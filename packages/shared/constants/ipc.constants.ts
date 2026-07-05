@@ -15,5 +15,9 @@ export const crystalIpcChannels = {
   projectPreviewReload: "project:preview-reload",
   projectPreviewSetTarget: "project:preview-set-target",
   projectPreviewGetState: "project:preview-get-state",
-  projectPreviewUpdated: "project:preview-updated"
+  projectPreviewUpdated: "project:preview-updated",
+  projectDomSnapshotBuild: "project:dom-snapshot-build",
+  projectDomSnapshotGetState: "project:dom-snapshot-get-state",
+  projectDomSnapshotClear: "project:dom-snapshot-clear",
+  projectDomSnapshotUpdated: "project:dom-snapshot-updated"
 } as const;

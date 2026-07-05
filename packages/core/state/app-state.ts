@@ -1,3 +1,5 @@
+import { initialProjectDomSnapshotState } from "../project/dom/project-dom-snapshot-state";
+import type { ProjectDomSnapshotState } from "../project/dom/project-dom-snapshot.types";
 import { initialProjectPreviewState } from "../project/preview/project-preview-state";
 import type { ProjectPreviewState } from "../project/preview/project-preview.types";
 import type { AppStateSnapshot, ProjectGraphState } from "./app-state.types";
@@ -26,7 +28,8 @@ const initialState: AppStateSnapshot = {
   build: { status: "idle", lastError: null },
   ui: { activeMode: "design" },
   projectGraph: initialProjectGraphState,
-  preview: initialProjectPreviewState
+  preview: initialProjectPreviewState,
+  domSnapshot: initialProjectDomSnapshotState
 };
 
 export class AppStateStore {
@@ -49,6 +52,11 @@ export class AppStateStore {
 
   patchProjectPreview(nextState: Partial<ProjectPreviewState>): void {
     this.state = { ...this.state, preview: { ...this.state.preview, ...nextState } };
+    this.notify();
+  }
+
+  patchProjectDomSnapshot(nextState: Partial<ProjectDomSnapshotState>): void {
+    this.state = { ...this.state, domSnapshot: { ...this.state.domSnapshot, ...nextState } };
     this.notify();
   }
 

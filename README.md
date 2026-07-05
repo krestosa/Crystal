@@ -2,7 +2,7 @@
 
 Crystal is a new desktop application for creating, inspecting, and modifying real HTML projects and their related assets.
 
-This repository now covers roadmap Phase -1, the minimal Phase 0 tooling foundation, the Phase 1 Project Graph foundation with watcher/cache support, and the first Phase 2 real project preview.
+This repository now covers roadmap Phase -1, the minimal Phase 0 tooling foundation, the Phase 1 Project Graph foundation with watcher/cache support, and the first Phase 2 real project preview with read-only DOM snapshot support.
 
 ## Requirements
 
@@ -64,6 +64,7 @@ npm run validate:structure
 npm run validate:project-graph
 npm run validate:project-watch
 npm run validate:preview
+npm run validate:dom-snapshot
 npm run validate:local:watch
 npm run doctor:electron
 ```
@@ -92,7 +93,10 @@ Implemented:
 - manual Load Preview and Reload Preview actions
 - controlled Preview reload after relevant watcher refreshes
 - visible Preview diagnostics for missing, blocked, or fallback-served resources
+- read-only DOM snapshot from static HTML source
+- minimal read-only DOM Tree panel
 - `validate:preview` for non-visual Preview checks
+- `validate:dom-snapshot` for non-visual DOM snapshot checks
 - local validation runner for pre-merge checks
 - Electron local environment diagnostics
 
@@ -105,7 +109,7 @@ Intentionally out of scope:
 - Rust/WASM analyzer implementation
 - code editor
 - integrated terminal
-- DOM visual selection, DOM tree, canvas, or bounding boxes
+- DOM visual selection, canvas, overlays, or bounding boxes
 - visual style editing
 - Electron UI automation frameworks such as Playwright, Cypress, or Spectron
 
@@ -128,3 +132,11 @@ Preview diagnostics are produced by Electron main and the protocol handler. The 
 Repeated issues are coalesced by type, safe path, and reason. Crystal keeps at most 50 recent Preview issues in memory. Unsupported MIME fallbacks are warnings only when an existing file is served with `application/octet-stream`.
 
 Watcher reload is conservative. Preview reload is considered after Project Graph refresh completion and only for the current page or direct dependencies. Ignored paths, including `.crystal-cache`, do not request Preview reload.
+
+## DOM snapshot read-only
+
+The DOM Tree panel builds a read-only structural snapshot from the current Preview target's HTML source. It does not inspect the live iframe DOM, add runtime code to the Preview document, expose Node to the Preview frame, or read arbitrary renderer paths.
+
+The snapshot contains a document root, element nodes, text previews, optional comments and doctype, basic attributes, node count, maximum observed depth, and controlled issues. Text and attribute values are truncated. Node count and depth are bounded.
+
+This parser is intentionally minimal and tolerant. It is suitable for the current Phase 2 DOM tree foundation, not for perfect browser-grade HTML parsing. Complex malformed HTML, unusual declarations, and raw text edge cases may produce warnings or truncated output. Visual selection, highlighting, overlays, bounding boxes, computed styles, and editing remain out of scope.

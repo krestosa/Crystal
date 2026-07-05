@@ -10,6 +10,7 @@ const validationSteps = [
   { label: "npm run validate:project-graph", command: "npm", args: ["run", "validate:project-graph"] },
   { label: "npm run validate:project-watch", command: "npm", args: ["run", "validate:project-watch"] },
   { label: "npm run validate:preview", command: "npm", args: ["run", "validate:preview"] },
+  { label: "npm run validate:dom-snapshot", command: "npm", args: ["run", "validate:dom-snapshot"] },
   { label: "watcher filesystem validation", command: "npm", args: ["run", "validate:local:watch"] },
   { label: "npm run doctor:electron", command: "npm", args: ["run", "doctor:electron"] }
 ];

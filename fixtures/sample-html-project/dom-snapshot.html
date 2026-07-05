@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>DOM Snapshot Fixture</title>
+  </head>
+  <body data-page="dom-snapshot">
+    <header class="site-header">
+      <nav aria-label="Primary navigation">
+        <a href="./index.html">Home</a>
+        <a href="./about.html">About</a>
+      </nav>
+    </header>
+    <main id="content" class="layout primary">
+      <section aria-label="Preview content">
+        <h1>Crystal DOM Snapshot</h1>
+        <p data-long="abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz">This text node is intentionally long enough to verify snapshot text preview truncation in validation.</p>
+        <img src="./assets/preview-icon.svg" alt="Preview icon" />
+      </section>
+      <section aria-label="Second content block">
+        <article data-card="one">
+          <h2>Nested article</h2>
+          <p>Sibling content after the first section must remain visible.</p>
+        </article>
+      </section>
+    </main>
+    <footer>
+      <small>End of DOM snapshot fixture.</small>
+    </footer>
+  </body>
+</html>

@@ -85,6 +85,7 @@ npm run validate:structure
 npm run validate:project-graph
 npm run validate:project-watch
 npm run validate:preview
+npm run validate:dom-snapshot
 npm run validate:local:watch
 npm run doctor:electron
 ```
@@ -111,6 +112,18 @@ This is a non-visual validation. It checks Preview target resolution, traversal 
 
 Preview diagnostics must not expose absolute filesystem paths. Validation checks that missing-resource and outside-root issues keep only safe relative paths or sanitized request URLs.
 
+## DOM snapshot validation
+
+Use:
+
+```bash
+npm run validate:dom-snapshot
+```
+
+This is a non-visual validation for the read-only DOM snapshot foundation. It checks the static HTML fixture, document root creation, `html`/`head`/`body` element detection, basic attributes, text preview truncation, node/depth limits, missing-file issues, traversal blocking, absolute path rejection, and absence of absolute filesystem paths in issues.
+
+The DOM snapshot parser is intentionally minimal. It is not a browser DOM implementation and does not validate CSS cascade, layout, script execution, iframe runtime state, computed styles, selection, overlays, or screenshots.
+
 ## Preview manual check
 
 Use `fixtures/sample-html-project` for manual Preview checks:
@@ -125,7 +138,22 @@ Use `fixtures/sample-html-project` for manual Preview checks:
 8. Start the watcher, change `preview.html` or `styles/preview.css`, and confirm controlled reload after Project Graph refresh.
 9. Create an ignored file such as `scratch.tmp` and confirm Preview does not reload because of it.
 
-The Preview issues panel is diagnostic only. It is not an Inspector, browser console, DOM tree, or visual editing surface.
+The Preview issues panel is diagnostic only. It is not an Inspector, browser console, visual editing surface, or overlay engine.
+
+## DOM snapshot manual check
+
+Use `fixtures/sample-html-project` for manual DOM snapshot checks:
+
+1. Run `npm run dev`.
+2. Open the fixture folder from the Project Graph panel.
+3. Load a Preview target.
+4. Press `Build DOM Snapshot` in the DOM Tree panel.
+5. Confirm a read-only textual tree appears.
+6. Confirm tags and basic attributes are visible.
+7. Confirm long text nodes are truncated.
+8. Confirm there is no click selection, hover highlight, overlay, bounding box, scroll-to-node behavior, style inspector, or editing.
+9. Press `Reload Preview` and confirm Preview still reloads normally.
+10. Run `npm run validate:local` before merge.
 
 ## Watcher filesystem validation
 

@@ -34,6 +34,18 @@ The renderer does not build absolute file paths. It calls explicit preload metho
 
 The Preview frame is intentionally limited to real HTML rendering and minimal diagnostics. It is not a DOM selection surface, Inspector, editor, browser console, canvas, or overlay engine in this phase.
 
+## DOM snapshot boundary
+
+The Phase 2 DOM snapshot model lives under `packages/core/project/dom/`. It defines a read-only `ProjectDomSnapshot`, `ProjectDomNode`, attributes, status, bounded issues, limits, text preview helpers, and a minimal static HTML snapshot builder.
+
+Electron main owns the DOM snapshot service. It reads only the current Preview target that was already resolved by the Preview service and returns sanitized state through explicit IPC channels. The renderer can request build, get state, clear state, and subscribe to snapshot updates through preload. The renderer never receives absolute filesystem paths.
+
+The first DOM snapshot source is `html-source`: static HTML read from the active target file. Crystal does not inspect the live iframe DOM, does not add runtime code to the Preview document, and does not relax Preview frame isolation for this feature.
+
+The parser is intentionally limited. It recognizes doctype, elements, basic attributes, text nodes, comments, void elements, and simple raw text handling for script/style. It bounds node count, depth, text preview length, attribute value length, and attribute count. Complex malformed HTML may produce warnings or truncated output instead of a browser-perfect DOM.
+
+The DOM Tree panel is read-only text output. It does not implement click-to-select, hover highlight, overlays, bounding boxes, scroll-to-node, breadcrumbs, style inspection, computed styles, or editing.
+
 ## Adapter boundary
 
 Current adapters:
@@ -54,4 +66,4 @@ Preview reload is downstream of Project Graph refresh. Watcher events do not rel
 
 ## Current limitations
 
-The current Project Graph is intentionally shallow. It detects files, HTML pages, direct dependencies, basic CSS references, basic script imports, external routes, and missing local routes. It now includes watcher/cache plumbing, conservative semi-incremental refresh planning, the first real Chromium Preview, and sanitized Preview diagnostics. It does not implement DOM snapshots, DOM tree, visual selection, CSS cascade analysis, framework alias resolution, editor features, WebGPU overlay, or Rust/WASM analysis.
+The current Project Graph is intentionally shallow. It detects files, HTML pages, direct dependencies, basic CSS references, basic script imports, external routes, and missing local routes. It now includes watcher/cache plumbing, conservative semi-incremental refresh planning, the first real Chromium Preview, sanitized Preview diagnostics, and a read-only static DOM snapshot foundation. It does not implement live DOM inspection, DOM visual selection, CSS cascade analysis, framework alias resolution, editor features, WebGPU overlay, or Rust/WASM analysis.

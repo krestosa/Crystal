@@ -1,3 +1,4 @@
+import type { ProjectDomSnapshotBuildResult, ProjectDomSnapshotState } from "../../core/project/dom/project-dom-snapshot.types";
 import type { ProjectGraph, ProjectScanResult } from "../../core/project/graph/project-graph.types";
 import type { ProjectPreviewLoadResult, ProjectPreviewSetTargetRequest, ProjectPreviewState } from "../../core/project/preview/project-preview.types";
 import type { ProjectGraphRefreshResult } from "../../core/project/refresh/project-graph-refresh.types";
@@ -35,4 +36,8 @@ export interface CrystalIpcResponseMap {
   readonly "project:preview-set-target": ProjectPreviewLoadResult;
   readonly "project:preview-get-state": ProjectPreviewState;
   readonly "project:preview-updated": ProjectPreviewState;
+  readonly "project:dom-snapshot-build": ProjectDomSnapshotBuildResult;
+  readonly "project:dom-snapshot-get-state": ProjectDomSnapshotState;
+  readonly "project:dom-snapshot-clear": ProjectDomSnapshotState;
+  readonly "project:dom-snapshot-updated": ProjectDomSnapshotState;
 }
