@@ -1,3 +1,4 @@
+import type { ProjectPreviewState } from "../project/preview/project-preview.types";
 import type { ProjectGraph, ProjectScanIssue } from "../project/graph/project-graph.types";
 import type { ProjectFileWatchEvent, ProjectGraphCacheStatus, ProjectGraphRefreshMode, ProjectWatcherStatus } from "../project/watching/project-watch.types";
 
@@ -36,4 +37,5 @@ export interface AppStateSnapshot {
   readonly build: BuildState;
   readonly ui: UiState;
   readonly projectGraph: ProjectGraphState;
+  readonly preview: ProjectPreviewState;
 }
