@@ -1,0 +1,19 @@
+.crystal-tabs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.crystal-tabs__button {
+  padding: 6px 10px;
+  border: 1px solid var(--crystal-color-border);
+  border-radius: 999px;
+  color: var(--crystal-color-muted);
+  background: transparent;
+  font: inherit;
+}
+
+.crystal-tabs__button[aria-pressed="true"] {
+  color: var(--crystal-color-text);
+  background: var(--crystal-color-surface-raised);
+}

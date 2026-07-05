@@ -1,0 +1,13 @@
+@use "./styles/tokens/tokens";
+@use "./styles/reset/reset";
+@use "./styles/base/base";
+@use "./layout/app-shell/app-shell";
+@use "./layout/top-bar/top-bar";
+@use "./layout/activity-bar/activity-bar";
+@use "./layout/side-bar/side-bar";
+@use "./layout/workbench/workbench";
+@use "./layout/status-bar/status-bar";
+@use "./components/tabs/tabs";
+@use "./views/design/design";
+@use "./views/inspector/inspector";
+@use "./views/developer/developer";

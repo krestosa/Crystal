@@ -1,0 +1,13 @@
+.crystal-app-shell {
+  display: grid;
+  grid-template-rows: 44px 1fr 26px;
+  min-height: 100vh;
+  color: var(--crystal-color-text);
+  background: var(--crystal-color-bg);
+}
+
+.crystal-app-shell__body {
+  display: grid;
+  grid-template-columns: 48px 260px 1fr;
+  min-height: 0;
+}
