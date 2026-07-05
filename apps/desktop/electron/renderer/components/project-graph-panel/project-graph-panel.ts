@@ -1,6 +1,6 @@
 import type { ProjectScanResult } from "../../../../../../packages/core/project/graph/project-graph.types";
 import type { ProjectGraphRefreshResult } from "../../../../../../packages/core/project/refresh/project-graph-refresh.types";
-import type { ProjectWatcherState } from "../../../../../../packages/core/project/watching/project-watch.types";
+import type { ProjectFileWatchEvent, ProjectWatcherState } from "../../../../../../packages/core/project/watching/project-watch.types";
 
 interface ProjectGraphPanelElements {
   readonly status: HTMLElement;
@@ -13,6 +13,13 @@ interface ProjectGraphPanelElements {
   readonly lastRefresh: HTMLElement;
   readonly refreshMode: HTMLElement;
   readonly watchEvents: HTMLElement;
+}
+
+interface CoalescedWatchEvent {
+  readonly type: ProjectFileWatchEvent["type"];
+  readonly relativePath: ProjectFileWatchEvent["relativePath"];
+  readonly affectsProjectGraph: ProjectFileWatchEvent["affectsProjectGraph"];
+  count: number;
 }
 
 export function initializeProjectGraphPanel(): void {
@@ -83,7 +90,32 @@ function renderWatcherState(elements: ProjectGraphPanelElements, state: ProjectW
   elements.cacheState.textContent = `Cache: ${state.cacheStatus}${state.cacheVersion ? ` - ${state.cacheVersion}` : ""}`;
   elements.lastRefresh.textContent = `Last refresh: ${state.lastRefreshAt ? formatTimestamp(state.lastRefreshAt) : "none"}`;
   elements.refreshMode.textContent = `Refresh mode: ${state.refreshMode}`;
-  renderList(elements.watchEvents, state.recentWatchEvents.map((event) => `${event.type} - ${event.relativePath} - ${event.affectsProjectGraph ? "graph" : "ignored"}`));
+  renderList(elements.watchEvents, formatVisibleWatchEvents(state.recentWatchEvents));
+}
+
+function formatVisibleWatchEvents(events: readonly ProjectFileWatchEvent[]): readonly string[] {
+  return coalesceVisibleWatchEvents(events).map((event) => {
+    const impact = event.affectsProjectGraph ? "graph" : "ignored";
+    const count = event.count > 1 ? ` ×${event.count}` : "";
+    return `${event.type} · ${event.relativePath} · ${impact}${count}`;
+  });
+}
+
+function coalesceVisibleWatchEvents(events: readonly ProjectFileWatchEvent[]): readonly CoalescedWatchEvent[] {
+  const coalesced: CoalescedWatchEvent[] = [];
+  for (const event of events) {
+    const previous = coalesced.at(-1);
+    if (previous && isSameVisibleWatchEvent(previous, event)) {
+      previous.count += 1;
+      continue;
+    }
+    coalesced.push({ type: event.type, relativePath: event.relativePath, affectsProjectGraph: event.affectsProjectGraph, count: 1 });
+  }
+  return coalesced;
+}
+
+function isSameVisibleWatchEvent(previous: CoalescedWatchEvent, event: ProjectFileWatchEvent): boolean {
+  return previous.type === event.type && previous.relativePath === event.relativePath && previous.affectsProjectGraph === event.affectsProjectGraph;
 }
 
 function renderCounts(container: HTMLElement, counts: Readonly<Record<string, number>>): void {
