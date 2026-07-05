@@ -1,10 +1,12 @@
 import { protocol } from "electron";
+import { Buffer } from "node:buffer";
 import { readFile, realpath } from "node:fs/promises";
 import path from "node:path";
 import { createProjectPreviewIssue } from "../../../../../packages/core/project/preview/project-preview-issues";
 import { resolveProjectPreviewPath } from "../../../../../packages/core/project/preview/project-preview-path";
 import type { ProjectPreviewIssue } from "../../../../../packages/core/project/preview/project-preview.types";
 import { getCurrentProjectRoot } from "../ipc/project-ipc-state";
+import { PROJECT_PREVIEW_SELECTION_SCRIPT } from "../preview-selection/project-preview-selection-script";
 import { getProjectPreviewMimeResult } from "./project-preview-mime";
 import { reportProjectPreviewResourceIssue } from "./project-preview-service";
 import { parseProjectPreviewUrl, projectPreviewScheme, sanitizeProjectPreviewRequestUrl } from "./project-preview-url";
@@ -58,11 +60,29 @@ async function handleProjectPreviewRequest(requestUrl: string): Promise<Response
     const file = await readFile(targetRealPath);
     const mime = getProjectPreviewMimeResult(targetRealPath);
     if (mime.isFallback) reportIssue(createProjectPreviewIssue({ code: "unsupported-mime", severity: "warning", message: "Preview resource uses an unsupported MIME extension and was served with a safe fallback.", path: resolution.relativePath, requestUrl: safeRequestUrl, reason: `Unsupported MIME extension${mime.extension ? `: ${mime.extension}` : "."}`, source: "protocol" }));
-    return new Response(new Uint8Array(file), { status: 200, headers: { "content-type": mime.mimeType, "cache-control": "no-store" } });
+    return createPreviewResourceResponse(file, mime.mimeType);
   } catch {
     reportIssue(createProtocolIssue("protocol-error", "Preview resource could not be read by Crystal.", resolution.relativePath, safeRequestUrl));
     return createTextResponse(500, "Preview resource could not be read by Crystal.");
   }
+}
+
+function createPreviewResourceResponse(file: Buffer, mimeType: string): Response {
+  const body = isHtmlMimeType(mimeType) ? injectPreviewSelectionScript(file.toString("utf8")) : new Uint8Array(file);
+  return new Response(body, { status: 200, headers: { "content-type": mimeType, "cache-control": "no-store" } });
+}
+
+function isHtmlMimeType(mimeType: string): boolean {
+  return mimeType.toLowerCase().startsWith("text/html");
+}
+
+function injectPreviewSelectionScript(html: string): string {
+  if (html.includes("__CRYSTAL_PREVIEW_SELECTION__")) return html;
+  const scriptElement = `<script>\n${PROJECT_PREVIEW_SELECTION_SCRIPT}\n</script>`;
+  const lowerHtml = html.toLowerCase();
+  const bodyCloseIndex = lowerHtml.lastIndexOf("</body>");
+  if (bodyCloseIndex < 0) return `${html}\n${scriptElement}\n`;
+  return `${html.slice(0, bodyCloseIndex)}${scriptElement}\n${html.slice(bodyCloseIndex)}`;
 }
 
 function createTextResponse(status: number, message: string): Response {
