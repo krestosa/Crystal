@@ -42,9 +42,15 @@ Electron main owns the DOM snapshot service. It reads only the current Preview t
 
 The first DOM snapshot source is `html-source`: static HTML read from the active target file. Crystal does not inspect the live iframe DOM, does not add runtime code to the Preview document, and does not relax Preview frame isolation for this feature.
 
-The parser is intentionally limited. It recognizes doctype, elements, basic attributes, text nodes, comments, void elements, and simple raw text handling for script/style. It bounds node count, depth, text preview length, attribute value length, and attribute count. Complex malformed HTML may produce warnings or truncated output instead of a browser-perfect DOM.
+Serialized DOM snapshot nodes use structural metadata. The document root uses `snapshotPath: "0"` and `id: "dom-node:0"`. Children derive their path from their serialized sibling position, for example `0/1/3`, and expose `siblingIndex`, `tagName`, and `depth`. This is deterministic for the same static HTML and traversal, but it is not a CSS selector and not a browser live-node identity.
 
-The DOM Tree panel is read-only text output. It does not implement click-to-select, hover highlight, overlays, bounding boxes, scroll-to-node, breadcrumbs, style inspection, computed styles, or editing.
+The parser is intentionally limited. It recognizes doctype, comments, elements, double-quoted attributes, single-quoted attributes, unquoted attributes, boolean attributes, void elements, self-closing syntax, text before or after elements, basic nesting recovery, and simple raw text handling for `script` and `style`.
+
+The parser is not browser-grade. It does not execute scripts, inspect iframe runtime DOM, evaluate templates, model framework components, compute styles, infer layout, or reproduce every browser error-recovery rule. Common malformed or unsupported patterns are recovered with controlled issues such as `malformed-tag`, `unclosed-tag`, and `unsupported-html-pattern` when possible.
+
+The snapshot is bounded by `maxNodes`, `maxDepth`, `maxTextPreviewLength`, `maxAttributeValueLength`, and `maxAttributesPerNode`. Limit handling marks affected nodes as truncated, renders `… truncated`, sets `isTruncated`, keeps `nodeCount` aligned with serialized nodes including `#document`, and reports issues such as `text-truncated`, `attributes-truncated`, `max-nodes-reached`, and `max-depth-reached` without absolute paths.
+
+The DOM Tree panel remains read-only text output. It may show subtle path metadata, but it does not implement click-to-select, hover highlight, overlays, bounding boxes, scroll-to-node, breadcrumbs, style inspection, computed styles, or editing.
 
 ## Adapter boundary
 
@@ -66,4 +72,4 @@ Preview reload is downstream of Project Graph refresh. Watcher events do not rel
 
 ## Current limitations
 
-The current Project Graph is intentionally shallow. It detects files, HTML pages, direct dependencies, basic CSS references, basic script imports, external routes, and missing local routes. It now includes watcher/cache plumbing, conservative semi-incremental refresh planning, the first real Chromium Preview, sanitized Preview diagnostics, and a read-only static DOM snapshot foundation. It does not implement live DOM inspection, DOM visual selection, CSS cascade analysis, framework alias resolution, editor features, WebGPU overlay, or Rust/WASM analysis.
+The current Project Graph is intentionally shallow. It detects files, HTML pages, direct dependencies, basic CSS references, basic script imports, external routes, and missing local routes. It now includes watcher/cache plumbing, conservative semi-incremental refresh planning, the first real Chromium Preview, sanitized Preview diagnostics, and a hardened read-only static DOM snapshot foundation. It does not implement live DOM inspection, DOM visual selection, CSS cascade analysis, framework alias resolution, editor features, WebGPU overlay, or Rust/WASM analysis.
