@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Crystal preview icon">
+  <rect width="64" height="64" rx="14" fill="#1f2a44"/>
+  <path d="M32 10 52 24 44 52H20L12 24 32 10Z" fill="#9fb7ff"/>
+  <path d="M21 25h22L32 48 21 25Z" fill="#ffffff" opacity="0.9"/>
+</svg>
