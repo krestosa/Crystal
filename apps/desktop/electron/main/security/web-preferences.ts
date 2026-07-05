@@ -3,7 +3,7 @@ import type { WebPreferences } from "electron";
 
 export function getSecureWebPreferences(): WebPreferences {
   return {
-    preload: path.resolve(__dirname, "../preload/preload.js"),
+    preload: path.resolve(__dirname, "../preload/preload.cjs"),
     contextIsolation: true,
     nodeIntegration: false,
     sandbox: true,
