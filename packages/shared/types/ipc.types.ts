@@ -1,4 +1,5 @@
 import type { ProjectGraph, ProjectScanResult } from "../../core/project/graph/project-graph.types";
+import type { ProjectPreviewLoadResult, ProjectPreviewSetTargetRequest, ProjectPreviewState } from "../../core/project/preview/project-preview.types";
 import type { ProjectGraphRefreshResult } from "../../core/project/refresh/project-graph-refresh.types";
 import type { ProjectWatcherState } from "../../core/project/watching/project-watch.types";
 import type { crystalIpcChannels } from "../constants/ipc.constants";
@@ -11,7 +12,8 @@ export interface ProjectWatcherUpdatePayload {
 }
 
 export interface CrystalIpcRequestMap {
-  readonly [channel: string]: void;
+  readonly [channel: string]: unknown;
+  readonly "project:preview-set-target": ProjectPreviewSetTargetRequest;
 }
 
 export interface CrystalIpcResponseMap {
@@ -28,4 +30,9 @@ export interface CrystalIpcResponseMap {
   readonly "project:refresh-graph": ProjectGraphRefreshResult;
   readonly "project:clear-cache": ProjectWatcherState;
   readonly "project:watcher-updated": ProjectWatcherUpdatePayload;
+  readonly "project:preview-load": ProjectPreviewLoadResult;
+  readonly "project:preview-reload": ProjectPreviewLoadResult;
+  readonly "project:preview-set-target": ProjectPreviewLoadResult;
+  readonly "project:preview-get-state": ProjectPreviewState;
+  readonly "project:preview-updated": ProjectPreviewState;
 }
