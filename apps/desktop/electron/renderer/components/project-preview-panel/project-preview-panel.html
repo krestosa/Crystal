@@ -7,6 +7,8 @@
     <div class="crystal-project-preview-panel__actions">
       <button class="crystal-project-preview-panel__button" type="button" data-project-preview-load>Load Preview</button>
       <button class="crystal-project-preview-panel__button" type="button" data-project-preview-reload>Reload Preview</button>
+      <button class="crystal-project-preview-panel__button" type="button" data-project-preview-select-mode>Select Mode</button>
+      <button class="crystal-project-preview-panel__button" type="button" data-project-preview-clear-selection>Clear Selection</button>
     </div>
   </div>
   <label class="crystal-project-preview-panel__target-label">
@@ -22,6 +24,20 @@
     <div><dt>Last issue</dt><dd data-project-preview-last-issue>none</dd></div>
   </dl>
   <p class="crystal-project-preview-panel__error" data-project-preview-error hidden></p>
+  <section class="crystal-project-preview-panel__selection" aria-label="Preview selection">
+    <div class="crystal-project-preview-panel__selection-header">
+      <h3 class="crystal-project-preview-panel__selection-title">Selected node</h3>
+      <p class="crystal-project-preview-panel__selection-mode" data-project-preview-selection-mode>idle</p>
+    </div>
+    <dl class="crystal-project-preview-panel__selection-summary">
+      <div><dt>Tag</dt><dd data-project-preview-selected-tag>none</dd></div>
+      <div><dt>snapshotPath</dt><dd data-project-preview-selected-path>none</dd></div>
+      <div><dt>Selector</dt><dd data-project-preview-selected-selector>none</dd></div>
+      <div><dt>Attributes</dt><dd data-project-preview-selected-attributes>none</dd></div>
+      <div><dt>Text</dt><dd data-project-preview-selected-text>none</dd></div>
+    </dl>
+    <p class="crystal-project-preview-panel__selection-issue" data-project-preview-selection-issue hidden></p>
+  </section>
   <section class="crystal-project-preview-panel__issues" aria-label="Preview issues">
     <h3 class="crystal-project-preview-panel__issues-title">Preview issues</h3>
     <p class="crystal-project-preview-panel__issues-empty" data-project-preview-issues-empty>No preview issues.</p>
