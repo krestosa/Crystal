@@ -39,8 +39,12 @@ const crystalApi: CrystalPreloadApi = {
     reloadPreview: () => invokeCrystal(crystalIpcChannels.projectPreviewReload),
     setPreviewTarget: (relativePath) => invokePreviewTarget(relativePath),
     getPreviewState: () => invokeCrystal(crystalIpcChannels.projectPreviewGetState),
+    buildDomSnapshot: () => invokeCrystal(crystalIpcChannels.projectDomSnapshotBuild),
+    getDomSnapshotState: () => invokeCrystal(crystalIpcChannels.projectDomSnapshotGetState),
+    clearDomSnapshot: () => invokeCrystal(crystalIpcChannels.projectDomSnapshotClear),
     onWatcherStateChanged: (listener) => onCrystal(crystalIpcChannels.projectWatcherUpdated, listener),
-    onPreviewStateChanged: (listener) => onCrystal(crystalIpcChannels.projectPreviewUpdated, listener)
+    onPreviewStateChanged: (listener) => onCrystal(crystalIpcChannels.projectPreviewUpdated, listener),
+    onDomSnapshotStateChanged: (listener) => onCrystal(crystalIpcChannels.projectDomSnapshotUpdated, listener)
   }
 };
 
