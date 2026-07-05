@@ -75,12 +75,21 @@ Covered:
 - target change reload from Project Graph pages
 - controlled Preview reload after relevant watcher-driven Project Graph refreshes
 - non-visual `validate:preview` script
+- read-only DOM snapshot state model
+- static HTML DOM snapshot builder
+- bounded DOM snapshot issues and limits
+- typed IPC and preload DOM snapshot API
+- minimal read-only DOM Tree panel in the Design view
+- non-visual `validate:dom-snapshot` script
 
 Not covered yet:
 
-- DOM snapshot parsing
-- DOM selection
-- DOM tree
+- live iframe DOM inspection
+- DOM visual selection
+- click-to-select
+- iframe overlays
+- bounding boxes
+- DOM tree interaction beyond read-only text output
 - CSS cascade or specificity analysis
 - framework alias resolution
 - TypeScript semantic analysis
@@ -101,7 +110,7 @@ Run:
 npm run validate:local
 ```
 
-The runner executes the current install, build, typecheck, Project Graph, watcher/cache, Preview, watcher filesystem, and Electron diagnostic checks in sequence. It stops on the first failure and returns a non-zero exit code.
+The runner executes the current install, build, typecheck, Project Graph, watcher/cache, Preview, DOM snapshot, watcher filesystem, and Electron diagnostic checks in sequence. It stops on the first failure and returns a non-zero exit code.
 
 For the explicit Electron launch check, run:
 
@@ -115,4 +124,4 @@ The validation runner is mandatory before requesting PR merge. It must be update
 
 ## Recommended next module
 
-After this Preview diagnostics PR passes local validation on Windows, the next module should either add DOM snapshot and DOM tree as narrow Phase 2 primitives or run one more Preview hardening pass if manual diagnostics reveal unstable resource loading. Do not jump to Design MVP, Inspector MVP, Developer IDE, WebGPU, or Rust/WASM from this PR.
+After this DOM snapshot PR passes local validation on Windows, the next module should either harden the static snapshot/parser limits or add narrow visual selection primitives. Do not jump to Inspector MVP, Developer IDE, WebGPU, or Rust/WASM from this PR.
