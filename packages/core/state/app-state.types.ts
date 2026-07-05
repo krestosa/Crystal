@@ -1,4 +1,5 @@
 import type { ProjectGraph, ProjectScanIssue } from "../project/graph/project-graph.types";
+import type { ProjectFileWatchEvent, ProjectGraphCacheStatus, ProjectGraphRefreshMode, ProjectWatcherStatus } from "../project/watching/project-watch.types";
 
 export interface WorkspaceState {
   readonly openedPath: string | null;
@@ -20,6 +21,14 @@ export interface ProjectGraphState {
   readonly issues: readonly ProjectScanIssue[];
   readonly lastScanAt: number | null;
   readonly lastError: string | null;
+  readonly watcherStatus: ProjectWatcherStatus;
+  readonly cacheStatus: ProjectGraphCacheStatus;
+  readonly lastWatchEventAt: number | null;
+  readonly lastRefreshAt: number | null;
+  readonly pendingWatchEvents: readonly ProjectFileWatchEvent[];
+  readonly refreshMode: ProjectGraphRefreshMode;
+  readonly lastRefreshDurationMs: number | null;
+  readonly cacheVersion: string | null;
 }
 
 export interface AppStateSnapshot {
