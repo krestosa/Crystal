@@ -114,6 +114,7 @@ export function buildProjectDomSnapshot(options: BuildProjectDomSnapshotOptions)
   if (stack.length > 1) pushIssue("parse-warning", "Some HTML elements were not closed.", "Unclosed element nesting.", "warning");
 
   const rootNode = finalizeNode(documentNode);
+  const isTruncated = hasTruncatedNode(rootNode) || issues.some((issue) => issue.code === "node-limit-exceeded" || issue.code === "depth-limit-exceeded");
   return {
     id: `dom-snapshot:${options.rootRelativePath}:${generatedAt}`,
     rootRelativePath: options.rootRelativePath,
@@ -123,6 +124,7 @@ export function buildProjectDomSnapshot(options: BuildProjectDomSnapshotOptions)
     rootNode,
     nodeCount,
     maxDepth,
+    isTruncated,
     issues
   };
 
@@ -168,15 +170,15 @@ export function buildProjectDomSnapshot(options: BuildProjectDomSnapshotOptions)
       return null;
     }
 
-    nodeCount += 1;
-    maxDepth = Math.max(maxDepth, depth);
     const node = createNode(type, tagName, textPreview, attributes, depth, offset, truncated);
+    maxDepth = Math.max(maxDepth, depth);
     parent.children.push(node);
     parent.childCount = parent.children.length;
     return node;
   }
 
   function createNode(type: ProjectDomNodeType, tagName: string | null, textPreview: string | null, attributes: ProjectDomAttribute[], depth: number, offset: number, truncated = false): MutableDomNode {
+    nodeCount += 1;
     const location = getSourceLocation(options.html, offset);
     return { id: `dom-node:${nodeCount}`, type, tagName, textPreview, attributes, children: [], depth, childCount: 0, sourceLocation: location, truncated };
   }
@@ -229,6 +231,11 @@ function parseAttributes(source: string, limits: ProjectDomSnapshotLimits): Proj
 function finalizeNode(node: MutableDomNode): ProjectDomNode {
   const children = node.children.map((child) => finalizeNode(child));
   return { ...node, children, childCount: children.length };
+}
+
+function hasTruncatedNode(node: ProjectDomNode): boolean {
+  if (node.truncated) return true;
+  return node.children.some((child) => hasTruncatedNode(child));
 }
 
 function getSourceLocation(source: string, offset: number): { readonly offset: number; readonly line: number; readonly column: number } {
