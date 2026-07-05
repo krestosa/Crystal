@@ -10,5 +10,10 @@ export const crystalIpcChannels = {
   projectGetWatcherState: "project:get-watcher-state",
   projectRefreshGraph: "project:refresh-graph",
   projectClearCache: "project:clear-cache",
-  projectWatcherUpdated: "project:watcher-updated"
+  projectWatcherUpdated: "project:watcher-updated",
+  projectPreviewLoad: "project:preview-load",
+  projectPreviewReload: "project:preview-reload",
+  projectPreviewSetTarget: "project:preview-set-target",
+  projectPreviewGetState: "project:preview-get-state",
+  projectPreviewUpdated: "project:preview-updated"
 } as const;
