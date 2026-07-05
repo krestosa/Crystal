@@ -26,7 +26,7 @@ For Windows Electron binary repair, use the clean install procedure in `docs/dev
 npm run dev
 ```
 
-The development command builds the current source and opens the Electron shell from `dist/main/main.js`. It intentionally does not hide Electron install failures.
+The development command builds the current source and opens the Electron shell from `dist/main/main.cjs`. Electron main and preload are emitted as explicit CommonJS outputs so the root `"type": "module"` setting can remain unchanged.
 
 ## Build and validation
 
