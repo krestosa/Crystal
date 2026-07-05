@@ -9,6 +9,7 @@ import type { ProjectFileWatchEvent, ProjectWatcherState } from "../../../../../
 import { appState } from "../../../../../packages/core/state/app-state";
 import { crystalIpcChannels } from "../../../../../packages/shared/constants/ipc.constants";
 import type { ProjectWatcherUpdatePayload } from "../../../../../packages/shared/types/ipc.types";
+import { reloadProjectPreviewAfterGraphRefresh } from "../preview/project-preview-service";
 import { getCurrentProjectRoot, getCurrentProjectScanResult, setCurrentProjectScanResult } from "./project-ipc-state";
 import { projectGraphCache, projectGraphRefresher } from "./project-services";
 
@@ -142,6 +143,7 @@ async function refreshFromEvents(events: readonly ProjectFileWatchEvent[]): Prom
     eventBus.emit({ type: projectEventTypes.projectGraphUpdated, payload: { graph: refresh.result.graph, issues: refresh.result.issues }, createdAt: Date.now() });
     eventBus.emit({ type: projectEventTypes.projectGraphCacheSaved, payload: { rootPath: refresh.result.rootPath, cacheVersion: crystalCacheVersion }, createdAt: Date.now() });
     notifyProjectRenderer(refresh);
+    void reloadProjectPreviewAfterGraphRefresh(events, refresh).catch(() => undefined);
     return refresh;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
