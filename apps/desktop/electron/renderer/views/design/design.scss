@@ -1,3 +1,6 @@
 .crystal-design-view {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
   border-color: rgba(108, 125, 255, 0.32);
 }
