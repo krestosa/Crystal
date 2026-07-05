@@ -15,13 +15,40 @@ await expectContains("styles/main.css", "./watch-target.css");
 const cssChange = normalizeEvent({ type: "changed", absolutePath: path.join(fixtureRoot, "styles/watch-target.css"), timestamp: 100 });
 const tmpChange = normalizeEvent({ type: "changed", absolutePath: path.join(fixtureRoot, "styles/draft.tmp"), timestamp: 101 });
 const cssDelete = normalizeEvent({ type: "deleted", absolutePath: path.join(fixtureRoot, "styles/watch-target.css"), timestamp: 102 });
+const htmlCreate = normalizeEvent({ type: "created", absolutePath: path.join(fixtureRoot, "created-watch-test.html"), timestamp: 103 });
+const cacheWrite = normalizeEvent({ type: "changed", absolutePath: path.join(fixtureRoot, ".crystal-cache/project-graph.json"), timestamp: 104 });
 
 if (!cssChange.accepted || cssChange.event?.type !== "changed" || !cssChange.event.affectsProjectGraph) failures.push("CSS change was not accepted as graph-relevant.");
 if (tmpChange.accepted || tmpChange.issue?.code !== "ignored-path") failures.push("Temporary file event was not ignored.");
+if (cacheWrite.accepted || cacheWrite.issue?.code !== "ignored-path") failures.push(".crystal-cache event was not ignored.");
 const dominant = chooseDominantEvent(cssChange.event, cssDelete.event);
 if (dominant?.type !== "deleted") failures.push("Deleted event did not dominate changed event in a batch.");
 if (createRefreshPlan([cssChange.event]).mode !== "semi-incremental") failures.push("Clear single event did not produce semi-incremental refresh plan.");
 if (createRefreshPlan([cssDelete.event]).mode !== "full") failures.push("Deleted event did not produce full refresh plan.");
+
+const autoRefresh = createAutoRefreshHarness();
+autoRefresh.seedGraph({ totalFiles: 1, totalPages: 1, missingDependencies: 0, filesByKind: { html: 1 } });
+await autoRefresh.enqueue([cssChange.event]);
+if (autoRefresh.refreshes.length !== 1) failures.push("Graph-relevant watcher event did not execute automatic refresh.");
+if (!autoRefresh.state.lastRefreshAt) failures.push("Automatic refresh did not update lastRefreshAt.");
+if (autoRefresh.state.refreshMode === "none") failures.push("Automatic refresh left refreshMode as none.");
+if (autoRefresh.state.graph?.summary.totalFiles !== 2) failures.push("Automatic refresh did not update Project Graph snapshot.");
+if (autoRefresh.state.cacheStatus !== "saved") failures.push("Automatic refresh did not save/update cache state.");
+
+const ignoredRefresh = createAutoRefreshHarness();
+ignoredRefresh.seedGraph({ totalFiles: 1, totalPages: 1, missingDependencies: 0, filesByKind: { html: 1 } });
+await ignoredRefresh.enqueue([{ ...cssChange.event, kind: "unknown", affectsProjectGraph: false, relativePath: ".", reason: "Ignored non-graph event." }]);
+if (ignoredRefresh.refreshes.length !== 0) failures.push("Ignored watcher event triggered automatic refresh.");
+
+const consolidatedRefresh = createAutoRefreshHarness();
+consolidatedRefresh.seedGraph({ totalFiles: 1, totalPages: 1, missingDependencies: 0, filesByKind: { html: 1 } });
+await consolidatedRefresh.enqueue([cssChange.event, htmlCreate.event]);
+if (consolidatedRefresh.refreshes.length !== 1 || consolidatedRefresh.refreshes[0].events.length !== 2) failures.push("Fast watcher events were not consolidated into one refresh.");
+
+const deleteRefresh = createAutoRefreshHarness();
+deleteRefresh.seedGraph({ totalFiles: 2, totalPages: 1, missingDependencies: 0, filesByKind: { html: 1, css: 1 } });
+await deleteRefresh.enqueue([cssDelete.event]);
+if (deleteRefresh.state.refreshMode !== "full") failures.push("Deleted graph-relevant event did not trigger full refresh.");
 
 const cacheEntry = createCacheEntry(fixtureRoot, { totalFiles: 1 }, [{ relativePath: "styles/watch-target.css", mtimeMs: 1, size: 1, kind: "css", dependencyCount: 0, isAsset: false, isPage: false }]);
 const restored = JSON.parse(JSON.stringify(cacheEntry));
@@ -32,7 +59,7 @@ if (failures.length > 0) {
   for (const failure of failures) console.error(`- ${failure}`);
   process.exit(1);
 }
-console.log("Project watch validation passed: batching, event classification, refresh planning, ignore rules, and cache round-trip.");
+console.log("Project watch validation passed: automatic refresh, batching, event classification, ignore rules, cache safety, refresh planning, and cache round-trip.");
 
 async function expectFile(relativePath) {
   try { await access(path.join(fixtureRoot, relativePath)); }
@@ -68,9 +95,32 @@ function chooseDominantEvent(previous, next) {
 }
 
 function createRefreshPlan(events) {
-  if (events.length === 0) return { mode: "none" };
-  if (events.length > 25 || events.some((event) => ["deleted", "renamed", "unknown"].includes(event?.type))) return { mode: "full" };
+  const relevantEvents = events.filter((event) => event?.affectsProjectGraph);
+  if (relevantEvents.length === 0) return { mode: "none" };
+  if (relevantEvents.length > 25 || relevantEvents.some((event) => ["deleted", "renamed", "unknown"].includes(event?.type))) return { mode: "full" };
   return { mode: "semi-incremental" };
+}
+
+function createAutoRefreshHarness() {
+  const state = { graph: null, lastRefreshAt: null, refreshMode: "none", cacheStatus: "empty" };
+  const refreshes = [];
+  let nextTotalFiles = 2;
+  return {
+    state,
+    refreshes,
+    seedGraph(summary) { state.graph = { summary }; },
+    async enqueue(events) {
+      const relevantEvents = events.filter((event) => event?.affectsProjectGraph);
+      if (relevantEvents.length === 0) return;
+      const plan = createRefreshPlan(relevantEvents);
+      const refreshedAt = Date.now();
+      state.graph = { summary: { totalFiles: nextTotalFiles++, totalPages: 1, missingDependencies: 0, filesByKind: { html: 1, css: 1 } } };
+      state.lastRefreshAt = refreshedAt;
+      state.refreshMode = plan.mode;
+      state.cacheStatus = "saved";
+      refreshes.push({ events: relevantEvents, mode: plan.mode, refreshedAt });
+    }
+  };
 }
 
 function createCacheEntry(rootPath, graph, fileMetadata) {
