@@ -5,10 +5,7 @@
   "description": "Crystal desktop application bootstrap.",
   "type": "module",
   "main": "dist/main/main.cjs",
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
+  "workspaces": ["apps/*", "packages/*"],
   "scripts": {
     "dev": "npm run build && electron dist/main/main.cjs",
     "build": "node scripts/build.mjs",
@@ -21,6 +18,7 @@
     "typecheck": "tsc --noEmit",
     "validate:structure": "node scripts/validate-structure.mjs",
     "validate:project-graph": "node scripts/validate-project-graph.mjs",
+    "validate:watch": "node scripts/validate-project-watch.mjs",
     "doctor:electron": "node scripts/doctor-electron.mjs"
   },
   "devDependencies": {
@@ -30,8 +28,5 @@
     "sass": "^1.83.4",
     "typescript": "^5.7.2"
   },
-  "engines": {
-    "node": ">=22.0.0",
-    "npm": ">=10.0.0"
-  }
+  "engines": { "node": ">=22.0.0", "npm": ">=10.0.0" }
 }
