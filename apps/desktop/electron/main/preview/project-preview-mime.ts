@@ -1,5 +1,13 @@
 import path from "node:path";
 
+export interface ProjectPreviewMimeResult {
+  readonly extension: string;
+  readonly mimeType: string;
+  readonly isFallback: boolean;
+}
+
+const fallbackProjectPreviewMimeType = "application/octet-stream";
+
 const previewMimeByExtension = new Map<string, string>([
   [".html", "text/html; charset=utf-8"],
   [".htm", "text/html; charset=utf-8"],
@@ -17,6 +25,12 @@ const previewMimeByExtension = new Map<string, string>([
   [".woff2", "font/woff2"]
 ]);
 
+export function getProjectPreviewMimeResult(filePath: string): ProjectPreviewMimeResult {
+  const extension = path.extname(filePath).toLowerCase();
+  const mimeType = previewMimeByExtension.get(extension);
+  return { extension, mimeType: mimeType ?? fallbackProjectPreviewMimeType, isFallback: !mimeType };
+}
+
 export function getProjectPreviewMimeType(filePath: string): string {
-  return previewMimeByExtension.get(path.extname(filePath).toLowerCase()) ?? "application/octet-stream";
+  return getProjectPreviewMimeResult(filePath).mimeType;
 }
