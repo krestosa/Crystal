@@ -34,6 +34,9 @@ export function registerProjectIpcHandlers(): void {
   ipcMain.handle(crystalIpcChannels.projectClearCache, () => clearProjectGraphCache());
   ipcMain.handle(crystalIpcChannels.projectPreviewLoad, () => loadProjectPreview("manual"));
   ipcMain.handle(crystalIpcChannels.projectPreviewReload, () => reloadProjectPreview("manual"));
-  ipcMain.handle(crystalIpcChannels.projectPreviewSetTarget, (_event, request: ProjectPreviewSetTargetRequest) => setProjectPreviewTarget(request.relativePath));
+  ipcMain.handle(crystalIpcChannels.projectPreviewSetTarget, (_event, request: ProjectPreviewSetTargetRequest | null) => {
+    if (!request || typeof request.relativePath !== "string") throw new Error("Invalid preview target request.");
+    return setProjectPreviewTarget(request.relativePath);
+  });
   ipcMain.handle(crystalIpcChannels.projectPreviewGetState, () => getProjectPreviewState());
 }
