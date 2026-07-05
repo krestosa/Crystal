@@ -89,9 +89,13 @@ function renderDomSnapshot(snapshot: ProjectDomSnapshot): string {
 
 function appendNodeLine(node: ProjectDomNode, lines: string[]): void {
   const indent = "  ".repeat(Math.max(0, node.depth));
-  lines.push(`${indent}${renderNodeLabel(node)}`);
+  lines.push(`${indent}${renderNodeLabel(node)} ${renderNodeMetadata(node)}`);
   if (node.truncated) lines.push(`${indent}  … truncated`);
   for (const child of node.children) appendNodeLine(child, lines);
+}
+
+function renderNodeMetadata(node: ProjectDomNode): string {
+  return `[${node.snapshotPath}]`;
 }
 
 function renderNodeLabel(node: ProjectDomNode): string {
@@ -109,8 +113,7 @@ function renderAttributes(attributes: readonly ProjectDomAttribute[]): string {
 
 function renderAttribute(attribute: ProjectDomAttribute): string {
   if (attribute.value === null) return attribute.name;
-  const suffix = attribute.truncated ? "…" : "";
-  return `${attribute.name}=\"${attribute.value}${suffix}\"`;
+  return `${attribute.name}=\"${attribute.value}\"`;
 }
 
 function renderDomSnapshotError(elements: ProjectDomTreePanelElements, error: unknown): void {
