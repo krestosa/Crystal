@@ -2,11 +2,28 @@ import type { AppStateSnapshot, ProjectGraphState } from "./app-state.types";
 
 type AppStateListener = (state: AppStateSnapshot) => void;
 
+const initialProjectGraphState: ProjectGraphState = {
+  root: null,
+  graph: null,
+  scanStatus: "idle",
+  issues: [],
+  lastScanAt: null,
+  lastError: null,
+  watcherStatus: "idle",
+  cacheStatus: "empty",
+  lastWatchEventAt: null,
+  lastRefreshAt: null,
+  pendingWatchEvents: [],
+  refreshMode: "none",
+  lastRefreshDurationMs: null,
+  cacheVersion: null
+};
+
 const initialState: AppStateSnapshot = {
   workspace: { openedPath: null },
   build: { status: "idle", lastError: null },
   ui: { activeMode: "design" },
-  projectGraph: { root: null, graph: null, scanStatus: "idle", issues: [], lastScanAt: null, lastError: null }
+  projectGraph: initialProjectGraphState
 };
 
 export class AppStateStore {
