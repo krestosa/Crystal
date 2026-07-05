@@ -2,7 +2,7 @@
 
 Crystal is a new desktop application for creating, inspecting, and modifying real HTML projects and their related assets.
 
-This repository now covers roadmap Phase -1, the minimal Phase 0 tooling foundation, the Phase 1 Project Graph foundation with watcher/cache support, and the first Phase 2 real project preview with read-only DOM snapshot support.
+This repository now covers roadmap Phase -1, the minimal Phase 0 tooling foundation, the Phase 1 Project Graph foundation with watcher/cache support, and the first Phase 2 real project preview with hardened read-only DOM snapshot support.
 
 ## Requirements
 
@@ -94,6 +94,7 @@ Implemented:
 - controlled Preview reload after relevant watcher refreshes
 - visible Preview diagnostics for missing, blocked, or fallback-served resources
 - read-only DOM snapshot from static HTML source
+- stable DOM snapshot node path metadata
 - minimal read-only DOM Tree panel
 - `validate:preview` for non-visual Preview checks
 - `validate:dom-snapshot` for non-visual DOM snapshot checks
@@ -137,6 +138,12 @@ Watcher reload is conservative. Preview reload is considered after Project Graph
 
 The DOM Tree panel builds a read-only structural snapshot from the current Preview target's HTML source. It does not inspect the live iframe DOM, add runtime code to the Preview document, expose Node to the Preview frame, or read arbitrary renderer paths.
 
-The snapshot contains a document root, element nodes, text previews, optional comments and doctype, basic attributes, node count, maximum observed depth, and controlled issues. Text and attribute values are truncated. Node count and depth are bounded.
+Each serialized node has a deterministic structural `snapshotPath` such as `0/1/3`, a path-based `id` such as `dom-node:0/1/3`, a `siblingIndex`, `tagName`, and `depth`. The path is based on the serialized snapshot tree, not on a CSS selector and not on browser layout state.
 
-This parser is intentionally minimal and tolerant. It is suitable for the current Phase 2 DOM tree foundation, not for perfect browser-grade HTML parsing. Complex malformed HTML, unusual declarations, and raw text edge cases may produce warnings or truncated output. Visual selection, highlighting, overlays, bounding boxes, computed styles, and editing remain out of scope.
+The parser is intentionally minimal and tolerant. It covers doctype, comments, elements, double-quoted attributes, single-quoted attributes, unquoted attributes, boolean attributes, void elements, self-closing syntax, basic nesting recovery, text before or after elements, and simple raw text handling for `script` and `style`.
+
+The parser is not browser-grade. It does not execute scripts, inspect the live DOM, evaluate templates, resolve framework component trees, compute CSS, infer layout, or guarantee exact browser error recovery for every malformed HTML pattern. Unsupported or malformed patterns produce controlled issues when possible.
+
+The snapshot is bounded by `maxNodes`, `maxDepth`, `maxTextPreviewLength`, `maxAttributeValueLength`, and `maxAttributesPerNode`. When truncation happens, affected nodes are marked, the tree renders `… truncated`, `isTruncated` is set, and issues such as `text-truncated`, `attributes-truncated`, `max-nodes-reached`, or `max-depth-reached` are reported without absolute filesystem paths.
+
+Visual selection, highlighting, overlays, bounding boxes, computed styles, breadcrumbs, scroll-to-node behavior, and editing remain out of scope.

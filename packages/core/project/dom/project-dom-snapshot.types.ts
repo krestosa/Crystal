@@ -11,8 +11,15 @@ export type ProjectDomSnapshotIssueCode =
   | "file-not-found"
   | "read-failed"
   | "parse-warning"
+  | "malformed-tag"
+  | "unclosed-tag"
+  | "unsupported-html-pattern"
+  | "text-truncated"
+  | "attributes-truncated"
   | "node-limit-exceeded"
   | "depth-limit-exceeded"
+  | "max-nodes-reached"
+  | "max-depth-reached"
   | "path-traversal"
   | "outside-project-root"
   | "unknown";
@@ -31,6 +38,8 @@ export interface ProjectDomSourceLocation {
 
 export interface ProjectDomNode {
   readonly id: string;
+  readonly snapshotPath: string;
+  readonly siblingIndex: number;
   readonly type: ProjectDomNodeType;
   readonly tagName: string | null;
   readonly textPreview: string | null;
