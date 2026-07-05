@@ -18,8 +18,8 @@ const requiredPaths = [
   "packages/adapters/bundler/bundler.adapter.ts",
   "packages/adapters/sass-compiler/sass-compiler.adapter.ts",
   "packages/adapters/html-assembler/html-assembler.adapter.ts",
-  "dist/main/main.js",
-  "dist/preload/preload.js",
+  "dist/main/main.cjs",
+  "dist/preload/preload.cjs",
   "dist/renderer/index.html",
   "dist/renderer/main.css",
   "dist/renderer/main.js"
