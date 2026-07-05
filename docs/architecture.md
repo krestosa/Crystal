@@ -7,8 +7,8 @@ Crystal is a desktop application built from a modular source tree into compact r
 Crystal starts with three Electron contexts:
 
 ```txt
-Electron main process  -> dist/main/main.js
-Electron preload       -> dist/preload/preload.js
+Electron main process  -> dist/main/main.cjs
+Electron preload       -> dist/preload/preload.cjs
 Renderer               -> dist/renderer/index.html + main.css + main.js
 ```
 

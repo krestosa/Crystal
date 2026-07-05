@@ -6,14 +6,27 @@ This repository now covers roadmap Phase -1, the minimal Phase 0 tooling foundat
 
 ## Requirements
 
-- Node.js 22+
-- npm 10+
+- Node.js 22.x for local development
+- npm 10.x recommended
+- Electron 35.x from the locked dependency tree
+
+Use the repository `.nvmrc` and see `docs/development.md` for the Windows Electron setup and clean reinstall procedure.
 
 ## Install
 
 ```bash
 npm install
 ```
+
+For Windows Electron binary repair, use the clean install procedure in `docs/development.md` instead of deleting random cache paths manually.
+
+## Development
+
+```bash
+npm run dev
+```
+
+The development command builds the current source and opens the Electron shell from `dist/main/main.cjs`. Electron main and preload are emitted as explicit CommonJS outputs so the root `"type": "module"` setting can remain unchanged.
 
 ## Build and validation
 
@@ -22,6 +35,7 @@ npm run build
 npm run typecheck
 npm run validate:structure
 npm run validate:project-graph
+npm run doctor:electron
 ```
 
 ## Current scope
@@ -40,6 +54,7 @@ Implemented:
 - missing route reporting
 - minimal renderer Project Graph verification panel
 - fixtures and `validate:project-graph`
+- Electron local environment diagnostics
 
 Intentionally out of scope:
 
