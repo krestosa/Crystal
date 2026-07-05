@@ -1,5 +1,6 @@
 import type { ProjectDomSnapshotBuildResult, ProjectDomSnapshotState } from "../../core/project/dom/project-dom-snapshot.types";
 import type { ProjectGraph, ProjectScanResult } from "../../core/project/graph/project-graph.types";
+import type { ProjectPreviewSelectionState } from "../../core/project/preview-selection/project-preview-selection.types";
 import type { ProjectPreviewLoadResult, ProjectPreviewSetTargetRequest, ProjectPreviewState } from "../../core/project/preview/project-preview.types";
 import type { ProjectGraphRefreshResult } from "../../core/project/refresh/project-graph-refresh.types";
 import type { ProjectWatcherState } from "../../core/project/watching/project-watch.types";
@@ -15,6 +16,7 @@ export interface ProjectWatcherUpdatePayload {
 export interface CrystalIpcRequestMap {
   readonly [channel: string]: unknown;
   readonly "project:preview-set-target": ProjectPreviewSetTargetRequest;
+  readonly "project:preview-selection:set-selected-node": unknown;
 }
 
 export interface CrystalIpcResponseMap {
@@ -40,4 +42,10 @@ export interface CrystalIpcResponseMap {
   readonly "project:dom-snapshot-get-state": ProjectDomSnapshotState;
   readonly "project:dom-snapshot-clear": ProjectDomSnapshotState;
   readonly "project:dom-snapshot-updated": ProjectDomSnapshotState;
+  readonly "project:preview-selection:get-state": ProjectPreviewSelectionState;
+  readonly "project:preview-selection:enable": ProjectPreviewSelectionState;
+  readonly "project:preview-selection:disable": ProjectPreviewSelectionState;
+  readonly "project:preview-selection:clear": ProjectPreviewSelectionState;
+  readonly "project:preview-selection:set-selected-node": ProjectPreviewSelectionState;
+  readonly "project:preview-selection:state-changed": ProjectPreviewSelectionState;
 }
