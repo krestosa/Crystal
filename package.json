@@ -18,7 +18,7 @@
     "typecheck": "tsc --noEmit",
     "validate:structure": "node scripts/validate-structure.mjs",
     "validate:project-graph": "node scripts/validate-project-graph.mjs",
-    "validate:watch": "node scripts/validate-project-watch.mjs",
+    "validate:project-watch": "node scripts/validate-project-watch.mjs",
     "doctor:electron": "node scripts/doctor-electron.mjs"
   },
   "devDependencies": {
