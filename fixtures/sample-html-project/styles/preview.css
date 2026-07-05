@@ -1,0 +1,28 @@
+:root {
+  color-scheme: light;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  background: #f5f7fb;
+  color: #121826;
+}
+
+.preview-fixture {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  align-content: center;
+  gap: 12px;
+}
+
+.preview-fixture img {
+  width: 72px;
+  height: 72px;
+}
+
+.preview-fixture h1,
+.preview-fixture p {
+  margin: 0;
+}
