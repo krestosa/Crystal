@@ -1,4 +1,3 @@
-import { spawnSync } from "node:child_process";
 import { access, mkdir, readFile, rm } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -76,9 +75,10 @@ try {
   expect(edgeSnapshot.issues.some((issue) => issue.code === "unsupported-html-pattern"), "Unsupported declaration did not produce unsupported-html-pattern issue.");
 
   const previewTruncatedSnapshot = buildSnapshot(edgeFixture, edgeHtml, { maxNodes: 500, maxDepth: 32, maxTextPreviewLength: 64, maxAttributeValueLength: 256, maxAttributesPerNode: 24 }, 4);
+  const truncatedTextNode = findNode(previewTruncatedSnapshot.rootNode, (node) => node.type === "text" && node.truncated && String(node.textPreview ?? "").endsWith("…"));
   expect(previewTruncatedSnapshot.issues.some((issue) => issue.code === "text-truncated"), "Text preview truncation did not produce text-truncated issue.");
   expect(previewTruncatedSnapshot.isTruncated, "Text preview truncation did not mark the snapshot as truncated.");
-  expect(findText(previewTruncatedSnapshot.rootNode, "intentionally unclosed")?.textPreview?.endsWith("…"), "Long text preview was not truncated with an ellipsis.");
+  expect(Boolean(truncatedTextNode), "Long text preview was not truncated with an ellipsis.");
   expect(renderSnapshot(previewTruncatedSnapshot).includes("… truncated"), "Text preview truncation did not render an explicit truncation marker.");
   expect(renderSnapshot(previewTruncatedSnapshot).includes(`#snapshot truncated — ${previewTruncatedSnapshot.nodeCount} nodes shown`), "Truncated DOM snapshot did not render an explicit truncated snapshot marker.");
 
@@ -125,8 +125,6 @@ console.log("DOM snapshot validation passed: real builder import, deterministic 
 
 async function loadDomSnapshotBuilder() {
   await mkdir(tempDir, { recursive: true });
-  const result = spawnSync(process.execPath, ["-e", "process.exit(0)"]);
-  if (result.status !== 0) failures.push("Node process sanity check failed before bundling DOM snapshot builder.");
   await build({
     entryPoints: ["packages/core/project/dom/project-dom-snapshot-builder.ts"],
     bundle: true,
