@@ -1,169 +1,102 @@
 import { access, readFile } from "node:fs/promises";
 import path from "node:path";
 
-const fixtureRoot = path.resolve("fixtures/sample-html-project");
+const root = path.resolve("fixtures/sample-html-project");
+const prefix = "crystal-preview://current/";
 const failures = [];
 
-await expectFile("preview.html");
-await expectFile("styles/preview.css");
-await expectFile("scripts/preview.js");
-await expectFile("assets/preview-icon.svg");
+for (const file of ["preview.html", "preview-missing-assets.html", "styles/preview.css", "scripts/preview.js", "assets/preview-icon.svg"]) await expectFile(file);
 await expectContains("preview.html", "./styles/preview.css");
 await expectContains("preview.html", "./scripts/preview.js");
 await expectContains("preview.html", "./assets/preview-icon.svg");
+await expectContains("preview-missing-assets.html", "./styles/missing-preview.css");
+await expectContains("preview-missing-assets.html", "./scripts/missing-preview.js");
+await expectContains("preview-missing-assets.html", "./assets/missing-preview-image.svg");
 
-const previewPath = resolvePreviewPath(fixtureRoot, "preview.html");
-const cssPath = resolvePreviewPath(fixtureRoot, "styles/preview.css");
-const traversalPath = resolvePreviewPath(fixtureRoot, "../package.json");
-const nestedTraversalPath = resolvePreviewPath(fixtureRoot, "styles/../../package.json");
-const absolutePath = resolvePreviewPath(fixtureRoot, path.resolve("package.json"));
+expect(resolvePath("preview.html").relativePath === "preview.html", "Preview target did not resolve as project-relative.");
+expect(resolvePath("styles/preview.css").relativePath === "styles/preview.css", "Preview CSS asset did not resolve as project-relative.");
+expect(resolvePath("assets/missing-preview-image.svg").relativePath === "assets/missing-preview-image.svg", "Missing asset path did not remain project-relative.");
+expect(resolvePath("../package.json").issue?.code === "path-traversal", "Parent traversal path was not blocked.");
+expect(resolvePath("styles/../../package.json").issue?.code === "path-traversal", "Nested traversal path was not blocked.");
+expect(resolvePath(path.resolve("package.json")).issue?.code === "invalid-preview-path", "Absolute preview path was not blocked.");
 
-if (!previewPath.ok || previewPath.relativePath !== "preview.html") failures.push("Preview target did not resolve as a project-relative path.");
-if (!cssPath.ok || cssPath.relativePath !== "styles/preview.css") failures.push("Preview CSS asset did not resolve as a project-relative path.");
-if (traversalPath.ok || traversalPath.issue?.code !== "path-traversal") failures.push("Parent traversal path was not blocked.");
-if (nestedTraversalPath.ok || nestedTraversalPath.issue?.code !== "path-traversal") failures.push("Nested traversal path was not blocked.");
-if (absolutePath.ok || absolutePath.issue?.code !== "invalid-preview-path") failures.push("Absolute preview path was not blocked.");
+const outsideIssue = issue("outside-project-root", "Preview resource resolves outside the active project root.", "styles/outside.css", "protocol");
+expect(outsideIssue.type === "outside-root", "outside-root issue type was not reported.");
+expect(isOutside(root, path.resolve("package.json")), "Outside-root guard did not detect an out-of-root target.");
 
-const previewUrl = createPreviewUrl("preview.html", 123);
-const parsedPreviewUrl = parsePreviewUrl(previewUrl);
-const parsedAssetUrl = parsePreviewUrl(createPreviewUrl("assets/preview icon.svg", 124));
-if (previewUrl !== "crystal-preview://current/preview.html?reload=123") failures.push("Preview URL format changed unexpectedly.");
-if (!parsedPreviewUrl.ok || parsedPreviewUrl.relativePath !== "preview.html") failures.push("Preview URL did not parse back to a relative path.");
-if (!parsedAssetUrl.ok || parsedAssetUrl.relativePath !== "assets/preview icon.svg") failures.push("Encoded preview URL did not decode correctly.");
-if (parsePreviewUrl("file:///etc/passwd").ok) failures.push("Non-preview URL was accepted.");
+const previewUrl = makeUrl("preview.html", 123);
+const traversalUrl = parseUrl("crystal-preview://current/../package.json?reload=1");
+expect(previewUrl === "crystal-preview://current/preview.html?reload=123", "Preview URL format changed.");
+expect(parseUrl(previewUrl).relativePath === "preview.html", "Preview URL did not parse back to relative path.");
+expect(parseUrl(makeUrl("assets/preview icon.svg", 124)).relativePath === "assets/preview icon.svg", "Encoded preview URL did not decode correctly.");
+expect(traversalUrl.relativePath === "../package.json", "Preview URL traversal path was normalized before diagnostics.");
+expect(resolvePath(traversalUrl.relativePath).issue?.code === "path-traversal", "Preview URL traversal was not reportable.");
+expect(sanitizeUrl(makeUrl("assets/preview icon.svg", 125)) === "crystal-preview://current/assets/preview%20icon.svg", "Preview URL query data was not stripped.");
+expect(!parseUrl("file:///etc/passwd").ok, "Non-preview URL was accepted.");
 
-if (getMimeType("index.html") !== "text/html; charset=utf-8") failures.push("HTML MIME type is incorrect.");
-if (getMimeType("styles/preview.css") !== "text/css; charset=utf-8") failures.push("CSS MIME type is incorrect.");
-if (getMimeType("scripts/preview.js") !== "application/javascript; charset=utf-8") failures.push("JavaScript MIME type is incorrect.");
-if (getMimeType("assets/preview-icon.svg") !== "image/svg+xml") failures.push("SVG MIME type is incorrect.");
-if (getMimeType("fonts/sample.woff2") !== "font/woff2") failures.push("WOFF2 MIME type is incorrect.");
+for (const [file, mime] of [["index.html", "text/html; charset=utf-8"], ["styles/preview.css", "text/css; charset=utf-8"], ["scripts/preview.js", "application/javascript; charset=utf-8"], ["assets/preview-icon.svg", "image/svg+xml"], ["fonts/sample.woff2", "font/woff2"]]) {
+  const result = mimeResult(file);
+  expect(result.mimeType === mime && !result.isFallback, `${file} MIME type is incorrect.`);
+}
+const fallbackMime = mimeResult("assets/sample.bin");
+expect(fallbackMime.mimeType === "application/octet-stream" && fallbackMime.isFallback, "Unknown MIME fallback was not reported.");
+expect(issue("unsupported-mime", "fallback", "assets/sample.bin", "protocol", "warning").severity === "warning", "Unsupported MIME was not warning severity.");
 
-const graph = createPreviewGraph();
+const graph = graphFixture();
 const defaultTarget = selectTarget(graph, null);
 const preferredTarget = selectTarget(graph, "preview.html");
-const missingTarget = selectTarget(graph, "missing.html");
-if (!defaultTarget.ok || defaultTarget.target?.relativePath !== "index.html") failures.push("Default preview target did not use the entrypoint page.");
-if (!preferredTarget.ok || preferredTarget.target?.relativePath !== "preview.html") failures.push("Preferred preview target was not selected from the Project Graph.");
-if (missingTarget.ok || missingTarget.issue?.code !== "target-not-in-graph") failures.push("Preview target outside Project Graph was accepted.");
+expect(defaultTarget.target?.relativePath === "index.html", "Default preview target did not use the entrypoint page.");
+expect(preferredTarget.target?.relativePath === "preview.html", "Preferred preview target was not selected.");
+expect(selectTarget(graph, "missing.html").issue?.code === "target-not-in-graph", "Target outside graph was accepted.");
 
-const readyState = { status: "ready", target: preferredTarget.target };
-const cssEvent = { type: "changed", relativePath: "styles/preview.css", previousRelativePath: null, kind: "css", affectsProjectGraph: true, timestamp: 1 };
-const jsEvent = { type: "changed", relativePath: "scripts/preview.js", previousRelativePath: null, kind: "javascript", affectsProjectGraph: true, timestamp: 2 };
-const ignoredEvent = { type: "changed", relativePath: "scratch.tmp", previousRelativePath: null, kind: "unknown", affectsProjectGraph: false, timestamp: 3 };
-const unrelatedEvent = { type: "changed", relativePath: "docs/readme.txt", previousRelativePath: null, kind: "unknown", affectsProjectGraph: true, timestamp: 4 };
+const missingIssue = await missingResourceIssue("assets/missing-preview-image.svg");
+expect(missingIssue?.code === "file-not-found", "Missing preview asset did not produce file-not-found.");
+expect(!JSON.stringify(missingIssue).includes(norm(root)), "Missing asset issue exposed root path.");
+expect(!JSON.stringify(outsideIssue).includes(norm(path.resolve("package.json"))), "Outside-root issue exposed absolute path.");
 
-if (!shouldReloadPreview(readyState, [cssEvent], graph)) failures.push("CSS dependency change did not request preview reload.");
-if (!shouldReloadPreview(readyState, [jsEvent], graph)) failures.push("JavaScript dependency change did not request preview reload.");
-if (shouldReloadPreview(readyState, [ignoredEvent], graph)) failures.push("Ignored event requested preview reload.");
-if (shouldReloadPreview(readyState, [unrelatedEvent], graph)) failures.push("Unrelated unknown event requested preview reload.");
+const coalesced = [missingIssue, missingIssue, missingIssue].filter(Boolean).reduce((issues, next) => merge(issues, next), []);
+expect(coalesced.length === 1 && coalesced[0].count === 3, "Repeated issues were not coalesced.");
+expect(count(coalesced) === 3, "Coalesced issue count is incorrect.");
+const limited = Array.from({ length: 60 }, (_, index) => issue("file-not-found", `Missing ${index}`, `assets/missing-${index}.svg`, "protocol")).reduce((issues, next) => merge(issues, next), []);
+expect(limited.length === 50, "Preview issues were not limited to 50 entries.");
 
-const reloadKeyA = createReloadKey([cssEvent, jsEvent], 100);
-const reloadKeyB = createReloadKey([jsEvent, cssEvent], 100);
-if (reloadKeyA !== reloadKeyB) failures.push("Reload key is not stable across event ordering.");
+const ready = { status: "ready", target: preferredTarget.target };
+const cssEvent = event("changed", "styles/preview.css", "css", true, 1);
+const jsEvent = event("changed", "scripts/preview.js", "javascript", true, 2);
+expect(shouldReload(ready, [cssEvent], graph), "CSS dependency did not request reload.");
+expect(shouldReload(ready, [jsEvent], graph), "JS dependency did not request reload.");
+expect(!shouldReload(ready, [event("changed", "scratch.tmp", "unknown", false, 3)], graph), "Ignored event requested reload.");
+expect(!shouldReload(ready, [event("changed", "docs/readme.txt", "unknown", true, 4)], graph), "Unrelated event requested reload.");
+expect(reloadKey([cssEvent, jsEvent], 100) === reloadKey([jsEvent, cssEvent], 100), "Reload key is not stable.");
 
 if (failures.length > 0) {
   console.error("Preview validation failed:");
   for (const failure of failures) console.error(`- ${failure}`);
   process.exit(1);
 }
+console.log("Preview validation passed: target resolution, blocked request diagnostics, missing asset reporting, MIME fallback reporting, issue coalescing, URL handling, and watcher reload planning.");
 
-console.log("Preview validation passed: target resolution, traversal blocking, MIME mapping, Project Graph target selection, URL handling, and watcher reload planning.");
-
-async function expectFile(relativePath) {
-  try { await access(path.join(fixtureRoot, relativePath)); }
-  catch { failures.push(`Missing fixture file: ${relativePath}`); }
-}
-
-async function expectContains(relativePath, fragment) {
-  const source = await readFile(path.join(fixtureRoot, relativePath), "utf8");
-  if (!source.includes(fragment)) failures.push(`${relativePath} does not contain ${fragment}.`);
-}
-
-function resolvePreviewPath(rootPath, requestedRelativePath) {
-  const normalized = normalizePreviewRelativePath(requestedRelativePath);
-  if (!normalized.ok) return { ok: false, relativePath: null, absolutePath: null, issue: normalized.issue };
-  const absolutePath = path.resolve(rootPath, normalized.relativePath);
-  const relativeFromRoot = normalizePath(path.relative(rootPath, absolutePath));
-  if (!relativeFromRoot || relativeFromRoot === ".." || relativeFromRoot.startsWith("../") || path.isAbsolute(relativeFromRoot)) return { ok: false, relativePath: normalized.relativePath, absolutePath, issue: { code: "outside-project-root" } };
-  return { ok: true, relativePath: relativeFromRoot, absolutePath, issue: null };
-}
-
-function normalizePreviewRelativePath(requestedRelativePath) {
-  if (typeof requestedRelativePath !== "string" || requestedRelativePath.trim().length === 0 || requestedRelativePath.includes("\0")) return { ok: false, relativePath: null, issue: { code: "invalid-preview-path" } };
-  const normalizedSeparators = requestedRelativePath.replace(/\\/g, "/");
-  if (normalizedSeparators.startsWith("/") || normalizedSeparators.startsWith("//") || /^[a-zA-Z]:[\\/]/.test(normalizedSeparators)) return { ok: false, relativePath: null, issue: { code: "invalid-preview-path" } };
-  const normalizedPath = path.posix.normalize(normalizedSeparators);
-  if (normalizedPath === "." || normalizedPath === ".." || normalizedPath.startsWith("../")) return { ok: false, relativePath: null, issue: { code: "path-traversal" } };
-  return { ok: true, relativePath: normalizedPath, issue: null };
-}
-
-function normalizePath(value) {
-  return value.replace(/\\/g, "/");
-}
-
-function createPreviewUrl(relativePath, reloadToken) {
-  return `crystal-preview://current/${relativePath.split("/").map((segment) => encodeURIComponent(segment)).join("/")}?reload=${reloadToken}`;
-}
-
-function parsePreviewUrl(rawUrl) {
-  let url;
-  try { url = new URL(rawUrl); }
-  catch { return { ok: false }; }
-  if (url.protocol !== "crystal-preview:" || url.hostname !== "current") return { ok: false };
-  const pathname = url.pathname.startsWith("/") ? url.pathname.slice(1) : url.pathname;
-  try { return { ok: true, relativePath: decodeURIComponent(pathname) }; }
-  catch { return { ok: false }; }
-}
-
-function getMimeType(filePath) {
-  return new Map([
-    [".html", "text/html; charset=utf-8"],
-    [".htm", "text/html; charset=utf-8"],
-    [".css", "text/css; charset=utf-8"],
-    [".js", "application/javascript; charset=utf-8"],
-    [".mjs", "application/javascript; charset=utf-8"],
-    [".cjs", "application/javascript; charset=utf-8"],
-    [".svg", "image/svg+xml"],
-    [".png", "image/png"],
-    [".jpg", "image/jpeg"],
-    [".jpeg", "image/jpeg"],
-    [".webp", "image/webp"],
-    [".woff", "font/woff"],
-    [".woff2", "font/woff2"]
-  ]).get(path.extname(filePath).toLowerCase()) ?? "application/octet-stream";
-}
-
-function createPreviewGraph() {
-  return {
-    rootPath: fixtureRoot,
-    pages: [
-      { relativePath: "index.html", displayName: "index.html", isEntrypoint: true, dependencies: [] },
-      { relativePath: "preview.html", displayName: "preview.html", isEntrypoint: false, dependencies: [
-        { resolvedAbsolutePath: path.join(fixtureRoot, "styles/preview.css"), isExternal: false, status: "resolved" },
-        { resolvedAbsolutePath: path.join(fixtureRoot, "scripts/preview.js"), isExternal: false, status: "resolved" },
-        { resolvedAbsolutePath: path.join(fixtureRoot, "assets/preview-icon.svg"), isExternal: false, status: "resolved" }
-      ] }
-    ]
-  };
-}
-
-function selectTarget(graph, preferredRelativePath) {
-  const page = preferredRelativePath ? graph.pages.find((item) => item.relativePath === preferredRelativePath) : graph.pages.find((item) => item.isEntrypoint) ?? graph.pages[0];
-  if (!page) return { ok: false, target: null, issue: { code: "target-not-in-graph" } };
-  const resolved = resolvePreviewPath(graph.rootPath, page.relativePath);
-  if (!resolved.ok) return { ok: false, target: null, issue: resolved.issue };
-  return { ok: true, issue: null, target: { relativePath: resolved.relativePath, directDependencyRelativePaths: page.dependencies.map((dependency) => normalizePath(path.relative(graph.rootPath, dependency.resolvedAbsolutePath))) } };
-}
-
-function shouldReloadPreview(state, events, graph) {
-  if (!state.target || state.status !== "ready") return false;
-  const related = new Set([state.target.relativePath, ...state.target.directDependencyRelativePaths]);
-  const relevantEvents = events.filter((event) => event.affectsProjectGraph);
-  if (relevantEvents.length === 0) return false;
-  if (relevantEvents.some((event) => related.has(event.relativePath) || related.has(event.previousRelativePath))) return true;
-  return !graph.pages.some((page) => page.relativePath === state.target.relativePath);
-}
-
-function createReloadKey(events, refreshedAt) {
-  return `${refreshedAt}:${events.map((event) => `${event.type}:${event.relativePath}:${event.timestamp}`).sort().join("|")}`;
-}
+function expect(ok, message) { if (!ok) failures.push(message); }
+async function expectFile(relativePath) { try { await access(path.join(root, relativePath)); } catch { failures.push(`Missing fixture file: ${relativePath}`); } }
+async function expectContains(relativePath, fragment) { if (!(await readFile(path.join(root, relativePath), "utf8")).includes(fragment)) failures.push(`${relativePath} does not contain ${fragment}.`); }
+async function missingResourceIssue(relativePath) { try { await access(path.join(root, relativePath)); return null; } catch { return issue("file-not-found", "Preview resource was not found inside the active project root.", relativePath, "protocol"); } }
+function resolvePath(request) { const normalized = normalizeRequest(request); if (!normalized.ok) return { ok: false, issue: normalized.issue }; const absolutePath = path.resolve(root, normalized.relativePath); const relativePath = norm(path.relative(root, absolutePath)); if (!relativePath || relativePath === ".." || relativePath.startsWith("../") || path.isAbsolute(relativePath)) return { ok: false, issue: issue("outside-project-root", "Preview path resolves outside the active project root.", normalized.relativePath, "target") }; return { ok: true, relativePath, absolutePath, issue: null }; }
+function normalizeRequest(request) { if (typeof request !== "string" || request.trim().length === 0 || request.includes("\0")) return { ok: false, issue: issue("invalid-preview-path", "Preview path is empty or invalid.", null, "target") }; const separators = request.replace(/\\/g, "/"); if (separators.startsWith("/") || separators.startsWith("//") || /^[a-zA-Z]:[\\/]/.test(separators)) return { ok: false, issue: issue("invalid-preview-path", "Preview path must be project-relative, not absolute.", request, "target") }; const normalizedPath = path.posix.normalize(separators); if (normalizedPath === "." || normalizedPath === ".." || normalizedPath.startsWith("../")) return { ok: false, issue: issue("path-traversal", "Preview path cannot traverse outside the project root.", request, "target") }; return { ok: true, relativePath: normalizedPath }; }
+function norm(value) { return value.replace(/\\/g, "/"); }
+function makeUrl(relativePath, reloadToken) { return `${prefix}${relativePath.split("/").map((part) => encodeURIComponent(part)).join("/")}?reload=${reloadToken}`; }
+function parseUrl(rawUrl) { if (!rawUrl.startsWith(prefix)) return { ok: false }; const encodedPath = encodedPathFromUrl(rawUrl); if (!encodedPath) return { ok: false }; try { return { ok: true, relativePath: decodeURIComponent(encodedPath) }; } catch { return { ok: false }; } }
+function sanitizeUrl(rawUrl) { if (!rawUrl.startsWith(prefix)) return null; const encodedPath = encodedPathFromUrl(rawUrl); return encodedPath ? `${prefix}${encodedPath}` : null; }
+function encodedPathFromUrl(rawUrl) { const value = rawUrl.slice(prefix.length); const q = value.indexOf("?"); const h = value.indexOf("#"); const cut = q < 0 ? h : h < 0 ? q : Math.min(q, h); return cut >= 0 ? value.slice(0, cut) : value; }
+function mimeResult(filePath) { const extension = path.extname(filePath).toLowerCase(); const mimeType = new Map([[".html", "text/html; charset=utf-8"], [".htm", "text/html; charset=utf-8"], [".css", "text/css; charset=utf-8"], [".js", "application/javascript; charset=utf-8"], [".mjs", "application/javascript; charset=utf-8"], [".cjs", "application/javascript; charset=utf-8"], [".svg", "image/svg+xml"], [".png", "image/png"], [".jpg", "image/jpeg"], [".jpeg", "image/jpeg"], [".webp", "image/webp"], [".gif", "image/gif"], [".woff", "font/woff"], [".woff2", "font/woff2"]]).get(extension); return { extension, mimeType: mimeType ?? "application/octet-stream", isFallback: !mimeType }; }
+function issue(code, message, relativePath, source, severity = severityFor(code)) { const timestamp = Date.now(); return { code, type: typeFor(code), severity, message, path: relativePath, relativePath, requestUrl: null, reason: message, source, timestamp, lastSeenAt: timestamp, count: 1 }; }
+function merge(issues, incoming) { const key = issueKey(incoming); const index = issues.findIndex((item) => issueKey(item) === key); if (index < 0) return [incoming, ...issues].slice(0, 50); const merged = { ...issues[index], lastSeenAt: incoming.lastSeenAt, count: issues[index].count + 1 }; return [merged, ...issues.slice(0, index), ...issues.slice(index + 1)].slice(0, 50); }
+function issueKey(item) { return [item.type, item.relativePath ?? item.path ?? item.requestUrl ?? "preview", item.reason].join("|"); }
+function count(issues) { return issues.reduce((total, item) => total + item.count, 0); }
+function typeFor(code) { if (code === "file-not-found") return "file-not-found"; if (code === "outside-project-root") return "outside-root"; if (code === "path-traversal") return "path-traversal"; if (["invalid-preview-path", "target-not-in-graph", "no-preview-target", "no-project-graph"].includes(code)) return "invalid-target"; if (code === "unsupported-mime") return "unsupported-mime"; if (["protocol-error", "no-project-root", "reload-skipped"].includes(code)) return "protocol-error"; return "unknown"; }
+function severityFor(code) { if (code === "unsupported-mime") return "warning"; if (code === "reload-skipped") return "info"; return "error"; }
+function isOutside(rootPath, targetPath) { const relativePath = path.relative(rootPath, targetPath); return relativePath === "" || relativePath === ".." || relativePath.startsWith(`..${path.sep}`) || path.isAbsolute(relativePath); }
+function graphFixture() { return { rootPath: root, pages: [{ relativePath: "index.html", displayName: "index.html", isEntrypoint: true, dependencies: [] }, { relativePath: "preview.html", displayName: "preview.html", isEntrypoint: false, dependencies: [{ resolvedAbsolutePath: path.join(root, "styles/preview.css"), isExternal: false, status: "resolved" }, { resolvedAbsolutePath: path.join(root, "scripts/preview.js"), isExternal: false, status: "resolved" }, { resolvedAbsolutePath: path.join(root, "assets/preview-icon.svg"), isExternal: false, status: "resolved" }] }] }; }
+function selectTarget(graph, preferred) { const page = preferred ? graph.pages.find((item) => item.relativePath === preferred) : graph.pages.find((item) => item.isEntrypoint) ?? graph.pages[0]; if (!page) return { ok: false, target: null, issue: issue("target-not-in-graph", "Requested preview target is not a page in the active Project Graph.", preferred, "target") }; const resolved = resolvePath(page.relativePath); if (!resolved.ok) return { ok: false, target: null, issue: resolved.issue }; return { ok: true, issue: null, target: { relativePath: resolved.relativePath, directDependencyRelativePaths: page.dependencies.map((dependency) => norm(path.relative(graph.rootPath, dependency.resolvedAbsolutePath))) } }; }
+function event(type, relativePath, kind, affectsProjectGraph, timestamp) { return { type, relativePath, previousRelativePath: null, kind, affectsProjectGraph, timestamp }; }
+function shouldReload(state, events, graph) { if (!state.target || state.status !== "ready") return false; const related = new Set([state.target.relativePath, ...state.target.directDependencyRelativePaths]); const relevant = events.filter((item) => item.affectsProjectGraph); if (relevant.length === 0) return false; if (relevant.some((item) => related.has(item.relativePath) || related.has(item.previousRelativePath))) return true; return !graph.pages.some((page) => page.relativePath === state.target.relativePath); }
+function reloadKey(events, refreshedAt) { return `${refreshedAt}:${events.map((item) => `${item.type}:${item.relativePath}:${item.timestamp}`).sort().join("|")}`; }
