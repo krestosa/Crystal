@@ -3,7 +3,7 @@ import { detectRawProjectDependencies } from "../dependencies/project-dependency
 import { classifyProjectFile, isBinaryHeavyProjectKind, isProjectTextFileKind } from "../files/project-file-classifier";
 import { projectFileKinds } from "../files/project-file-kind.constants";
 import { createProjectGraph } from "../graph/project-graph-builder";
-import type { ProjectAsset, ProjectDependency, ProjectFile, ProjectFileSystem, ProjectPage, ProjectScanIssue, ProjectScanOptions, ProjectScanResult } from "../graph/project-graph.types";
+import type { ProjectAsset, ProjectDependency, ProjectDependencyStatus, ProjectFile, ProjectFileSystem, ProjectPage, ProjectScanIssue, ProjectScanOptions, ProjectScanResult } from "../graph/project-graph.types";
 import { normalizeProjectPath, resolveProjectPath } from "../paths/project-path-resolver";
 
 const defaultIgnoredDirectoryNames = new Set(["node_modules", ".git", "dist", ".cache", ".crystal-cache", ".next", ".nuxt", ".vite"]);
@@ -36,6 +36,7 @@ export class ProjectScanner {
         const content = await this.fileSystem.readTextFile(file.absolutePath, maxFileBytes);
         dependencies.push(...detectRawProjectDependencies(file, content).map((dependency, index) => {
           const resolved = resolveProjectPath({ rootPath: normalizedRootPath, fromAbsolutePath: dependency.fromAbsolutePath, rawSpecifier: dependency.rawSpecifier, knownRelativePaths });
+          const status: ProjectDependencyStatus = resolved.isExternal ? "external" : resolved.exists ? "resolved" : "missing";
           return {
             ...dependency,
             id: `${dependency.fromPath}:${index}:${dependency.rawSpecifier}`,
@@ -43,7 +44,7 @@ export class ProjectScanner {
             resolvedPath: resolved.relativePath,
             resolvedAbsolutePath: resolved.absolutePath,
             isExternal: resolved.isExternal,
-            status: resolved.isExternal ? "external" : resolved.exists ? "resolved" : "missing"
+            status
           };
         }));
       } catch (error) {
