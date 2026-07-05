@@ -60,6 +60,7 @@ export interface ProjectDomSnapshot {
   readonly rootNode: ProjectDomNode;
   readonly nodeCount: number;
   readonly maxDepth: number;
+  readonly isTruncated: boolean;
   readonly issues: readonly ProjectDomSnapshotIssue[];
 }
 
