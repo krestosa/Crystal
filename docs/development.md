@@ -71,13 +71,13 @@ The command exits with a non-zero status when Electron is not installed correctl
 
 ## Development command
 
-The development command remains:
+The development command is:
 
 ```bash
-npm run build && electron dist/main/main.js
+npm run build && electron dist/main/main.cjs
 ```
 
-This is deliberate. The command first builds the app and then launches the Electron main entrypoint from `dist/main/main.js`. If Electron is missing, corrupted, or blocked by install settings, the command must fail visibly.
+The command first builds the app and then launches the Electron main entrypoint from `dist/main/main.cjs`. Electron main and preload are emitted as explicit CommonJS files, `dist/main/main.cjs` and `dist/preload/preload.cjs`, because the repository root keeps `"type": "module"` for `.js` files. If Electron is missing, corrupted, or blocked by install settings, the command must fail visibly.
 
 ## Do not use forced audit fixes
 
