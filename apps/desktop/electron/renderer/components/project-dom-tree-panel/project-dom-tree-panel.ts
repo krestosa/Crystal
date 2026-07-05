@@ -1,4 +1,4 @@
-import type { ProjectDomAttribute, ProjectDomNode, ProjectDomSnapshotIssue, ProjectDomSnapshotState } from "../../../../../../packages/core/project/dom/project-dom-snapshot.types";
+import type { ProjectDomAttribute, ProjectDomNode, ProjectDomSnapshot, ProjectDomSnapshotIssue, ProjectDomSnapshotState } from "../../../../../../packages/core/project/dom/project-dom-snapshot.types";
 import type { ProjectPreviewState } from "../../../../../../packages/core/project/preview/project-preview.types";
 import type { ProjectDomTreePanelElements } from "./project-dom-tree-panel.types";
 
@@ -51,7 +51,7 @@ function renderDomSnapshotState(elements: ProjectDomTreePanelElements, state: Pr
   elements.error.hidden = !state.lastError;
   elements.error.textContent = state.lastError ?? "";
   elements.clearButton.disabled = !snapshot && state.status === "idle";
-  elements.tree.textContent = snapshot ? renderDomNode(snapshot.rootNode) : "No DOM snapshot built.";
+  elements.tree.textContent = snapshot ? renderDomSnapshot(snapshot) : "No DOM snapshot built.";
   renderSnapshotIssues(elements, state.issues);
 }
 
@@ -79,25 +79,27 @@ function createIssuePart(name: string, value: string): HTMLSpanElement {
   return part;
 }
 
-function renderDomNode(node: ProjectDomNode): string {
+function renderDomSnapshot(snapshot: ProjectDomSnapshot): string {
   const lines: string[] = [];
-  appendNodeLine(node, lines);
+  appendNodeLine(snapshot.rootNode, lines);
+  lines.push("");
+  lines.push(snapshot.isTruncated ? `#snapshot truncated — ${snapshot.nodeCount} nodes shown` : `#snapshot complete — ${snapshot.nodeCount} nodes`);
   return lines.join("\n");
 }
 
 function appendNodeLine(node: ProjectDomNode, lines: string[]): void {
   const indent = "  ".repeat(Math.max(0, node.depth));
   lines.push(`${indent}${renderNodeLabel(node)}`);
+  if (node.truncated) lines.push(`${indent}  … truncated`);
   for (const child of node.children) appendNodeLine(child, lines);
 }
 
 function renderNodeLabel(node: ProjectDomNode): string {
-  const suffix = node.truncated ? " …" : "";
-  if (node.type === "document") return `#document${suffix}`;
-  if (node.type === "doctype") return `<!doctype ${node.textPreview ?? "html"}>${suffix}`;
-  if (node.type === "comment") return `<!-- ${node.textPreview ?? ""} -->${suffix}`;
-  if (node.type === "text") return `#text \"${node.textPreview ?? ""}\"${suffix}`;
-  return `<${node.tagName ?? "element"}${renderAttributes(node.attributes)}>${suffix}`;
+  if (node.type === "document") return "#document";
+  if (node.type === "doctype") return `<!doctype ${node.textPreview ?? "html"}>`;
+  if (node.type === "comment") return `<!-- ${node.textPreview ?? ""} -->`;
+  if (node.type === "text") return `#text \"${node.textPreview ?? ""}\"`;
+  return `<${node.tagName ?? "element"}${renderAttributes(node.attributes)}>`;
 }
 
 function renderAttributes(attributes: readonly ProjectDomAttribute[]): string {
