@@ -6,6 +6,17 @@ export type ProjectPreviewReloadReason = "manual" | "watch" | "project-open" | "
 
 export type ProjectPreviewIssueSeverity = "info" | "warning" | "error";
 
+export type ProjectPreviewResourceIssueType =
+  | "file-not-found"
+  | "outside-root"
+  | "path-traversal"
+  | "invalid-target"
+  | "unsupported-mime"
+  | "protocol-error"
+  | "unknown";
+
+export type ProjectPreviewIssueSource = "protocol" | "load" | "reload" | "target";
+
 export type ProjectPreviewIssueCode =
   | "no-project-root"
   | "no-project-graph"
@@ -15,14 +26,33 @@ export type ProjectPreviewIssueCode =
   | "path-traversal"
   | "outside-project-root"
   | "file-not-found"
+  | "unsupported-mime"
   | "protocol-error"
-  | "reload-skipped";
+  | "reload-skipped"
+  | "unknown";
 
-export interface ProjectPreviewIssue {
+export interface ProjectPreviewResourceIssue {
   readonly code: ProjectPreviewIssueCode;
+  readonly type: ProjectPreviewResourceIssueType;
   readonly severity: ProjectPreviewIssueSeverity;
   readonly message: string;
   readonly path: ProjectPath | null;
+  readonly relativePath: ProjectPath | null;
+  readonly requestUrl: string | null;
+  readonly reason: string;
+  readonly source: ProjectPreviewIssueSource;
+  readonly timestamp: number;
+  readonly lastSeenAt: number;
+  readonly count: number;
+}
+
+export type ProjectPreviewIssue = ProjectPreviewResourceIssue;
+
+export interface ProjectPreviewResourceRequestResult {
+  readonly ok: boolean;
+  readonly status: number;
+  readonly mimeType: string | null;
+  readonly issue: ProjectPreviewIssue | null;
 }
 
 export interface ProjectPreviewTarget {
@@ -44,6 +74,8 @@ export interface ProjectPreviewState {
   readonly lastReloadedAt: number | null;
   readonly lastReloadReason: ProjectPreviewReloadReason | null;
   readonly lastError: string | null;
+  readonly lastIssueAt: number | null;
+  readonly issueCount: number;
   readonly isSyncedWithProjectGraph: boolean;
   readonly issues: readonly ProjectPreviewIssue[];
 }
