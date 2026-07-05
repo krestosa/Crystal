@@ -45,6 +45,23 @@ consolidatedRefresh.seedGraph({ totalFiles: 1, totalPages: 1, missingDependencie
 await consolidatedRefresh.enqueue([cssChange.event, htmlCreate.event]);
 if (consolidatedRefresh.refreshes.length !== 1 || consolidatedRefresh.refreshes[0].events.length !== 2) failures.push("Fast watcher events were not consolidated into one refresh.");
 
+const duplicateVisibleEvents = coalesceVisibleWatchEvents([
+  { ...cssChange.event, timestamp: 203 },
+  { ...cssChange.event, timestamp: 202 },
+  { ...cssChange.event, timestamp: 201 },
+  { ...htmlCreate.event, timestamp: 200 },
+  { ...cssChange.event, timestamp: 199 },
+  { ...cssDelete.event, timestamp: 198 },
+  { ...cssDelete.event, timestamp: 197 },
+  { ...cssDelete.event, timestamp: 196, affectsProjectGraph: false }
+]);
+if (duplicateVisibleEvents.length !== 5) failures.push("Visible watcher events did not preserve distinct consecutive groups.");
+if (formatVisibleWatchEvent(duplicateVisibleEvents[0]) !== "changed · styles/watch-target.css · graph ×3") failures.push("Consecutive changed events were not coalesced with a count.");
+if (formatVisibleWatchEvent(duplicateVisibleEvents[1]) !== "created · created-watch-test.html · graph") failures.push("Distinct created event was not preserved.");
+if (formatVisibleWatchEvent(duplicateVisibleEvents[2]) !== "changed · styles/watch-target.css · graph") failures.push("Non-consecutive duplicate changed event was incorrectly hidden.");
+if (formatVisibleWatchEvent(duplicateVisibleEvents[3]) !== "deleted · styles/watch-target.css · graph ×2") failures.push("Consecutive deleted graph events were not coalesced.");
+if (formatVisibleWatchEvent(duplicateVisibleEvents[4]) !== "deleted · styles/watch-target.css · ignored") failures.push("Different event impact was incorrectly merged.");
+
 const deleteRefresh = createAutoRefreshHarness();
 deleteRefresh.seedGraph({ totalFiles: 2, totalPages: 1, missingDependencies: 0, filesByKind: { html: 1, css: 1 } });
 await deleteRefresh.enqueue([cssDelete.event]);
@@ -59,7 +76,7 @@ if (failures.length > 0) {
   for (const failure of failures) console.error(`- ${failure}`);
   process.exit(1);
 }
-console.log("Project watch validation passed: automatic refresh, batching, event classification, ignore rules, cache safety, refresh planning, and cache round-trip.");
+console.log("Project watch validation passed: automatic refresh, batching, event classification, ignore rules, visible event coalescing, cache safety, refresh planning, and cache round-trip.");
 
 async function expectFile(relativePath) {
   try { await access(path.join(fixtureRoot, relativePath)); }
@@ -121,6 +138,25 @@ function createAutoRefreshHarness() {
       refreshes.push({ events: relevantEvents, mode: plan.mode, refreshedAt });
     }
   };
+}
+
+function coalesceVisibleWatchEvents(events) {
+  const coalesced = [];
+  for (const event of events) {
+    const previous = coalesced.at(-1);
+    if (previous && previous.type === event.type && previous.relativePath === event.relativePath && previous.affectsProjectGraph === event.affectsProjectGraph) {
+      previous.count += 1;
+      continue;
+    }
+    coalesced.push({ type: event.type, relativePath: event.relativePath, affectsProjectGraph: event.affectsProjectGraph, count: 1 });
+  }
+  return coalesced;
+}
+
+function formatVisibleWatchEvent(event) {
+  const impact = event.affectsProjectGraph ? "graph" : "ignored";
+  const count = event.count > 1 ? ` ×${event.count}` : "";
+  return `${event.type} · ${event.relativePath} · ${impact}${count}`;
 }
 
 function createCacheEntry(rootPath, graph, fileMetadata) {
