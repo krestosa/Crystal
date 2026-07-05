@@ -5,7 +5,11 @@ export interface ProjectPreviewPanelElements {
   readonly lastLoad: HTMLElement;
   readonly lastReload: HTMLElement;
   readonly reason: HTMLElement;
+  readonly issueCount: HTMLElement;
+  readonly lastIssue: HTMLElement;
   readonly error: HTMLElement;
+  readonly issuesEmpty: HTMLElement;
+  readonly issuesList: HTMLUListElement;
   readonly frame: HTMLIFrameElement;
   readonly loadButton: HTMLButtonElement;
   readonly reloadButton: HTMLButtonElement;
