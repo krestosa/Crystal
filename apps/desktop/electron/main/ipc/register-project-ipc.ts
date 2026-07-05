@@ -40,7 +40,7 @@ export function registerProjectIpcHandlers(): void {
     return setProjectPreviewTarget(request.relativePath);
   });
   ipcMain.handle(crystalIpcChannels.projectPreviewGetState, () => getProjectPreviewState());
-  ipcMain.handle(crystalIpcChannels.projectDomSnapshotBuild, () => buildProjectDomSnapshotFromPreviewTarget());
+  ipcMain.handle(crystalIpcChannels.projectDomSnapshotBuild, () => buildProjectDomSnapshotFromPreviewTarget(getProjectPreviewState().target));
   ipcMain.handle(crystalIpcChannels.projectDomSnapshotGetState, () => getProjectDomSnapshotState());
   ipcMain.handle(crystalIpcChannels.projectDomSnapshotClear, () => clearProjectDomSnapshot());
 }
