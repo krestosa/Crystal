@@ -1,9 +1,9 @@
 export const projectPreviewScheme = "crystal-preview";
 export const projectPreviewHost = "current";
 
-export function createProjectPreviewUrl(relativePath: string): string {
+export function createProjectPreviewUrl(relativePath: string, reloadToken: number): string {
   const encodedPath = relativePath.split("/").map((segment) => encodeURIComponent(segment)).join("/");
-  return `${projectPreviewScheme}://${projectPreviewHost}/${encodedPath}`;
+  return `${projectPreviewScheme}://${projectPreviewHost}/${encodedPath}?reload=${reloadToken}`;
 }
 
 export function parseProjectPreviewUrl(rawUrl: string): { readonly ok: true; readonly relativePath: string } | { readonly ok: false; readonly reason: string } {
