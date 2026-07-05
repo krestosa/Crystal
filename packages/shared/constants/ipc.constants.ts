@@ -9,5 +9,6 @@ export const crystalIpcChannels = {
   projectStopWatcher: "project:stop-watcher",
   projectGetWatcherState: "project:get-watcher-state",
   projectRefreshGraph: "project:refresh-graph",
-  projectClearCache: "project:clear-cache"
+  projectClearCache: "project:clear-cache",
+  projectWatcherUpdated: "project:watcher-updated"
 } as const;
