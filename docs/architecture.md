@@ -22,13 +22,17 @@ The Node filesystem implementation is isolated under `packages/adapters/file-sys
 
 ## Preview boundary
 
-The Phase 2 Preview model lives under `packages/core/project/preview/`. It defines Preview state, target selection, safe relative path resolution, and reload planning without depending on Electron renderer code.
+The Phase 2 Preview model lives under `packages/core/project/preview/`. It defines Preview state, target selection, safe relative path resolution, issue modeling, issue coalescing, and reload planning without depending on Electron renderer code.
 
 Electron main owns the actual Preview service and the `crystal-preview://current/<relative-project-path>` protocol. The protocol scheme privileges are registered before app readiness. The protocol handler is registered after app readiness, resolves requests against the active project root, and rejects traversal or out-of-project paths.
 
+The protocol reports failed or blocked requests into Preview state as sanitized issues. Missing files, invalid preview URLs, path traversal, realpath targets outside the active root, read failures, and unsupported MIME fallback are produced in main. The renderer displays only relative paths or sanitized `crystal-preview://current/...` request URLs.
+
+Preview issues are coalesced by issue type, safe path, and reason. The state keeps a bounded recent list of 50 issues, plus `issueCount` and `lastIssueAt`. This prevents repeated iframe retries for the same missing asset from producing unbounded UI noise.
+
 The renderer does not build absolute file paths. It calls explicit preload methods for load, reload, target selection, and state. Main resolves targets from the active Project Graph and returns a safe Preview URL.
 
-The Preview frame is intentionally limited to real HTML rendering. It is not a DOM selection surface, Inspector, editor, canvas, or overlay engine in this phase.
+The Preview frame is intentionally limited to real HTML rendering and minimal diagnostics. It is not a DOM selection surface, Inspector, editor, browser console, canvas, or overlay engine in this phase.
 
 ## Adapter boundary
 
@@ -50,4 +54,4 @@ Preview reload is downstream of Project Graph refresh. Watcher events do not rel
 
 ## Current limitations
 
-The current Project Graph is intentionally shallow. It detects files, HTML pages, direct dependencies, basic CSS references, basic script imports, external routes, and missing local routes. It now includes watcher/cache plumbing, conservative semi-incremental refresh planning, and the first real Chromium Preview. It does not implement DOM snapshots, DOM tree, visual selection, CSS cascade analysis, framework alias resolution, editor features, WebGPU overlay, or Rust/WASM analysis.
+The current Project Graph is intentionally shallow. It detects files, HTML pages, direct dependencies, basic CSS references, basic script imports, external routes, and missing local routes. It now includes watcher/cache plumbing, conservative semi-incremental refresh planning, the first real Chromium Preview, and sanitized Preview diagnostics. It does not implement DOM snapshots, DOM tree, visual selection, CSS cascade analysis, framework alias resolution, editor features, WebGPU overlay, or Rust/WASM analysis.
