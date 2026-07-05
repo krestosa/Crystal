@@ -18,7 +18,12 @@ const crystalApi: CrystalPreloadApi = {
     openFolder: () => invokeCrystal(crystalIpcChannels.projectOpenFolder),
     openHtmlFile: () => invokeCrystal(crystalIpcChannels.projectOpenHtmlFile),
     scan: () => invokeCrystal(crystalIpcChannels.projectScan),
-    getGraph: () => invokeCrystal(crystalIpcChannels.projectGetGraph)
+    getGraph: () => invokeCrystal(crystalIpcChannels.projectGetGraph),
+    startWatcher: () => invokeCrystal(crystalIpcChannels.projectStartWatcher),
+    stopWatcher: () => invokeCrystal(crystalIpcChannels.projectStopWatcher),
+    getWatcherState: () => invokeCrystal(crystalIpcChannels.projectGetWatcherState),
+    refreshGraph: () => invokeCrystal(crystalIpcChannels.projectRefreshGraph),
+    clearCache: () => invokeCrystal(crystalIpcChannels.projectClearCache)
   }
 };
 
