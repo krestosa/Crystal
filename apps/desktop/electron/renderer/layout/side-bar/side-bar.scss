@@ -1,20 +1,4 @@
-.crystal-side-bar {
-  min-width: 0;
-  padding: 16px;
-  border-right: 1px solid var(--crystal-color-border);
-  background: var(--crystal-color-surface);
-}
-
-.crystal-side-bar__title {
-  margin: 0 0 8px;
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-.crystal-side-bar__text {
-  margin: 0;
-  color: var(--crystal-color-muted);
-  font-size: 13px;
-  line-height: 1.45;
-}
+.crystal-side-bar { min-width: 0; padding: 16px; border-right: 1px solid var(--crystal-color-border); background: var(--crystal-color-surface); overflow: auto; }
+.crystal-side-bar__section { display: grid; gap: 14px; }
+.crystal-side-bar__title { margin: 0 0 8px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; }
+.crystal-side-bar__text { margin: 0; color: var(--crystal-color-muted); font-size: 13px; line-height: 1.45; }

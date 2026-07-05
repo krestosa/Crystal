@@ -1,0 +1,9 @@
+.crystal-project-graph-panel { display: grid; gap: 14px; }
+.crystal-project-graph-panel__actions { display: grid; gap: 8px; }
+.crystal-project-graph-panel__button { width: 100%; padding: 8px 10px; border: 1px solid var(--crystal-color-border); border-radius: 8px; color: var(--crystal-color-text); background: var(--crystal-color-surface-raised); font: inherit; text-align: left; }
+.crystal-project-graph-panel__status, .crystal-project-graph-panel__list, .crystal-project-graph-panel__counts { margin: 0; color: var(--crystal-color-muted); font-size: 12px; line-height: 1.4; }
+.crystal-project-graph-panel__section { display: grid; gap: 6px; }
+.crystal-project-graph-panel__heading { margin: 0; color: var(--crystal-color-text); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; }
+.crystal-project-graph-panel__list { display: grid; gap: 4px; max-height: 150px; padding-left: 16px; overflow: auto; }
+.crystal-project-graph-panel__counts { display: grid; grid-template-columns: 1fr auto; gap: 4px 8px; }
+.crystal-project-graph-panel__counts dt, .crystal-project-graph-panel__counts dd { margin: 0; }

@@ -1,18 +1,12 @@
-import type { AppStateSnapshot } from "./app-state.types";
+import type { AppStateSnapshot, ProjectGraphState } from "./app-state.types";
 
 type AppStateListener = (state: AppStateSnapshot) => void;
 
 const initialState: AppStateSnapshot = {
-  workspace: {
-    openedPath: null
-  },
-  build: {
-    status: "idle",
-    lastError: null
-  },
-  ui: {
-    activeMode: "design"
-  }
+  workspace: { openedPath: null },
+  build: { status: "idle", lastError: null },
+  ui: { activeMode: "design" },
+  projectGraph: { root: null, graph: null, scanStatus: "idle", issues: [], lastScanAt: null, lastError: null }
 };
 
 export class AppStateStore {
@@ -24,19 +18,22 @@ export class AppStateStore {
   }
 
   patch(nextState: Partial<AppStateSnapshot>): void {
-    this.state = {
-      ...this.state,
-      ...nextState
-    };
+    this.state = { ...this.state, ...nextState };
+    this.notify();
+  }
 
-    for (const listener of this.listeners) {
-      listener(this.state);
-    }
+  patchProjectGraph(nextState: Partial<ProjectGraphState>): void {
+    this.state = { ...this.state, projectGraph: { ...this.state.projectGraph, ...nextState } };
+    this.notify();
   }
 
   subscribe(listener: AppStateListener): () => void {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
+  }
+
+  private notify(): void {
+    for (const listener of this.listeners) listener(this.state);
   }
 }
 

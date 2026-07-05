@@ -27,20 +27,38 @@ Partially covered:
 - structure validation script
 - build scripts
 
-## Out of scope by design
+### Phase 1 — Project Graph foundation
 
-The following roadmap items are not implemented here:
+Covered:
 
-- Project Graph
+- opening a project folder through Electron dialog IPC
+- opening an HTML file through Electron dialog IPC and scanning its containing folder
+- recursive file scanning with ignored directories and initial limits
+- file classification for HTML, CSS, Sass/SCSS, JS, TS, images, SVG, fonts, video, audio, other assets, and unknown files
+- HTML page detection including `index.html` and subfolder pages
+- direct HTML dependency detection for stylesheets, scripts, images, media, iframes, SVG references, and `srcset`
+- CSS/SCSS dependency detection for `@import` and `url(...)`
+- basic JS/TS dependency detection for static imports, side-effect imports, dynamic imports, and `require(...)`
+- local, external, resolved, and missing route classification
+- Project Graph state integration
+- project events and command type definitions
+- minimal renderer verification panel for files, pages, issues, and file counts
+- sample fixture project and `validate:project-graph`
+
+Not covered yet:
+
+- file watcher
+- cache
 - real Chromium preview pipeline for user projects
-- Design MVP editing
+- DOM snapshot parsing
+- CSS cascade or specificity analysis
+- framework alias resolution
+- TypeScript semantic analysis
+- Rust/WASM analyzer
+- WebGPU overlay
+- visual Design MVP
 - Inspector MVP
 - Developer IDE features
-- WebGPU overlay implementation
-- Rust/WASM analyzer implementation
-- file mutation commands
-- undo/redo implementation
-- terminal, browser console, or code editor integrations
 
 ## How to verify this phase
 
@@ -49,11 +67,12 @@ npm install
 npm run build
 npm run typecheck
 npm run validate:structure
+npm run validate:project-graph
 npm run dev
 ```
 
-Opening the app should display the Crystal application shell with a top bar, activity bar, side bar, central workbench, status bar, and inert mode buttons for Diseño, Inspector, and Desarrollador.
+Opening the app should display the Crystal application shell. In the side bar, use `Open Folder` or `Open HTML` to scan a fixture or local HTML project. The side bar should show file counts, detected pages, detected files, and missing-route issues.
 
 ## Recommended next module
 
-The next operational chat/module should take Phase 1: Project Graph. It should implement opening/scanning a project folder, detecting HTML pages, collecting CSS/Sass/JS/TS/assets dependencies, identifying broken routes, and producing the first shared internal project model consumed later by Diseño, Inspector, and Desarrollador.
+The next operational chat/module should implement Phase 1 extended reliability: filesystem watcher, graph cache, incremental refresh, and tighter validation around route resolution. That should come before Phase 2 preview so Chromium receives a stable project model.

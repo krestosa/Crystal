@@ -2,7 +2,7 @@
 
 Crystal is a new desktop application for creating, inspecting, and modifying real HTML projects and their related assets.
 
-This repository bootstrap covers roadmap Phase -1 and a minimal foundation for Phase 0. It establishes the physical architecture, source modularity rules, Electron separation, and the first build pipeline. It does not implement product features yet.
+This repository now covers roadmap Phase -1, the minimal Phase 0 tooling foundation, and the first Phase 1 Project Graph foundation.
 
 ## Requirements
 
@@ -15,66 +15,46 @@ This repository bootstrap covers roadmap Phase -1 and a minimal foundation for P
 npm install
 ```
 
-## Development
-
-```bash
-npm run dev
-```
-
-The development command builds the current source and opens the Electron shell from `dist/main/main.js`.
-
-## Build
+## Build and validation
 
 ```bash
 npm run build
 npm run typecheck
 npm run validate:structure
+npm run validate:project-graph
 ```
-
-The build pipeline produces:
-
-```txt
-dist/
-  main/main.js
-  preload/preload.js
-  renderer/index.html
-  renderer/main.css
-  renderer/main.js
-```
-
-`dist/` is generated output and is intentionally ignored by Git.
 
 ## Current scope
 
 Implemented:
 
 - npm workspaces monorepo base
-- `/apps` and `/packages` architecture
 - Electron main/preload/renderer split
 - `contextIsolation: true`
-- no direct Node access from the renderer
+- `nodeIntegration: false`
 - controlled preload bridge
-- minimal typed IPC contract
-- modular renderer HTML/SCSS/TypeScript
-- simple HTML include assembler
-- Sass compilation
-- esbuild TypeScript bundling
-- command/event/state skeletons
-- adapters for bundler, Sass compiler, and HTML assembler
-- structure validation script
+- typed IPC contract
+- initial Project Graph types and scanner
+- HTML/CSS/SCSS/JS/TS dependency detection
+- asset and page detection
+- missing route reporting
+- minimal renderer Project Graph verification panel
+- fixtures and `validate:project-graph`
 
 Intentionally out of scope:
 
-- Project Graph
-- real Chromium preview pipeline
+- real Chromium preview pipeline for user projects
 - visual Design MVP editing
 - Inspector MVP
 - Developer IDE features
 - WebGPU overlay implementation
 - Rust/WASM analyzer implementation
+- code editor
+- integrated terminal
+- DOM visual selection, canvas, or bounding boxes
 
-## Architecture notes
+## Project Graph scan
 
-The source tree is intentionally modular. HTML partials, SCSS modules, and TypeScript modules are assembled or bundled into compact runtime entrypoints. External dependencies are isolated behind adapter boundaries where practical.
+Use the app side bar buttons to open a folder or an HTML file. Crystal scans the selected project root through main-process IPC, builds a Project Graph in core, and sends a serializable result to the renderer.
 
-The next operational phase should be handled by a Project Graph implementation chat/module, because Phase 1 requires file scanning, dependency detection, page detection, asset validation, and the first internal project model.
+The initial scanner detects local HTML pages, stylesheets, scripts, static imports, CSS `@import`, CSS `url(...)`, common media references, assets, external routes, and missing local references. It does not execute scripts, render HTML, resolve framework aliases, analyze CSS cascade, or parse TypeScript semantics.

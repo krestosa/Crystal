@@ -19,7 +19,8 @@
     "build:scss": "node scripts/build-scss.mjs",
     "build:ts": "node scripts/build-ts.mjs",
     "typecheck": "tsc --noEmit",
-    "validate:structure": "node scripts/validate-structure.mjs"
+    "validate:structure": "node scripts/validate-structure.mjs",
+    "validate:project-graph": "node scripts/validate-project-graph.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
