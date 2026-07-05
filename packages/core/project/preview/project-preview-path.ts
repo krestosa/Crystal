@@ -1,4 +1,5 @@
 import path from "node:path";
+import { createProjectPreviewIssue } from "./project-preview-issues";
 import type { ProjectPreviewIssue, ProjectPreviewPathResolution } from "./project-preview.types";
 
 const windowsDrivePathPattern = /^[a-zA-Z]:[\\/]/;
@@ -50,5 +51,5 @@ function isOutsideProjectRoot(relativeFromRoot: string): boolean {
 }
 
 function createIssue(code: ProjectPreviewIssue["code"], message: string, issuePath: string | null): ProjectPreviewIssue {
-  return { code, severity: "error", message, path: issuePath };
+  return createProjectPreviewIssue({ code, message, path: issuePath, source: "target" });
 }
