@@ -1,3 +1,4 @@
 @import "./theme.scss";
+@import "./watch-target.css";
 @font-face { font-family: "Crystal Fixture"; src: url("../assets/sample.woff2") format("woff2"); }
 body { background-image: url("../assets/photo.jpg"); }
