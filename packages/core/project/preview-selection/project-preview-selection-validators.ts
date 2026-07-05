@@ -76,7 +76,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function isSafeInteger(value: unknown, max: number): value is number {
-  return Number.isInteger(value) && value >= 0 && value <= max;
+  return typeof value === "number" && Number.isInteger(value) && value >= 0 && value <= max;
 }
 
 function isValidSnapshotPath(value: string): boolean {
