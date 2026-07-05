@@ -2,7 +2,7 @@
 
 Crystal is a new desktop application for creating, inspecting, and modifying real HTML projects and their related assets.
 
-This repository now covers roadmap Phase -1, the minimal Phase 0 tooling foundation, the Phase 1 Project Graph foundation with watcher/cache support, and the first Phase 2 real project preview with hardened read-only DOM snapshot support.
+This repository now covers roadmap Phase -1, the minimal Phase 0 tooling foundation, the Phase 1 Project Graph foundation with watcher/cache support, and the first Phase 2 real project preview with hardened read-only DOM snapshot and basic read-only Preview selection support.
 
 ## Requirements
 
@@ -65,6 +65,7 @@ npm run validate:project-graph
 npm run validate:project-watch
 npm run validate:preview
 npm run validate:dom-snapshot
+npm run validate:preview-selection
 npm run validate:local:watch
 npm run doctor:electron
 ```
@@ -96,8 +97,12 @@ Implemented:
 - read-only DOM snapshot from static HTML source
 - stable DOM snapshot node path metadata
 - minimal read-only DOM Tree panel
+- injected inactive-by-default Preview selection script for HTML responses
+- renderer `postMessage` bridge for read-only Preview selection
+- minimal `previewSelection` state and selected-node summary
 - `validate:preview` for non-visual Preview checks
 - `validate:dom-snapshot` for non-visual DOM snapshot checks
+- `validate:preview-selection` for non-visual Preview selection checks
 - local validation runner for pre-merge checks
 - Electron local environment diagnostics
 
@@ -110,8 +115,9 @@ Intentionally out of scope:
 - Rust/WASM analyzer implementation
 - code editor
 - integrated terminal
-- DOM visual selection, canvas, overlays, or bounding boxes
-- visual style editing
+- DOM visual selection canvas, persistent overlays, or bounding boxes
+- computed styles and visual style editing
+- editable attributes or source mutation from selection
 - Electron UI automation frameworks such as Playwright, Cypress, or Spectron
 
 ## Project Graph scan
@@ -134,6 +140,18 @@ Repeated issues are coalesced by type, safe path, and reason. Crystal keeps at m
 
 Watcher reload is conservative. Preview reload is considered after Project Graph refresh completion and only for the current page or direct dependencies. Ignored paths, including `.crystal-cache`, do not request Preview reload.
 
+## Preview selection read-only
+
+Preview selection is a basic read-only bridge built on the injected script served only for HTML responses through `crystal-preview://`. Selection mode is off by default. The renderer toggles it by sending `crystal:preview-selection:enable`, `crystal:preview-selection:disable`, and `crystal:preview-selection:clear` to the iframe with `iframe.contentWindow.postMessage(...)`.
+
+The Preview iframe remains sandboxed without `allow-same-origin`. Because the sandbox can give the iframe an opaque origin, the renderer does not depend on `event.origin`. It accepts selected-node messages only when `event.source === iframe.contentWindow` and the message type is `crystal:preview-selection:selected`.
+
+The renderer never reads `iframe.contentDocument`, never reads `iframe.contentWindow.document`, never exposes Node or filesystem APIs to the iframe, and never writes to project files. The payload is validated locally in the renderer and again in Electron main before it can update `previewSelection` state.
+
+The selected-node summary is strictly read-only. It shows a bounded `snapshotPath`, normalized `tagName`, `selectorPreview`, limited `attributesPreview`, and limited `textPreview`. `Clear Selection` clears `selectedNode` and the temporary highlight. If selection mode is enabled, clearing returns the state to `selecting`; if it is disabled, clearing returns it to `idle`. Reloading Preview or changing target clears the current selected node so stale live-DOM selections are not presented as valid.
+
+The `snapshotPath` comes from the browser's live DOM at click time. The DOM Tree snapshot is built separately from static HTML source. Those paths usually align for simple static HTML, but they can diverge when the browser inserts implicit nodes, repairs malformed HTML differently, or project scripts mutate the DOM. Exact live-DOM to static-snapshot mapping is intentionally not implemented yet.
+
 ## DOM snapshot read-only
 
 The DOM Tree panel builds a read-only structural snapshot from the current Preview target's HTML source. It does not inspect the live iframe DOM, add runtime code to the Preview document, expose Node to the Preview frame, or read arbitrary renderer paths.
@@ -146,4 +164,4 @@ The parser is not browser-grade. It does not execute scripts, inspect the live D
 
 The snapshot is bounded by `maxNodes`, `maxDepth`, `maxTextPreviewLength`, `maxAttributeValueLength`, and `maxAttributesPerNode`. When truncation happens, affected nodes are marked, the tree renders `… truncated`, `isTruncated` is set, and issues such as `text-truncated`, `attributes-truncated`, `max-nodes-reached`, or `max-depth-reached` are reported without absolute filesystem paths.
 
-Visual selection, highlighting, overlays, bounding boxes, computed styles, breadcrumbs, scroll-to-node behavior, and editing remain out of scope.
+Visual editing, Inspector MVP, computed styles, breadcrumbs, scroll-to-node behavior, persistent overlays, bounding boxes, WebGPU overlay rendering, and source mutation remain out of scope.
