@@ -19,5 +19,11 @@ export const crystalIpcChannels = {
   projectDomSnapshotBuild: "project:dom-snapshot-build",
   projectDomSnapshotGetState: "project:dom-snapshot-get-state",
   projectDomSnapshotClear: "project:dom-snapshot-clear",
-  projectDomSnapshotUpdated: "project:dom-snapshot-updated"
+  projectDomSnapshotUpdated: "project:dom-snapshot-updated",
+  projectPreviewSelectionGetState: "project:preview-selection:get-state",
+  projectPreviewSelectionEnable: "project:preview-selection:enable",
+  projectPreviewSelectionDisable: "project:preview-selection:disable",
+  projectPreviewSelectionClear: "project:preview-selection:clear",
+  projectPreviewSelectionSetSelectedNode: "project:preview-selection:set-selected-node",
+  projectPreviewSelectionStateChanged: "project:preview-selection:state-changed"
 } as const;
