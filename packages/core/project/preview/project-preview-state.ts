@@ -1,4 +1,4 @@
-import type { ProjectPreviewIssue, ProjectPreviewState } from "./project-preview.types";
+import type { ProjectPreviewState } from "./project-preview.types";
 
 export const initialProjectPreviewState: ProjectPreviewState = {
   rootPath: null,
@@ -9,10 +9,10 @@ export const initialProjectPreviewState: ProjectPreviewState = {
   lastReloadedAt: null,
   lastReloadReason: null,
   lastError: null,
+  lastIssueAt: null,
+  issueCount: 0,
   isSyncedWithProjectGraph: false,
   issues: []
 };
 
-export function createProjectPreviewIssue(issue: ProjectPreviewIssue): ProjectPreviewIssue {
-  return issue;
-}
+export { createProjectPreviewIssue } from "./project-preview-issues";
