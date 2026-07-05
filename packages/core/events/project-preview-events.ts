@@ -8,7 +8,8 @@ export const projectPreviewEventTypes = {
   projectPreviewReloadRequested: "ProjectPreviewReloadRequested",
   projectPreviewReloaded: "ProjectPreviewReloaded",
   projectPreviewReloadFailed: "ProjectPreviewReloadFailed",
-  projectPreviewTargetChanged: "ProjectPreviewTargetChanged"
+  projectPreviewTargetChanged: "ProjectPreviewTargetChanged",
+  projectPreviewIssueReported: "ProjectPreviewIssueReported"
 } as const;
 
 export type ProjectPreviewLoadRequestedEvent = CrystalEvent<{ readonly state: ProjectPreviewState }> & { readonly type: "ProjectPreviewLoadRequested" };
@@ -18,6 +19,7 @@ export type ProjectPreviewReloadRequestedEvent = CrystalEvent<{ readonly state: 
 export type ProjectPreviewReloadedEvent = CrystalEvent<{ readonly result: ProjectPreviewLoadResult }> & { readonly type: "ProjectPreviewReloaded" };
 export type ProjectPreviewReloadFailedEvent = CrystalEvent<{ readonly issue: ProjectPreviewIssue; readonly state: ProjectPreviewState }> & { readonly type: "ProjectPreviewReloadFailed" };
 export type ProjectPreviewTargetChangedEvent = CrystalEvent<{ readonly target: ProjectPreviewTarget | null; readonly state: ProjectPreviewState }> & { readonly type: "ProjectPreviewTargetChanged" };
+export type ProjectPreviewIssueReportedEvent = CrystalEvent<{ readonly issue: ProjectPreviewIssue; readonly state: ProjectPreviewState }> & { readonly type: "ProjectPreviewIssueReported" };
 
 export type ProjectPreviewEvent =
   | ProjectPreviewLoadRequestedEvent
@@ -26,4 +28,5 @@ export type ProjectPreviewEvent =
   | ProjectPreviewReloadRequestedEvent
   | ProjectPreviewReloadedEvent
   | ProjectPreviewReloadFailedEvent
-  | ProjectPreviewTargetChangedEvent;
+  | ProjectPreviewTargetChangedEvent
+  | ProjectPreviewIssueReportedEvent;
