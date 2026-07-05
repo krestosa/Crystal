@@ -91,6 +91,7 @@ Implemented:
 - Preview target selection from Project Graph pages
 - manual Load Preview and Reload Preview actions
 - controlled Preview reload after relevant watcher refreshes
+- visible Preview diagnostics for missing, blocked, or fallback-served resources
 - `validate:preview` for non-visual Preview checks
 - local validation runner for pre-merge checks
 - Electron local environment diagnostics
@@ -121,5 +122,9 @@ Open `fixtures/sample-html-project` or another HTML project, then use the Previe
 The renderer calls the typed preload API for load, reload, target selection, and state. Electron main resolves the requested page against the active Project Graph and root, validates that the file remains inside the project, and returns a `crystal-preview://current/<relative-project-path>` URL.
 
 The custom Preview protocol is registered in Electron main before app readiness for scheme privileges, then handled after app readiness. It serves only active-project files and rejects traversal or out-of-project requests.
+
+Preview diagnostics are produced by Electron main and the protocol handler. The renderer only displays sanitized state delivered through `project:preview-updated`; it does not inspect the filesystem and does not receive absolute filesystem paths. Missing assets, traversal attempts, out-of-root resources, read failures, and unsupported MIME fallbacks are reported as Preview issues.
+
+Repeated issues are coalesced by type, safe path, and reason. Crystal keeps at most 50 recent Preview issues in memory. Unsupported MIME fallbacks are warnings only when an existing file is served with `application/octet-stream`.
 
 Watcher reload is conservative. Preview reload is considered after Project Graph refresh completion and only for the current page or direct dependencies. Ignored paths, including `.crystal-cache`, do not request Preview reload.

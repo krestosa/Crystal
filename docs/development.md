@@ -107,7 +107,9 @@ Use:
 npm run validate:preview
 ```
 
-This is a non-visual validation. It checks Preview target resolution, traversal blocking, MIME mapping, Project Graph target selection, Preview URL handling, and watcher reload planning. It intentionally does not use Playwright, Cypress, Spectron, or screenshot testing.
+This is a non-visual validation. It checks Preview target resolution, traversal blocking, outside-root guard reporting, MIME mapping and fallback reporting, missing asset diagnostics, issue coalescing, Project Graph target selection, Preview URL handling, and watcher reload planning. It intentionally does not use Playwright, Cypress, Spectron, or screenshot testing.
+
+Preview diagnostics must not expose absolute filesystem paths. Validation checks that missing-resource and outside-root issues keep only safe relative paths or sanitized request URLs.
 
 ## Preview manual check
 
@@ -115,10 +117,15 @@ Use `fixtures/sample-html-project` for manual Preview checks:
 
 1. Run `npm run dev`.
 2. Open the fixture folder from the Project Graph panel.
-3. In the Design view, press `Load Preview`.
-4. Confirm the HTML renders and `styles/preview.css`, `scripts/preview.js`, and `assets/preview-icon.svg` load.
-5. Start the watcher, change `preview.html` or `styles/preview.css`, and confirm controlled reload after Project Graph refresh.
-6. Create an ignored file such as `scratch.tmp` and confirm Preview does not reload because of it.
+3. In the Design view, load `preview.html` and press `Load Preview`.
+4. Confirm the HTML renders and `styles/preview.css`, `scripts/preview.js`, and `assets/preview-icon.svg` load without critical issues.
+5. Load `preview-missing-assets.html`.
+6. Confirm the Preview issues section shows `file-not-found` entries for missing local CSS, script, or image resources.
+7. Press `Reload Preview` and confirm repeated resource failures are coalesced with a count instead of creating noisy duplicate rows.
+8. Start the watcher, change `preview.html` or `styles/preview.css`, and confirm controlled reload after Project Graph refresh.
+9. Create an ignored file such as `scratch.tmp` and confirm Preview does not reload because of it.
+
+The Preview issues panel is diagnostic only. It is not an Inspector, browser console, DOM tree, or visual editing surface.
 
 ## Watcher filesystem validation
 

@@ -64,8 +64,13 @@ Covered:
 - secure project-relative Preview path resolver
 - custom `crystal-preview://current/<relative-project-path>` protocol
 - basic MIME serving for HTML, CSS, JavaScript, SVG, images, and fonts
+- unsupported MIME fallback reporting as warning
+- missing Preview resource reporting
+- blocked path traversal and outside-root request reporting
+- coalesced Preview issues with bounded recent history
 - typed IPC and preload Preview API
 - minimal renderer Preview panel in the Design view
+- visible Preview issues section in the Preview panel
 - manual Load Preview and Reload Preview
 - target change reload from Project Graph pages
 - controlled Preview reload after relevant watcher-driven Project Graph refreshes
@@ -110,4 +115,4 @@ The validation runner is mandatory before requesting PR merge. It must be update
 
 ## Recommended next module
 
-After this Preview foundation PR passes local validation on Windows, the next module should harden Preview reload/security behavior or add the next Phase 2 primitive explicitly. Do not jump to Design MVP, Inspector MVP, Developer IDE, WebGPU, or Rust/WASM from this PR.
+After this Preview diagnostics PR passes local validation on Windows, the next module should either add DOM snapshot and DOM tree as narrow Phase 2 primitives or run one more Preview hardening pass if manual diagnostics reveal unstable resource loading. Do not jump to Design MVP, Inspector MVP, Developer IDE, WebGPU, or Rust/WASM from this PR.

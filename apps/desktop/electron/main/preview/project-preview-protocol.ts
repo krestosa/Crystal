@@ -1,25 +1,18 @@
 import { protocol } from "electron";
-import { readFile } from "node:fs/promises";
+import { readFile, realpath } from "node:fs/promises";
+import path from "node:path";
+import { createProjectPreviewIssue } from "../../../../../packages/core/project/preview/project-preview-issues";
 import { resolveProjectPreviewPath } from "../../../../../packages/core/project/preview/project-preview-path";
+import type { ProjectPreviewIssue } from "../../../../../packages/core/project/preview/project-preview.types";
 import { getCurrentProjectRoot } from "../ipc/project-ipc-state";
-import { getProjectPreviewMimeType } from "./project-preview-mime";
-import { parseProjectPreviewUrl, projectPreviewScheme } from "./project-preview-url";
+import { getProjectPreviewMimeResult } from "./project-preview-mime";
+import { reportProjectPreviewResourceIssue } from "./project-preview-service";
+import { parseProjectPreviewUrl, projectPreviewScheme, sanitizeProjectPreviewRequestUrl } from "./project-preview-url";
 
 let protocolHandlerRegistered = false;
 
 export function registerProjectPreviewProtocolPrivileges(): void {
-  protocol.registerSchemesAsPrivileged([
-    {
-      scheme: projectPreviewScheme,
-      privileges: {
-        standard: true,
-        secure: true,
-        supportFetchAPI: true,
-        corsEnabled: true,
-        stream: true
-      }
-    }
-  ]);
+  protocol.registerSchemesAsPrivileged([{ scheme: projectPreviewScheme, privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true, stream: true } }]);
 }
 
 export function registerProjectPreviewProtocolHandler(): void {
@@ -29,35 +22,62 @@ export function registerProjectPreviewProtocolHandler(): void {
 }
 
 async function handleProjectPreviewRequest(requestUrl: string): Promise<Response> {
+  const safeRequestUrl = sanitizeProjectPreviewRequestUrl(requestUrl);
   const rootPath = getCurrentProjectRoot();
-  if (!rootPath) return createTextResponse(404, "No active Crystal project root.");
+  if (!rootPath) {
+    reportIssue(createProtocolIssue("no-project-root", "No active Crystal project root is available for preview requests.", null, safeRequestUrl));
+    return createTextResponse(404, "No active Crystal project root.");
+  }
 
   const parsedUrl = parseProjectPreviewUrl(requestUrl);
-  if (!parsedUrl.ok) return createTextResponse(400, parsedUrl.reason);
+  if (!parsedUrl.ok) {
+    reportIssue(createProtocolIssue("protocol-error", parsedUrl.reason, null, safeRequestUrl));
+    return createTextResponse(400, parsedUrl.reason);
+  }
 
   const resolution = resolveProjectPreviewPath(rootPath, parsedUrl.relativePath);
-  if (!resolution.ok || !resolution.absolutePath) return createTextResponse(403, resolution.issue?.message ?? "Preview path rejected.");
+  if (!resolution.ok || !resolution.absolutePath || !resolution.relativePath) {
+    const issue = resolution.issue ?? createProtocolIssue("protocol-error", "Preview path rejected.", parsedUrl.relativePath, safeRequestUrl);
+    reportIssue(createProtocolIssue(issue.code, issue.message, issue.relativePath ?? issue.path ?? parsedUrl.relativePath, safeRequestUrl));
+    return createTextResponse(403, issue.message);
+  }
+
+  const rootRealPath = await realpath(rootPath).catch(() => rootPath);
+  const targetRealPath = await realpath(resolution.absolutePath).catch(() => null);
+  if (!targetRealPath) {
+    reportIssue(createProtocolIssue("file-not-found", "Preview resource was not found inside the active project root.", resolution.relativePath, safeRequestUrl));
+    return createTextResponse(404, "Preview resource was not found inside the active project root.");
+  }
+
+  if (isOutsideRoot(rootRealPath, targetRealPath)) {
+    reportIssue(createProtocolIssue("outside-project-root", "Preview resource resolves outside the active project root.", resolution.relativePath, safeRequestUrl));
+    return createTextResponse(403, "Preview resource was blocked by Crystal.");
+  }
 
   try {
-    const file = await readFile(resolution.absolutePath);
-    return new Response(new Uint8Array(file), {
-      status: 200,
-      headers: {
-        "content-type": getProjectPreviewMimeType(resolution.absolutePath),
-        "cache-control": "no-store"
-      }
-    });
+    const file = await readFile(targetRealPath);
+    const mime = getProjectPreviewMimeResult(targetRealPath);
+    if (mime.isFallback) reportIssue(createProjectPreviewIssue({ code: "unsupported-mime", severity: "warning", message: "Preview resource uses an unsupported MIME extension and was served with a safe fallback.", path: resolution.relativePath, requestUrl: safeRequestUrl, reason: `Unsupported MIME extension${mime.extension ? `: ${mime.extension}` : "."}`, source: "protocol" }));
+    return new Response(new Uint8Array(file), { status: 200, headers: { "content-type": mime.mimeType, "cache-control": "no-store" } });
   } catch {
-    return createTextResponse(404, "Preview file was not found inside the active project root.");
+    reportIssue(createProtocolIssue("protocol-error", "Preview resource could not be read by Crystal.", resolution.relativePath, safeRequestUrl));
+    return createTextResponse(500, "Preview resource could not be read by Crystal.");
   }
 }
 
 function createTextResponse(status: number, message: string): Response {
-  return new Response(message, {
-    status,
-    headers: {
-      "content-type": "text/plain; charset=utf-8",
-      "cache-control": "no-store"
-    }
-  });
+  return new Response(message, { status, headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store" } });
+}
+
+function createProtocolIssue(code: ProjectPreviewIssue["code"], message: string, relativePath: string | null, requestUrl: string | null): ProjectPreviewIssue {
+  return createProjectPreviewIssue({ code, message, path: relativePath, requestUrl, source: "protocol" });
+}
+
+function reportIssue(issue: ProjectPreviewIssue): void {
+  reportProjectPreviewResourceIssue(issue);
+}
+
+function isOutsideRoot(rootRealPath: string, targetRealPath: string): boolean {
+  const relativeFromRoot = path.relative(rootRealPath, targetRealPath);
+  return relativeFromRoot === "" || relativeFromRoot === ".." || relativeFromRoot.startsWith(`..${path.sep}`) || path.isAbsolute(relativeFromRoot);
 }

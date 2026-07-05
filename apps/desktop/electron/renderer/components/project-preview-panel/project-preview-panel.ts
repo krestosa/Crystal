@@ -1,5 +1,5 @@
 import type { ProjectGraph } from "../../../../../../packages/core/project/graph/project-graph.types";
-import type { ProjectPreviewLoadResult, ProjectPreviewState } from "../../../../../../packages/core/project/preview/project-preview.types";
+import type { ProjectPreviewIssue, ProjectPreviewLoadResult, ProjectPreviewState } from "../../../../../../packages/core/project/preview/project-preview.types";
 import type { ProjectPreviewPanelElements } from "./project-preview-panel.types";
 
 export function initializeProjectPreviewPanel(): void {
@@ -41,14 +41,17 @@ async function refreshPreviewTargets(elements: ProjectPreviewPanelElements): Pro
 }
 
 function renderPreviewState(elements: ProjectPreviewPanelElements, state: ProjectPreviewState): void {
-  elements.status.textContent = state.status;
+  elements.status.textContent = renderPreviewStatus(state);
   elements.page.textContent = state.target?.relativePath ?? "None";
   elements.lastLoad.textContent = state.lastLoadedAt ? formatTimestamp(state.lastLoadedAt) : "none";
   elements.lastReload.textContent = state.lastReloadedAt ? formatTimestamp(state.lastReloadedAt) : "none";
   elements.reason.textContent = state.lastReloadReason ?? "none";
+  elements.issueCount.textContent = String(state.issueCount);
+  elements.lastIssue.textContent = state.lastIssueAt ? formatTimestamp(state.lastIssueAt) : "none";
   elements.error.hidden = !state.lastError;
   elements.error.textContent = state.lastError ?? "";
   elements.reloadButton.disabled = !state.target;
+  renderPreviewIssues(elements, state.issues);
 
   if (state.target && elements.target.value !== state.target.relativePath) elements.target.value = state.target.relativePath;
   if (state.previewUrl && state.status === "ready") elements.frame.src = state.previewUrl;
@@ -77,6 +80,29 @@ function renderTargetOptions(elements: ProjectPreviewPanelElements, graph: Proje
   if (selected && pages.some((page) => page.relativePath === selected)) elements.target.value = selected;
 }
 
+function renderPreviewIssues(elements: ProjectPreviewPanelElements, issues: readonly ProjectPreviewIssue[]): void {
+  elements.issuesEmpty.hidden = issues.length > 0;
+  elements.issuesList.replaceChildren(...issues.slice(0, 10).map(createPreviewIssueItem));
+}
+
+function createPreviewIssueItem(issue: ProjectPreviewIssue): HTMLLIElement {
+  const item = document.createElement("li");
+  item.className = `crystal-project-preview-panel__issue crystal-project-preview-panel__issue--${issue.severity}`;
+  item.append(createIssuePart("type", issue.type), createIssuePart("path", getIssueDisplayPath(issue)), createIssuePart("reason", issue.reason), createIssuePart("count", issue.count > 1 ? `x${issue.count}` : ""));
+  return item;
+}
+
+function createIssuePart(name: string, value: string): HTMLSpanElement {
+  const part = document.createElement("span");
+  part.className = `crystal-project-preview-panel__issue-${name}`;
+  part.textContent = value;
+  return part;
+}
+
+function getIssueDisplayPath(issue: ProjectPreviewIssue): string {
+  return issue.relativePath ?? issue.path ?? issue.requestUrl ?? "preview";
+}
+
 function renderPreviewError(elements: ProjectPreviewPanelElements, error: unknown): void {
   elements.error.hidden = false;
   elements.error.textContent = error instanceof Error ? error.message : String(error);
@@ -96,17 +122,28 @@ function getProjectPreviewPanelElements(panel: HTMLElement): ProjectPreviewPanel
     lastLoad: queryPanelElement(panel, "[data-project-preview-last-load]", HTMLElement),
     lastReload: queryPanelElement(panel, "[data-project-preview-last-reload]", HTMLElement),
     reason: queryPanelElement(panel, "[data-project-preview-reason]", HTMLElement),
+    issueCount: queryPanelElement(panel, "[data-project-preview-issue-count]", HTMLElement),
+    lastIssue: queryPanelElement(panel, "[data-project-preview-last-issue]", HTMLElement),
     error: queryPanelElement(panel, "[data-project-preview-error]", HTMLElement),
+    issuesEmpty: queryPanelElement(panel, "[data-project-preview-issues-empty]", HTMLElement),
+    issuesList: queryPanelElement(panel, "[data-project-preview-issues-list]", HTMLUListElement),
     frame: queryPanelElement(panel, "[data-project-preview-frame]", HTMLIFrameElement),
     loadButton: queryPanelElement(panel, "[data-project-preview-load]", HTMLButtonElement),
     reloadButton: queryPanelElement(panel, "[data-project-preview-reload]", HTMLButtonElement)
   };
 }
 
-function queryPanelElement<TElement extends HTMLElement>(panel: HTMLElement, selector: string, constructor: new () => TElement): TElement {
+function queryPanelElement<TElement extends HTMLElement>(panel: HTMLElement, selector: string, elementType: new () => TElement): TElement {
   const element = panel.querySelector(selector);
-  if (!(element instanceof constructor)) throw new Error(`Missing Project Preview panel element: ${selector}`);
+  if (!(element instanceof elementType)) throw new Error(`Missing Project Preview panel element: ${selector}`);
   return element;
+}
+
+function renderPreviewStatus(state: ProjectPreviewState): string {
+  if (state.status === "ready" && state.issueCount > 0) return "ready with issues";
+  if (state.status === "ready" && state.isSyncedWithProjectGraph) return "ready";
+  if (state.status === "ready") return "ready, graph pending";
+  return state.status;
 }
 
 function formatTimestamp(timestamp: number): string {

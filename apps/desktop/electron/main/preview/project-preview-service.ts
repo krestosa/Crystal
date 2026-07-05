@@ -2,6 +2,7 @@ import { BrowserWindow } from "electron";
 import { access } from "node:fs/promises";
 import { eventBus } from "../../../../../packages/core/events/event-bus";
 import { projectPreviewEventTypes } from "../../../../../packages/core/events/project-preview-events";
+import { createProjectPreviewIssue, getLastProjectPreviewIssueTimestamp, getProjectPreviewIssueCount, mergeProjectPreviewIssue } from "../../../../../packages/core/project/preview/project-preview-issues";
 import { selectProjectPreviewTarget } from "../../../../../packages/core/project/preview/project-preview-target";
 import { createProjectPreviewWatchReloadKey, shouldReloadProjectPreviewForEvents } from "../../../../../packages/core/project/preview/project-preview-reload";
 import { initialProjectPreviewState } from "../../../../../packages/core/project/preview/project-preview-state";
@@ -25,36 +26,27 @@ export async function loadProjectPreview(reason: ProjectPreviewReloadReason = "m
 
   previewOperationInFlight = true;
   const requestedStatus = reason === "manual" && getProjectPreviewState().status !== "ready" ? "loading" : "reloading";
-  patchPreview({ status: requestedStatus, lastError: null, issues: [], lastReloadReason: reason });
+  patchPreview({ status: requestedStatus, lastError: null, issues: [], issueCount: 0, lastIssueAt: null, lastReloadReason: reason });
   emitPreviewRequestEvent(reason);
 
   try {
     const scanResult = getCurrentProjectScanResult();
     const currentTarget = getProjectPreviewState().target;
     const targetSelection = selectProjectPreviewTarget(scanResult, preferredRelativePath ?? currentTarget?.relativePath ?? null);
-    if (!targetSelection.ok || !targetSelection.target) return failPreview(targetSelection.issue ?? createIssue("no-preview-target", "No preview target could be resolved.", null), reason);
+    if (!targetSelection.ok || !targetSelection.target) return failPreview(targetSelection.issue ?? createIssue("no-preview-target", "No preview target could be resolved.", null, "target"), reason);
 
-    await access(targetSelection.target.absolutePath);
+    try { await access(targetSelection.target.absolutePath); }
+    catch { return failPreview(createIssue("file-not-found", "Preview target was not found inside the active project root.", targetSelection.target.relativePath, "target"), reason); }
+
     const now = Date.now();
     const previewUrl = createProjectPreviewUrl(targetSelection.target.relativePath, now);
-    const state = patchPreview({
-      rootPath: targetSelection.target.rootPath,
-      target: targetSelection.target,
-      previewUrl,
-      status: "ready",
-      lastLoadedAt: reason === "manual" || reason === "project-open" || reason === "page-change" ? now : getProjectPreviewState().lastLoadedAt,
-      lastReloadedAt: reason === "watch" || reason === "manual" ? now : getProjectPreviewState().lastReloadedAt,
-      lastReloadReason: reason,
-      lastError: null,
-      isSyncedWithProjectGraph: true,
-      issues: []
-    });
+    const state = patchPreview({ rootPath: targetSelection.target.rootPath, target: targetSelection.target, previewUrl, status: "ready", lastLoadedAt: reason === "manual" || reason === "project-open" || reason === "page-change" ? now : getProjectPreviewState().lastLoadedAt, lastReloadedAt: reason === "watch" || reason === "manual" ? now : getProjectPreviewState().lastReloadedAt, lastReloadReason: reason, lastError: null, isSyncedWithProjectGraph: true });
     const result: ProjectPreviewLoadResult = { ok: true, state, issue: null };
     emitPreviewSuccessEvent(reason, result);
     notifyProjectPreviewRenderer(state);
     return result;
-  } catch (error) {
-    return failPreview(createIssue("file-not-found", error instanceof Error ? error.message : String(error), null), reason);
+  } catch {
+    return failPreview(createIssue("protocol-error", "Preview failed while preparing the requested target.", null, "load"), reason);
   } finally {
     previewOperationInFlight = false;
   }
@@ -78,15 +70,8 @@ export function clearProjectPreview(): ProjectPreviewState {
 export function prepareProjectPreviewForScanResult(): ProjectPreviewState {
   const scanResult = getCurrentProjectScanResult();
   const selection = selectProjectPreviewTarget(scanResult);
-  const state = patchPreview({
-    ...initialProjectPreviewState,
-    rootPath: scanResult?.rootPath ?? null,
-    target: selection.target,
-    status: selection.ok ? "idle" : "failed",
-    lastError: selection.issue?.message ?? null,
-    isSyncedWithProjectGraph: Boolean(selection.ok),
-    issues: selection.issue ? [selection.issue] : []
-  });
+  const issues = selection.issue ? [selection.issue] : [];
+  const state = patchPreview({ ...initialProjectPreviewState, rootPath: scanResult?.rootPath ?? null, target: selection.target, status: selection.ok ? "idle" : "failed", lastError: selection.issue?.message ?? null, lastIssueAt: getLastProjectPreviewIssueTimestamp(issues), issueCount: getProjectPreviewIssueCount(issues), isSyncedWithProjectGraph: Boolean(selection.ok), issues });
   eventBus.emit({ type: projectPreviewEventTypes.projectPreviewTargetChanged, payload: { target: state.target, state }, createdAt: Date.now() });
   notifyProjectPreviewRenderer(state);
   return state;
@@ -101,45 +86,19 @@ export async function reloadProjectPreviewAfterGraphRefresh(events: readonly Pro
   await reloadProjectPreview("watch");
 }
 
-function patchPreview(patch: Partial<ProjectPreviewState>): ProjectPreviewState {
-  appState.patchProjectPreview(patch);
-  return appState.getSnapshot().preview;
-}
-
-function failWithCurrentState(code: ProjectPreviewIssue["code"], message: string, issuePath: string | null): ProjectPreviewLoadResult {
-  const issue = createIssue(code, message, issuePath);
-  return { ok: false, state: getProjectPreviewState(), issue };
-}
-
-function failPreview(issue: ProjectPreviewIssue, reason: ProjectPreviewReloadReason): ProjectPreviewLoadResult {
-  const state = patchPreview({ status: "failed", lastError: issue.message, lastReloadReason: reason, isSyncedWithProjectGraph: false, issues: [issue] });
-  const result: ProjectPreviewLoadResult = { ok: false, state, issue };
-  emitPreviewFailureEvent(reason, issue, state);
+export function reportProjectPreviewResourceIssue(issue: ProjectPreviewIssue): ProjectPreviewState {
+  const issues = mergeProjectPreviewIssue(getProjectPreviewState().issues, issue);
+  const state = patchPreview({ issues, issueCount: getProjectPreviewIssueCount(issues), lastIssueAt: getLastProjectPreviewIssueTimestamp(issues) });
+  eventBus.emit({ type: projectPreviewEventTypes.projectPreviewIssueReported, payload: { issue, state }, createdAt: Date.now() });
   notifyProjectPreviewRenderer(state);
-  return result;
+  return state;
 }
 
-function emitPreviewRequestEvent(reason: ProjectPreviewReloadReason): void {
-  const eventType = reason === "watch" ? projectPreviewEventTypes.projectPreviewReloadRequested : projectPreviewEventTypes.projectPreviewLoadRequested;
-  eventBus.emit({ type: eventType, payload: { state: getProjectPreviewState() }, createdAt: Date.now() });
-}
-
-function emitPreviewSuccessEvent(reason: ProjectPreviewReloadReason, result: ProjectPreviewLoadResult): void {
-  const eventType = reason === "watch" ? projectPreviewEventTypes.projectPreviewReloaded : projectPreviewEventTypes.projectPreviewLoaded;
-  eventBus.emit({ type: eventType, payload: { result }, createdAt: Date.now() });
-}
-
-function emitPreviewFailureEvent(reason: ProjectPreviewReloadReason, issue: ProjectPreviewIssue, state: ProjectPreviewState): void {
-  const eventType = reason === "watch" ? projectPreviewEventTypes.projectPreviewReloadFailed : projectPreviewEventTypes.projectPreviewLoadFailed;
-  eventBus.emit({ type: eventType, payload: { issue, state }, createdAt: Date.now() });
-}
-
-function notifyProjectPreviewRenderer(state: ProjectPreviewState): void {
-  for (const browserWindow of BrowserWindow.getAllWindows()) {
-    if (!browserWindow.isDestroyed()) browserWindow.webContents.send(crystalIpcChannels.projectPreviewUpdated, state);
-  }
-}
-
-function createIssue(code: ProjectPreviewIssue["code"], message: string, issuePath: string | null): ProjectPreviewIssue {
-  return { code, severity: "error", message, path: issuePath };
-}
+function patchPreview(patch: Partial<ProjectPreviewState>): ProjectPreviewState { appState.patchProjectPreview(patch); return appState.getSnapshot().preview; }
+function failWithCurrentState(code: ProjectPreviewIssue["code"], message: string, issuePath: string | null): ProjectPreviewLoadResult { const issue = createIssue(code, message, issuePath, "load"); return { ok: false, state: getProjectPreviewState(), issue }; }
+function failPreview(issue: ProjectPreviewIssue, reason: ProjectPreviewReloadReason): ProjectPreviewLoadResult { const issues = mergeProjectPreviewIssue(getProjectPreviewState().issues, issue); const state = patchPreview({ status: "failed", lastError: issue.message, lastReloadReason: reason, isSyncedWithProjectGraph: false, issues, issueCount: getProjectPreviewIssueCount(issues), lastIssueAt: getLastProjectPreviewIssueTimestamp(issues) }); const result: ProjectPreviewLoadResult = { ok: false, state, issue }; emitPreviewFailureEvent(reason, issue, state); notifyProjectPreviewRenderer(state); return result; }
+function emitPreviewRequestEvent(reason: ProjectPreviewReloadReason): void { const eventType = reason === "watch" ? projectPreviewEventTypes.projectPreviewReloadRequested : projectPreviewEventTypes.projectPreviewLoadRequested; eventBus.emit({ type: eventType, payload: { state: getProjectPreviewState() }, createdAt: Date.now() }); }
+function emitPreviewSuccessEvent(reason: ProjectPreviewReloadReason, result: ProjectPreviewLoadResult): void { const eventType = reason === "watch" ? projectPreviewEventTypes.projectPreviewReloaded : projectPreviewEventTypes.projectPreviewLoaded; eventBus.emit({ type: eventType, payload: { result }, createdAt: Date.now() }); }
+function emitPreviewFailureEvent(reason: ProjectPreviewReloadReason, issue: ProjectPreviewIssue, state: ProjectPreviewState): void { const eventType = reason === "watch" ? projectPreviewEventTypes.projectPreviewReloadFailed : projectPreviewEventTypes.projectPreviewLoadFailed; eventBus.emit({ type: eventType, payload: { issue, state }, createdAt: Date.now() }); }
+function notifyProjectPreviewRenderer(state: ProjectPreviewState): void { for (const browserWindow of BrowserWindow.getAllWindows()) if (!browserWindow.isDestroyed()) browserWindow.webContents.send(crystalIpcChannels.projectPreviewUpdated, state); }
+function createIssue(code: ProjectPreviewIssue["code"], message: string, issuePath: string | null, source: ProjectPreviewIssue["source"]): ProjectPreviewIssue { return createProjectPreviewIssue({ code, message, path: issuePath, source }); }

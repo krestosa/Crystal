@@ -18,8 +18,15 @@
     <div><dt>Last load</dt><dd data-project-preview-last-load>none</dd></div>
     <div><dt>Last reload</dt><dd data-project-preview-last-reload>none</dd></div>
     <div><dt>Reason</dt><dd data-project-preview-reason>none</dd></div>
+    <div><dt>Issues</dt><dd data-project-preview-issue-count>0</dd></div>
+    <div><dt>Last issue</dt><dd data-project-preview-last-issue>none</dd></div>
   </dl>
   <p class="crystal-project-preview-panel__error" data-project-preview-error hidden></p>
+  <section class="crystal-project-preview-panel__issues" aria-label="Preview issues">
+    <h3 class="crystal-project-preview-panel__issues-title">Preview issues</h3>
+    <p class="crystal-project-preview-panel__issues-empty" data-project-preview-issues-empty>No preview issues.</p>
+    <ul class="crystal-project-preview-panel__issues-list" data-project-preview-issues-list></ul>
+  </section>
   <div class="crystal-project-preview-panel__frame-wrap">
     <iframe class="crystal-project-preview-panel__frame" data-project-preview-frame title="Crystal project preview" sandbox="allow-scripts allow-forms allow-popups"></iframe>
   </div>
