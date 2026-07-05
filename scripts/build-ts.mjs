@@ -3,14 +3,14 @@ import { build } from "esbuild";
 const targets = {
   main: {
     entryPoints: ["apps/desktop/electron/main/main.ts"],
-    outfile: "dist/main/main.js",
+    outfile: "dist/main/main.cjs",
     platform: "node",
     format: "cjs",
     external: ["electron"]
   },
   preload: {
     entryPoints: ["apps/desktop/electron/preload/preload.ts"],
-    outfile: "dist/preload/preload.js",
+    outfile: "dist/preload/preload.cjs",
     platform: "node",
     format: "cjs",
     external: ["electron"]
