@@ -55,19 +55,7 @@ Use:
 npm run doctor:electron
 ```
 
-The diagnostic checks:
-
-- Node version.
-- npm version.
-- `node_modules/electron/path.txt`.
-- `node_modules/electron/dist/electron.exe` on Windows.
-- `npx electron --version`.
-- `ELECTRON_SKIP_BINARY_DOWNLOAD`.
-- `ELECTRON_MIRROR`.
-- `ELECTRON_CUSTOM_DIR`.
-- `npm_config_ignore_scripts`.
-
-The command exits with a non-zero status when Electron is not installed correctly. It does not fake a fallback Electron runtime.
+The diagnostic checks Node, npm, Electron install files, Electron executable availability, and known Electron install environment variables.
 
 ## Development command
 
@@ -79,6 +67,12 @@ npm run build && electron dist/main/main.cjs
 
 The command first builds the app and then launches the Electron main entrypoint from `dist/main/main.cjs`. Electron main and preload are emitted as explicit CommonJS files, `dist/main/main.cjs` and `dist/preload/preload.cjs`, because the repository root keeps `"type": "module"` for `.js` files. If Electron is missing, corrupted, or blocked by install settings, the command must fail visibly.
 
+## Project Graph watcher development
+
+After opening a project folder or HTML file in the app, the Project Graph panel can start and stop the watcher, manually refresh the graph, clear the in-memory cache, and display recent file events.
+
+Use `fixtures/sample-html-project` for local checks. Modify `styles/watch-target.css`, create a small SVG placeholder, or delete a temporary fixture file to verify event classification and refresh behavior. Ambiguous events should fall back to full rescan.
+
 ## Do not use forced audit fixes
 
 Do not run:
@@ -89,27 +83,6 @@ npm audit fix --force
 
 Forced audit fixes may replace major dependency versions, rewrite the lockfile, and change Electron or build tooling outside the scope of the current phase. Security fixes must be reviewed as explicit dependency updates.
 
-## Common causes of a missing Electron binary
-
-Check these before reinstalling repeatedly:
-
-```powershell
-Get-ChildItem Env:ELECTRON_SKIP_BINARY_DOWNLOAD
-Get-ChildItem Env:ELECTRON_MIRROR
-Get-ChildItem Env:ELECTRON_CUSTOM_DIR
-npm config get ignore-scripts
-```
-
-Problematic states:
-
-```txt
-ELECTRON_SKIP_BINARY_DOWNLOAD=true
-npm_config_ignore_scripts=true
-npm config get ignore-scripts -> true
-```
-
-If `ELECTRON_MIRROR` or `ELECTRON_CUSTOM_DIR` is set, make sure the configured mirror actually serves the Electron version from `package-lock.json`.
-
 ## Required validation sequence
 
 After a clean install, run:
@@ -119,6 +92,7 @@ npm run build
 npm run typecheck
 npm run validate:structure
 npm run validate:project-graph
+npm run validate:project-watch
 npm run doctor:electron
 npm run dev
 ```
