@@ -2,7 +2,7 @@
 
 Crystal is a new desktop application for creating, inspecting, and modifying real HTML projects and their related assets.
 
-This repository now covers roadmap Phase -1, the minimal Phase 0 tooling foundation, and the Phase 1 Project Graph foundation with watcher/cache support.
+This repository now covers roadmap Phase -1, the minimal Phase 0 tooling foundation, the Phase 1 Project Graph foundation with watcher/cache support, and the first Phase 2 real project preview.
 
 ## Requirements
 
@@ -63,6 +63,7 @@ npm run typecheck
 npm run validate:structure
 npm run validate:project-graph
 npm run validate:project-watch
+npm run validate:preview
 npm run validate:local:watch
 npm run doctor:electron
 ```
@@ -84,15 +85,18 @@ Implemented:
 - asset and page detection
 - missing route reporting
 - minimal renderer Project Graph verification panel
-- fixtures and Project Graph validation scripts
 - filesystem watcher adapter
 - Project Graph watcher/cache validation
+- secure custom `crystal-preview://current/<relative-project-path>` protocol
+- Preview target selection from Project Graph pages
+- manual Load Preview and Reload Preview actions
+- controlled Preview reload after relevant watcher refreshes
+- `validate:preview` for non-visual Preview checks
 - local validation runner for pre-merge checks
 - Electron local environment diagnostics
 
 Intentionally out of scope:
 
-- real Chromium preview pipeline for user projects
 - visual Design MVP editing
 - Inspector MVP
 - Developer IDE features
@@ -100,11 +104,22 @@ Intentionally out of scope:
 - Rust/WASM analyzer implementation
 - code editor
 - integrated terminal
-- DOM visual selection, canvas, or bounding boxes
+- DOM visual selection, DOM tree, canvas, or bounding boxes
+- visual style editing
 - Electron UI automation frameworks such as Playwright, Cypress, or Spectron
 
 ## Project Graph scan
 
 Use the app side bar buttons to open a folder or an HTML file. Crystal scans the selected project root through main-process IPC, builds a Project Graph in core, and sends a serializable result to the renderer.
 
-The scanner detects local HTML pages, stylesheets, scripts, static imports, CSS `@import`, CSS `url(...)`, common media references, assets, external routes, and missing local references. It does not execute scripts, render HTML, resolve framework aliases, analyze CSS cascade, or parse TypeScript semantics.
+The scanner detects local HTML pages, stylesheets, scripts, static imports, CSS `@import`, CSS `url(...)`, common media references, assets, external routes, and missing local references. It does not execute scripts, resolve framework aliases, analyze CSS cascade, or parse TypeScript semantics.
+
+## Real project preview
+
+Open `fixtures/sample-html-project` or another HTML project, then use the Preview panel in the Design view.
+
+The renderer calls the typed preload API for load, reload, target selection, and state. Electron main resolves the requested page against the active Project Graph and root, validates that the file remains inside the project, and returns a `crystal-preview://current/<relative-project-path>` URL.
+
+The custom Preview protocol is registered in Electron main before app readiness for scheme privileges, then handled after app readiness. It serves only active-project files and rejects traversal or out-of-project requests.
+
+Watcher reload is conservative. Preview reload is considered after Project Graph refresh completion and only for the current page or direct dependencies. Ignored paths, including `.crystal-cache`, do not request Preview reload.

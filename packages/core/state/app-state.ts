@@ -1,3 +1,5 @@
+import { initialProjectPreviewState } from "../project/preview/project-preview-state";
+import type { ProjectPreviewState } from "../project/preview/project-preview.types";
 import type { AppStateSnapshot, ProjectGraphState } from "./app-state.types";
 
 type AppStateListener = (state: AppStateSnapshot) => void;
@@ -23,7 +25,8 @@ const initialState: AppStateSnapshot = {
   workspace: { openedPath: null },
   build: { status: "idle", lastError: null },
   ui: { activeMode: "design" },
-  projectGraph: initialProjectGraphState
+  projectGraph: initialProjectGraphState,
+  preview: initialProjectPreviewState
 };
 
 export class AppStateStore {
@@ -41,6 +44,11 @@ export class AppStateStore {
 
   patchProjectGraph(nextState: Partial<ProjectGraphState>): void {
     this.state = { ...this.state, projectGraph: { ...this.state.projectGraph, ...nextState } };
+    this.notify();
+  }
+
+  patchProjectPreview(nextState: Partial<ProjectPreviewState>): void {
+    this.state = { ...this.state, preview: { ...this.state.preview, ...nextState } };
     this.notify();
   }
 

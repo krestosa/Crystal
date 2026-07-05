@@ -84,6 +84,7 @@ npm run typecheck
 npm run validate:structure
 npm run validate:project-graph
 npm run validate:project-watch
+npm run validate:preview
 npm run validate:local:watch
 npm run doctor:electron
 ```
@@ -97,6 +98,27 @@ npm run validate:local -- --with-dev
 ```
 
 With `--with-dev`, Electron opens during `npm run dev`. The user must close the app manually before the validation runner can finish.
+
+## Preview validation
+
+Use:
+
+```bash
+npm run validate:preview
+```
+
+This is a non-visual validation. It checks Preview target resolution, traversal blocking, MIME mapping, Project Graph target selection, Preview URL handling, and watcher reload planning. It intentionally does not use Playwright, Cypress, Spectron, or screenshot testing.
+
+## Preview manual check
+
+Use `fixtures/sample-html-project` for manual Preview checks:
+
+1. Run `npm run dev`.
+2. Open the fixture folder from the Project Graph panel.
+3. In the Design view, press `Load Preview`.
+4. Confirm the HTML renders and `styles/preview.css`, `scripts/preview.js`, and `assets/preview-icon.svg` load.
+5. Start the watcher, change `preview.html` or `styles/preview.css`, and confirm controlled reload after Project Graph refresh.
+6. Create an ignored file such as `scratch.tmp` and confirm Preview does not reload because of it.
 
 ## Watcher filesystem validation
 

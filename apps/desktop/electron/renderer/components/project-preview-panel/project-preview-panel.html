@@ -1,0 +1,26 @@
+<section class="crystal-project-preview-panel" data-project-preview-panel>
+  <div class="crystal-project-preview-panel__header">
+    <div>
+      <h2 class="crystal-project-preview-panel__title">Preview</h2>
+      <p class="crystal-project-preview-panel__status" data-project-preview-status>idle</p>
+    </div>
+    <div class="crystal-project-preview-panel__actions">
+      <button class="crystal-project-preview-panel__button" type="button" data-project-preview-load>Load Preview</button>
+      <button class="crystal-project-preview-panel__button" type="button" data-project-preview-reload>Reload Preview</button>
+    </div>
+  </div>
+  <label class="crystal-project-preview-panel__target-label">
+    Page
+    <select class="crystal-project-preview-panel__target" data-project-preview-target></select>
+  </label>
+  <dl class="crystal-project-preview-panel__meta">
+    <div><dt>Current page</dt><dd data-project-preview-page>None</dd></div>
+    <div><dt>Last load</dt><dd data-project-preview-last-load>none</dd></div>
+    <div><dt>Last reload</dt><dd data-project-preview-last-reload>none</dd></div>
+    <div><dt>Reason</dt><dd data-project-preview-reason>none</dd></div>
+  </dl>
+  <p class="crystal-project-preview-panel__error" data-project-preview-error hidden></p>
+  <div class="crystal-project-preview-panel__frame-wrap">
+    <iframe class="crystal-project-preview-panel__frame" data-project-preview-frame title="Crystal project preview" sandbox="allow-scripts allow-forms allow-popups"></iframe>
+  </div>
+</section>

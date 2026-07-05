@@ -5,12 +5,16 @@ import { isCrystalIpcChannel } from "../../../../../packages/shared/validators/i
 import type { CrystalPreloadApi } from "../types/preload-api.types";
 
 function invokeCrystal<TChannel extends CrystalIpcChannel>(channel: TChannel): Promise<CrystalIpcResponseMap[TChannel]> {
-  if (!isCrystalIpcChannel(channel)) return Promise.reject(new Error(`Invalid Crystal IPC channel: ${channel}`));
+  if (!isCrystalIpcChannel(channel)) return Promise.reject(new Error("Invalid Crystal IPC channel."));
   return ipcRenderer.invoke(channel) as Promise<CrystalIpcResponseMap[TChannel]>;
 }
 
+function invokePreviewTarget(relativePath: string): Promise<CrystalIpcResponseMap["project:preview-set-target"]> {
+  return ipcRenderer.invoke(crystalIpcChannels.projectPreviewSetTarget, { relativePath }) as Promise<CrystalIpcResponseMap["project:preview-set-target"]>;
+}
+
 function onCrystal<TChannel extends CrystalIpcChannel>(channel: TChannel, listener: (payload: CrystalIpcResponseMap[TChannel]) => void): () => void {
-  if (!isCrystalIpcChannel(channel)) throw new Error(`Invalid Crystal IPC channel: ${channel}`);
+  if (!isCrystalIpcChannel(channel)) throw new Error("Invalid Crystal IPC channel.");
   const subscription = (_event: IpcRendererEvent, payload: CrystalIpcResponseMap[TChannel]) => listener(payload);
   ipcRenderer.on(channel, subscription);
   return () => ipcRenderer.removeListener(channel, subscription);
@@ -31,7 +35,12 @@ const crystalApi: CrystalPreloadApi = {
     getWatcherState: () => invokeCrystal(crystalIpcChannels.projectGetWatcherState),
     refreshGraph: () => invokeCrystal(crystalIpcChannels.projectRefreshGraph),
     clearCache: () => invokeCrystal(crystalIpcChannels.projectClearCache),
-    onWatcherStateChanged: (listener) => onCrystal(crystalIpcChannels.projectWatcherUpdated, listener)
+    loadPreview: () => invokeCrystal(crystalIpcChannels.projectPreviewLoad),
+    reloadPreview: () => invokeCrystal(crystalIpcChannels.projectPreviewReload),
+    setPreviewTarget: (relativePath) => invokePreviewTarget(relativePath),
+    getPreviewState: () => invokeCrystal(crystalIpcChannels.projectPreviewGetState),
+    onWatcherStateChanged: (listener) => onCrystal(crystalIpcChannels.projectWatcherUpdated, listener),
+    onPreviewStateChanged: (listener) => onCrystal(crystalIpcChannels.projectPreviewUpdated, listener)
   }
 };
 
