@@ -11,6 +11,7 @@ import type { ProjectGraphRefreshResult } from "../../../../../packages/core/pro
 import type { ProjectFileWatchEvent } from "../../../../../packages/core/project/watching/project-watch.types";
 import { appState } from "../../../../../packages/core/state/app-state";
 import { crystalIpcChannels } from "../../../../../packages/shared/constants/ipc.constants";
+import { clearProjectDomSnapshot, markProjectDomSnapshotStale } from "../dom/project-dom-snapshot-service";
 import { getCurrentProjectScanResult } from "../ipc/project-ipc-state";
 import { createProjectPreviewUrl } from "./project-preview-url";
 
@@ -41,6 +42,7 @@ export async function loadProjectPreview(reason: ProjectPreviewReloadReason = "m
     const now = Date.now();
     const previewUrl = createProjectPreviewUrl(targetSelection.target.relativePath, now);
     const state = patchPreview({ rootPath: targetSelection.target.rootPath, target: targetSelection.target, previewUrl, status: "ready", lastLoadedAt: reason === "manual" || reason === "project-open" || reason === "page-change" ? now : getProjectPreviewState().lastLoadedAt, lastReloadedAt: reason === "watch" || reason === "manual" ? now : getProjectPreviewState().lastReloadedAt, lastReloadReason: reason, lastError: null, isSyncedWithProjectGraph: true });
+    markProjectDomSnapshotStale(state.target?.relativePath ?? null);
     const result: ProjectPreviewLoadResult = { ok: true, state, issue: null };
     emitPreviewSuccessEvent(reason, result);
     notifyProjectPreviewRenderer(state);
@@ -62,6 +64,7 @@ export function setProjectPreviewTarget(relativePath: string): Promise<ProjectPr
 
 export function clearProjectPreview(): ProjectPreviewState {
   const state = patchPreview(initialProjectPreviewState);
+  clearProjectDomSnapshot();
   eventBus.emit({ type: projectPreviewEventTypes.projectPreviewTargetChanged, payload: { target: null, state }, createdAt: Date.now() });
   notifyProjectPreviewRenderer(state);
   return state;
