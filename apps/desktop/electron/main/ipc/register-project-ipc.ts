@@ -3,6 +3,7 @@ import path from "node:path";
 import { crystalIpcChannels } from "../../../../../packages/shared/constants/ipc.constants";
 import { getCurrentProjectRoot, getCurrentProjectScanResult } from "./project-ipc-state";
 import { scanProjectRoot } from "./project-scan-service";
+import { clearProjectGraphCache, getProjectWatcherState, refreshProjectGraphFromRenderer, startProjectWatcher, stopProjectWatcher } from "./project-live-service";
 
 export function registerProjectIpcHandlers(): void {
   ipcMain.handle(crystalIpcChannels.projectOpenFolder, async () => {
@@ -24,4 +25,9 @@ export function registerProjectIpcHandlers(): void {
   });
 
   ipcMain.handle(crystalIpcChannels.projectGetGraph, () => getCurrentProjectScanResult()?.graph ?? null);
+  ipcMain.handle(crystalIpcChannels.projectStartWatcher, () => startProjectWatcher());
+  ipcMain.handle(crystalIpcChannels.projectStopWatcher, () => stopProjectWatcher());
+  ipcMain.handle(crystalIpcChannels.projectGetWatcherState, () => getProjectWatcherState());
+  ipcMain.handle(crystalIpcChannels.projectRefreshGraph, () => refreshProjectGraphFromRenderer());
+  ipcMain.handle(crystalIpcChannels.projectClearCache, () => clearProjectGraphCache());
 }

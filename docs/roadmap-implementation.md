@@ -42,14 +42,20 @@ Covered:
 - local, external, resolved, and missing route classification
 - Project Graph state integration
 - project events and command type definitions
-- minimal renderer verification panel for files, pages, issues, and file counts
-- sample fixture project and `validate:project-graph`
+- minimal renderer verification panel for files, pages, issues, file counts, watcher state, refresh state, and cache state
+- sample fixture project and validation scripts
+- filesystem watcher adapter
+- Project Graph watch event normalization
+- batched watch events
+- in-memory Project Graph cache foundation
+- file metadata for cache/invalidation
+- conservative semi-incremental refresh planning with full-rescan fallback
+- typed IPC for watcher/cache control
 
 Not covered yet:
 
-- file watcher
-- cache
 - real Chromium preview pipeline for user projects
+- preview reload pipeline
 - DOM snapshot parsing
 - CSS cascade or specificity analysis
 - framework alias resolution
@@ -68,11 +74,13 @@ npm run build
 npm run typecheck
 npm run validate:structure
 npm run validate:project-graph
+npm run validate:project-watch
+npm run doctor:electron
 npm run dev
 ```
 
-Opening the app should display the Crystal application shell. In the side bar, use `Open Folder` or `Open HTML` to scan a fixture or local HTML project. The side bar should show file counts, detected pages, detected files, and missing-route issues.
+Opening the app should display the Crystal application shell. In the side bar, use `Open Folder` or `Open HTML` to scan a fixture or local HTML project. The side bar should show file counts, detected pages, detected files, missing-route issues, watcher state, cache state, recent watch events, refresh timestamp, and refresh mode.
 
 ## Recommended next module
 
-The next operational chat/module should implement Phase 1 extended reliability: filesystem watcher, graph cache, incremental refresh, and tighter validation around route resolution. That should come before Phase 2 preview so Chromium receives a stable project model.
+The next module should harden Phase 1 with real local validation of watcher lifecycle on Windows and then move to Phase 2 preview. Phase 2 should consume the stable Project Graph but must not mix preview reload with this watcher/cache PR.
