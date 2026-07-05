@@ -4,5 +4,10 @@ export const crystalIpcChannels = {
   projectOpenFolder: "project:open-folder",
   projectOpenHtmlFile: "project:open-html-file",
   projectScan: "project:scan",
-  projectGetGraph: "project:get-graph"
+  projectGetGraph: "project:get-graph",
+  projectStartWatcher: "project:start-watcher",
+  projectStopWatcher: "project:stop-watcher",
+  projectGetWatcherState: "project:get-watcher-state",
+  projectRefreshGraph: "project:refresh-graph",
+  projectClearCache: "project:clear-cache"
 } as const;
