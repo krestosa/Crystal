@@ -7,23 +7,52 @@ const failures = [];
 
 await expectFile(fixture);
 const html = await readFile(path.join(root, fixture), "utf8");
-const snapshot = buildSnapshot(fixture, html, { maxNodes: 500, maxDepth: 32, maxTextPreviewLength: 64, maxAttributeValueLength: 80, maxAttributesPerNode: 24 });
 
-expect(snapshot.rootNode.type === "document", "Root DOM snapshot node is not a document.");
-expect(snapshot.nodeCount > 0, "DOM snapshot node count is empty.");
-expect(Boolean(findElement(snapshot.rootNode, "html")), "DOM snapshot did not include html element.");
-expect(Boolean(findElement(snapshot.rootNode, "head")), "DOM snapshot did not include head element.");
-expect(Boolean(findElement(snapshot.rootNode, "body")), "DOM snapshot did not include body element.");
-expect(hasAttribute(findElement(snapshot.rootNode, "body"), "data-page", "dom-snapshot"), "DOM snapshot did not preserve a body data attribute.");
-expect(hasAttribute(findElement(snapshot.rootNode, "main"), "id", "content"), "DOM snapshot did not preserve id attribute.");
-expect(hasAttribute(findElement(snapshot.rootNode, "main"), "class", "layout primary"), "DOM snapshot did not preserve class attribute.");
-expect(findText(snapshot.rootNode, "intentionally long")?.textPreview?.endsWith("…"), "Long text preview was not truncated.");
+const completeSnapshot = buildSnapshot(fixture, html, { maxNodes: 500, maxDepth: 32, maxTextPreviewLength: 512, maxAttributeValueLength: 256, maxAttributesPerNode: 24 });
+expect(completeSnapshot.rootNode.type === "document", "Root DOM snapshot node is not a document.");
+expect(completeSnapshot.nodeCount > 0, "DOM snapshot node count is empty.");
+expect(completeSnapshot.nodeCount === countNodes(completeSnapshot.rootNode), "DOM snapshot nodeCount does not match recursive node count.");
+expect(completeSnapshot.maxDepth === getMaxDepth(completeSnapshot.rootNode), "DOM snapshot maxDepth does not match recursive max depth.");
+expect(completeSnapshot.nodeCount >= 20, "DOM snapshot fixture did not produce enough nodes to validate completeness.");
+expect(completeSnapshot.isTruncated === false, "Complete DOM snapshot was incorrectly marked as truncated.");
+expect(renderSnapshot(completeSnapshot).includes(`#snapshot complete — ${completeSnapshot.nodeCount} nodes`), "Complete DOM snapshot did not render an explicit completion marker.");
+expect(!renderSnapshot(completeSnapshot).includes("… truncated"), "Complete DOM snapshot rendered a truncation marker.");
 
-const limitedNodes = buildSnapshot(fixture, html, { maxNodes: 4, maxDepth: 32, maxTextPreviewLength: 64, maxAttributeValueLength: 80, maxAttributesPerNode: 24 });
+const htmlElement = findElement(completeSnapshot.rootNode, "html");
+const headElement = findElement(completeSnapshot.rootNode, "head");
+const bodyElement = findElement(completeSnapshot.rootNode, "body");
+expect(Boolean(htmlElement), "DOM snapshot did not include html element.");
+expect(Boolean(headElement), "DOM snapshot did not include head element.");
+expect(Boolean(bodyElement), "DOM snapshot did not include body element.");
+expect(hasAttribute(bodyElement, "data-page", "dom-snapshot"), "DOM snapshot did not preserve a body data attribute.");
+expect(hasAttribute(findElement(completeSnapshot.rootNode, "main"), "id", "content"), "DOM snapshot did not preserve id attribute.");
+expect(hasAttribute(findElement(completeSnapshot.rootNode, "main"), "class", "layout primary"), "DOM snapshot did not preserve class attribute.");
+expect(hasAttribute(findElement(completeSnapshot.rootNode, "section"), "aria-label", "Preview content"), "DOM snapshot did not preserve aria-label attribute.");
+
+const bodyChildren = directElementChildren(bodyElement).map((node) => node.tagName);
+expect(bodyChildren.join(",") === "header,main,footer", "DOM snapshot did not preserve multiple body children in order.");
+expect(Boolean(findElement(completeSnapshot.rootNode, "article")), "DOM snapshot did not preserve nested article content.");
+expect(Boolean(findText(completeSnapshot.rootNode, "Sibling content after the first section")), "DOM snapshot appears to stop before later sibling content.");
+expect(Boolean(findText(completeSnapshot.rootNode, "End of DOM snapshot fixture")), "DOM snapshot did not include footer text at the end of the fixture.");
+
+const previewTruncatedSnapshot = buildSnapshot(fixture, html, { maxNodes: 500, maxDepth: 32, maxTextPreviewLength: 64, maxAttributeValueLength: 80, maxAttributesPerNode: 24 });
+expect(previewTruncatedSnapshot.isTruncated, "Text preview truncation did not mark the snapshot as truncated.");
+expect(findText(previewTruncatedSnapshot.rootNode, "intentionally long")?.textPreview?.endsWith("…"), "Long text preview was not truncated with an ellipsis.");
+expect(renderSnapshot(previewTruncatedSnapshot).includes("… truncated"), "Text preview truncation did not render an explicit truncation marker.");
+expect(renderSnapshot(previewTruncatedSnapshot).includes(`#snapshot truncated — ${previewTruncatedSnapshot.nodeCount} nodes shown`), "Truncated DOM snapshot did not render an explicit truncated snapshot marker.");
+
+const limitedNodes = buildSnapshot(fixture, html, { maxNodes: 8, maxDepth: 32, maxTextPreviewLength: 512, maxAttributeValueLength: 256, maxAttributesPerNode: 24 });
 expect(limitedNodes.issues.some((issue) => issue.code === "node-limit-exceeded"), "Node limit did not produce a controlled issue.");
+expect(limitedNodes.isTruncated, "Node limit did not mark snapshot as truncated.");
+expect(limitedNodes.nodeCount === countNodes(limitedNodes.rootNode), "Limited node snapshot nodeCount does not match rendered nodes.");
+expect(renderSnapshot(limitedNodes).includes("… truncated"), "Node limit did not render an explicit node truncation marker.");
+expect(renderSnapshot(limitedNodes).includes(`#snapshot truncated — ${limitedNodes.nodeCount} nodes shown`), "Node-limited snapshot did not render truncated completion state.");
 
-const limitedDepth = buildSnapshot(fixture, html, { maxNodes: 500, maxDepth: 2, maxTextPreviewLength: 64, maxAttributeValueLength: 80, maxAttributesPerNode: 24 });
+const limitedDepth = buildSnapshot(fixture, html, { maxNodes: 500, maxDepth: 2, maxTextPreviewLength: 512, maxAttributeValueLength: 256, maxAttributesPerNode: 24 });
 expect(limitedDepth.issues.some((issue) => issue.code === "depth-limit-exceeded"), "Depth limit did not produce a controlled issue.");
+expect(limitedDepth.isTruncated, "Depth limit did not mark snapshot as truncated.");
+expect(limitedDepth.maxDepth === getMaxDepth(limitedDepth.rootNode), "Depth-limited snapshot maxDepth does not match rendered nodes.");
+expect(renderSnapshot(limitedDepth).includes("… truncated"), "Depth limit did not render an explicit truncation marker.");
 
 const missingIssue = await readTarget("missing-dom-snapshot.html");
 expect(missingIssue?.code === "file-not-found", "Missing DOM snapshot target did not produce file-not-found.");
@@ -38,7 +67,7 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log("DOM snapshot validation passed: static HTML parsing, attributes, text truncation, node/depth limits, missing file handling, traversal blocking, and safe relative issues.");
+console.log("DOM snapshot validation passed: static HTML parsing, multiple body children, recursive nodeCount, maxDepth, completion markers, truncation markers, missing file handling, traversal blocking, and safe relative issues.");
 
 async function expectFile(relativePath) { try { await access(path.join(root, relativePath)); } catch { failures.push(`Missing fixture file: ${relativePath}`); } }
 function expect(ok, message) { if (!ok) failures.push(message); }
@@ -65,13 +94,13 @@ function resolveTarget(request) {
 
 function buildSnapshot(rootRelativePath, source, limits) {
   const issues = [];
-  const rootNode = node("document", null, null, [], 0, false);
-  const stack = [rootNode];
   let nodeCount = 0;
   let maxDepth = 0;
-  let cursor = 0;
   let nodeLimitReported = false;
   let depthLimitReported = false;
+  const rootNode = node("document", null, null, [], 0, false);
+  const stack = [rootNode];
+  let cursor = 0;
 
   while (cursor < source.length) {
     const start = source.indexOf("<", cursor);
@@ -91,7 +120,8 @@ function buildSnapshot(rootRelativePath, source, limits) {
     cursor = end + 1;
   }
 
-  return { rootRelativePath, rootNode, nodeCount, maxDepth, issues };
+  const isTruncated = hasTruncatedNode(rootNode) || issues.some((item) => item.code === "node-limit-exceeded" || item.code === "depth-limit-exceeded");
+  return { rootRelativePath, rootNode, nodeCount, maxDepth, isTruncated, issues };
 
   function appendText(value) {
     const preview = textPreview(value, limits.maxTextPreviewLength);
@@ -111,9 +141,8 @@ function buildSnapshot(rootRelativePath, source, limits) {
       if (!nodeLimitReported) { issues.push(issue("node-limit-exceeded", "DOM snapshot node limit was reached.", rootRelativePath, `Maximum node count ${limits.maxNodes} reached.`)); nodeLimitReported = true; }
       return null;
     }
-    nodeCount += 1;
-    maxDepth = Math.max(maxDepth, depth);
     const child = node(type, tagName, textPreviewValue, attributes, depth, truncated);
+    maxDepth = Math.max(maxDepth, depth);
     parent.children.push(child);
     parent.childCount = parent.children.length;
     return child;
@@ -122,6 +151,44 @@ function buildSnapshot(rootRelativePath, source, limits) {
   function close(tagName) {
     for (let index = stack.length - 1; index > 0; index -= 1) if (stack[index].tagName === tagName) { stack.length = index; return; }
   }
+
+  function node(type, tagName, textPreviewValue, attributes, depth, truncated) {
+    nodeCount += 1;
+    return { type, tagName, textPreview: textPreviewValue, attributes, children: [], depth, childCount: 0, truncated };
+  }
+}
+
+function renderSnapshot(snapshot) {
+  const lines = [];
+  appendNodeLine(snapshot.rootNode, lines);
+  lines.push("");
+  lines.push(snapshot.isTruncated ? `#snapshot truncated — ${snapshot.nodeCount} nodes shown` : `#snapshot complete — ${snapshot.nodeCount} nodes`);
+  return lines.join("\n");
+}
+
+function appendNodeLine(current, lines) {
+  const indent = "  ".repeat(Math.max(0, current.depth));
+  lines.push(`${indent}${renderNodeLabel(current)}`);
+  if (current.truncated) lines.push(`${indent}  … truncated`);
+  for (const child of current.children) appendNodeLine(child, lines);
+}
+
+function renderNodeLabel(current) {
+  if (current.type === "document") return "#document";
+  if (current.type === "doctype") return `<!doctype ${current.textPreview ?? "html"}>`;
+  if (current.type === "comment") return `<!-- ${current.textPreview ?? ""} -->`;
+  if (current.type === "text") return `#text \"${current.textPreview ?? ""}\"`;
+  return `<${current.tagName ?? "element"}${renderAttributes(current.attributes)}>`;
+}
+
+function renderAttributes(attributes) {
+  if (attributes.length === 0) return "";
+  return ` ${attributes.map(renderAttribute).join(" ")}`;
+}
+
+function renderAttribute(attribute) {
+  if (attribute.value === null) return attribute.name;
+  return `${attribute.name}=\"${attribute.value}${attribute.truncated ? "…" : ""}\"`;
 }
 
 function parseTag(raw, limits) {
@@ -155,9 +222,12 @@ function textPreview(value, maxLength) {
   return { value: `${normalized.slice(0, Math.max(0, maxLength - 1))}…`, truncated: true };
 }
 
-function node(type, tagName, textPreviewValue, attributes, depth, truncated) { return { type, tagName, textPreview: textPreviewValue, attributes, children: [], depth, childCount: 0, truncated }; }
+function countNodes(current) { return 1 + current.children.reduce((total, child) => total + countNodes(child), 0); }
+function getMaxDepth(current) { return current.children.reduce((maximum, child) => Math.max(maximum, getMaxDepth(child)), current.depth); }
+function hasTruncatedNode(current) { return current.truncated || current.children.some((child) => hasTruncatedNode(child)); }
 function issue(code, message, relativePath, reason) { return { code, severity: code === "node-limit-exceeded" || code === "depth-limit-exceeded" ? "warning" : "error", message, relativePath, reason, timestamp: Date.now() }; }
 function isVoid(tagName) { return ["area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source", "track", "wbr"].includes(tagName); }
 function findElement(current, tagName) { if (current.type === "element" && current.tagName === tagName) return current; for (const child of current.children) { const match = findElement(child, tagName); if (match) return match; } return null; }
 function findText(current, fragment) { if (current.type === "text" && current.textPreview?.includes(fragment)) return current; for (const child of current.children) { const match = findText(child, fragment); if (match) return match; } return null; }
 function hasAttribute(nodeValue, name, value) { return Boolean(nodeValue?.attributes.some((attribute) => attribute.name === name && attribute.value === value)); }
+function directElementChildren(nodeValue) { return nodeValue?.children.filter((child) => child.type === "element") ?? []; }
