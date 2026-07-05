@@ -1,0 +1,10 @@
+.crystal-status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  border-top: 1px solid var(--crystal-color-border);
+  color: var(--crystal-color-muted);
+  background: var(--crystal-color-surface-strong);
+  font-size: 12px;
+}

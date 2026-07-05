@@ -1,0 +1,35 @@
+{
+  "name": "crystal",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Crystal desktop application bootstrap.",
+  "type": "module",
+  "main": "dist/main/main.js",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run build && electron dist/main/main.js",
+    "build": "node scripts/build.mjs",
+    "build:main": "node scripts/build-ts.mjs main",
+    "build:preload": "node scripts/build-ts.mjs preload",
+    "build:renderer": "npm run build:html && npm run build:scss && node scripts/build-ts.mjs renderer",
+    "build:html": "node scripts/build-html.mjs",
+    "build:scss": "node scripts/build-scss.mjs",
+    "build:ts": "node scripts/build-ts.mjs",
+    "typecheck": "tsc --noEmit",
+    "validate:structure": "node scripts/validate-structure.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "electron": "^35.0.0",
+    "esbuild": "^0.24.2",
+    "sass": "^1.83.4",
+    "typescript": "^5.7.2"
+  },
+  "engines": {
+    "node": ">=22.0.0",
+    "npm": ">=10.0.0"
+  }
+}
