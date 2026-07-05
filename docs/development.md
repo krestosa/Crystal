@@ -67,11 +67,67 @@ npm run build && electron dist/main/main.cjs
 
 The command first builds the app and then launches the Electron main entrypoint from `dist/main/main.cjs`. Electron main and preload are emitted as explicit CommonJS files, `dist/main/main.cjs` and `dist/preload/preload.cjs`, because the repository root keeps `"type": "module"` for `.js` files. If Electron is missing, corrupted, or blocked by install settings, the command must fail visibly.
 
+## Local validation runner
+
+Before requesting a PR merge, run:
+
+```bash
+npm run validate:local
+```
+
+The runner executes:
+
+```txt
+npm install
+npm run build
+npm run typecheck
+npm run validate:structure
+npm run validate:project-graph
+npm run validate:project-watch
+npm run validate:local:watch
+npm run doctor:electron
+```
+
+It prints each command, measures duration per step, stops on the first failure, prints a final summary, exits with code `1` on failure, and exits with code `0` only when every check passes.
+
+`npm run validate:local` does not run `npm run dev` by default. To include the interactive Electron launch check:
+
+```bash
+npm run validate:local -- --with-dev
+```
+
+With `--with-dev`, Electron opens during `npm run dev`. The user must close the app manually before the validation runner can finish.
+
+## Watcher filesystem validation
+
+Use:
+
+```bash
+npm run validate:local:watch
+```
+
+This check creates a temporary project under `.tmp/validation/watch-run-<timestamp>`, performs real filesystem operations, validates graph-relevant and ignored paths, verifies that ignored paths do not count as refresh-triggering events, stops the watcher harness, and removes the temporary project in a `finally` cleanup block.
+
+The temporary project includes:
+
+```txt
+index.html
+styles/main.css
+styles/delete-watch.css
+scripts/main.js
+```
+
+The validation modifies HTML and JavaScript files, creates a CSS file, deletes a CSS file, creates/deletes `scratch.tmp`, and verifies `.crystal-cache` as ignored.
+
+The script uses Node standard library APIs only. It intentionally does not use Playwright, Cypress, Spectron, or another UI automation framework.
+
 ## Project Graph watcher development
 
 After opening a project folder or HTML file in the app, the Project Graph panel can start and stop the watcher, manually refresh the graph, clear the in-memory cache, and display recent file events.
 
-Use `fixtures/sample-html-project` for local checks. Modify `styles/watch-target.css`, create a small SVG placeholder, or delete a temporary fixture file to verify event classification and refresh behavior. Ambiguous events should fall back to full rescan.
+Use `fixtures/sample-html-project` for manual local checks. Modify `styles/watch-target.css`, create a small SVG placeholder, or delete a temporary fixture file to verify event classification and refresh behavior. Ambiguous events should fall back to full rescan.
+
+Manual UI checks remain required only where there is not enough automation yet. The validation runner must be updated whenever a roadmap phase adds new required checks.
 
 ## Do not use forced audit fixes
 
@@ -88,11 +144,11 @@ Forced audit fixes may replace major dependency versions, rewrite the lockfile, 
 After a clean install, run:
 
 ```bash
-npm run build
-npm run typecheck
-npm run validate:structure
-npm run validate:project-graph
-npm run validate:project-watch
-npm run doctor:electron
-npm run dev
+npm run validate:local
+```
+
+For the explicit Electron launch check, run:
+
+```bash
+npm run validate:local -- --with-dev
 ```
