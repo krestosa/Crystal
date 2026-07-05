@@ -2,6 +2,7 @@ import { dialog, ipcMain } from "electron";
 import path from "node:path";
 import { crystalIpcChannels } from "../../../../../packages/shared/constants/ipc.constants";
 import type { ProjectPreviewSetTargetRequest } from "../../../../../packages/core/project/preview/project-preview.types";
+import { buildProjectDomSnapshotFromPreviewTarget, clearProjectDomSnapshot, getProjectDomSnapshotState } from "../dom/project-dom-snapshot-service";
 import { getCurrentProjectRoot, getCurrentProjectScanResult } from "./project-ipc-state";
 import { scanProjectRoot } from "./project-scan-service";
 import { clearProjectGraphCache, getProjectWatcherState, refreshProjectGraphFromRenderer, startProjectWatcher, stopProjectWatcher } from "./project-live-service";
@@ -39,4 +40,7 @@ export function registerProjectIpcHandlers(): void {
     return setProjectPreviewTarget(request.relativePath);
   });
   ipcMain.handle(crystalIpcChannels.projectPreviewGetState, () => getProjectPreviewState());
+  ipcMain.handle(crystalIpcChannels.projectDomSnapshotBuild, () => buildProjectDomSnapshotFromPreviewTarget());
+  ipcMain.handle(crystalIpcChannels.projectDomSnapshotGetState, () => getProjectDomSnapshotState());
+  ipcMain.handle(crystalIpcChannels.projectDomSnapshotClear, () => clearProjectDomSnapshot());
 }
