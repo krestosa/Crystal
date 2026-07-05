@@ -32,7 +32,23 @@ Preview issues are coalesced by issue type, safe path, and reason. The state kee
 
 The renderer does not build absolute file paths. It calls explicit preload methods for load, reload, target selection, and state. Main resolves targets from the active Project Graph and returns a safe Preview URL.
 
-The Preview frame is intentionally limited to real HTML rendering and minimal diagnostics. It is not a DOM selection surface, Inspector, editor, browser console, canvas, or overlay engine in this phase.
+The Preview frame is intentionally limited to real HTML rendering, diagnostics, read-only DOM snapshots, and basic read-only node selection. It is not an Inspector, editor, browser console, canvas, or overlay engine in this phase.
+
+## Preview selection boundary
+
+The Phase 2 Preview selection model lives under `packages/core/project/preview-selection/`. It defines `previewSelection` state separately from Preview load state and DOM snapshot state. The state stores only whether selection mode is enabled, the current mode, a sanitized selected-node summary, the last selected timestamp, and one controlled issue.
+
+Electron main owns the authoritative Preview selection state and exposes only explicit IPC channels for get-state, enable, disable, clear, set-selected-node, and state-changed. Main validates every selected-node payload before saving it. Invalid payloads do not replace the current `selectedNode`; they only produce a controlled `lastIssue` without absolute paths or raw dangerous data.
+
+The Preview document receives an injected script only for HTML responses served through `crystal-preview://`. The script is inactive by default. The renderer toggles it with namespaced `postMessage` commands: `crystal:preview-selection:enable`, `crystal:preview-selection:disable`, and `crystal:preview-selection:clear`.
+
+The Preview iframe remains sandboxed without `allow-same-origin`. Since the iframe can have an opaque origin, the renderer does not depend on `event.origin`. It accepts selected-node messages only when `event.source === iframe.contentWindow` and the message type is `crystal:preview-selection:selected`.
+
+The renderer bridge never reads `iframe.contentDocument`, never reads `iframe.contentWindow.document`, and never exposes Node or filesystem APIs to the iframe. It validates selected-node payloads locally before IPC, then main validates the sanitized payload again.
+
+Selected-node data is read-only UI state. It can show `snapshotPath`, normalized `tagName`, `siblingIndex`, `depth`, limited `attributesPreview`, limited `textPreview`, and limited `selectorPreview`. It cannot edit attributes, mutate project files, compute styles, scroll to source, or drive Inspector behavior.
+
+Live-DOM `snapshotPath` values can diverge from static DOM snapshot paths because the browser can insert implicit nodes, recover malformed HTML differently, or execute project scripts that mutate the DOM. Exact live-DOM to static-source mapping is deferred.
 
 ## DOM snapshot boundary
 
@@ -72,4 +88,4 @@ Preview reload is downstream of Project Graph refresh. Watcher events do not rel
 
 ## Current limitations
 
-The current Project Graph is intentionally shallow. It detects files, HTML pages, direct dependencies, basic CSS references, basic script imports, external routes, and missing local routes. It now includes watcher/cache plumbing, conservative semi-incremental refresh planning, the first real Chromium Preview, sanitized Preview diagnostics, and a hardened read-only static DOM snapshot foundation. It does not implement live DOM inspection, DOM visual selection, CSS cascade analysis, framework alias resolution, editor features, WebGPU overlay, or Rust/WASM analysis.
+The current Project Graph is intentionally shallow. It detects files, HTML pages, direct dependencies, basic CSS references, basic script imports, external routes, and missing local routes. It now includes watcher/cache plumbing, conservative semi-incremental refresh planning, the first real Chromium Preview, sanitized Preview diagnostics, a hardened read-only static DOM snapshot foundation, and a basic read-only Preview selection bridge. It does not implement Inspector MVP, visual editing, editable attributes, computed styles, live/static DOM path reconciliation, CSS cascade analysis, framework alias resolution, editor features, WebGPU overlay, or Rust/WASM analysis.
