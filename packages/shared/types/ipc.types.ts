@@ -5,6 +5,11 @@ import type { crystalIpcChannels } from "../constants/ipc.constants";
 
 export type CrystalIpcChannel = typeof crystalIpcChannels[keyof typeof crystalIpcChannels];
 
+export interface ProjectWatcherUpdatePayload {
+  readonly watcherState: ProjectWatcherState;
+  readonly refresh: ProjectGraphRefreshResult | null;
+}
+
 export interface CrystalIpcRequestMap {
   readonly [channel: string]: void;
 }
@@ -22,4 +27,5 @@ export interface CrystalIpcResponseMap {
   readonly "project:get-watcher-state": ProjectWatcherState;
   readonly "project:refresh-graph": ProjectGraphRefreshResult;
   readonly "project:clear-cache": ProjectWatcherState;
+  readonly "project:watcher-updated": ProjectWatcherUpdatePayload;
 }
