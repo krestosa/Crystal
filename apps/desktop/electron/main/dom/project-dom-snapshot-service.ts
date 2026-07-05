@@ -5,9 +5,9 @@ import { projectDomSnapshotEventTypes } from "../../../../../packages/core/event
 import { buildProjectDomSnapshot } from "../../../../../packages/core/project/dom/project-dom-snapshot-builder";
 import { initialProjectDomSnapshotState } from "../../../../../packages/core/project/dom/project-dom-snapshot-state";
 import type { ProjectDomSnapshotBuildResult, ProjectDomSnapshotIssue, ProjectDomSnapshotState } from "../../../../../packages/core/project/dom/project-dom-snapshot.types";
+import type { ProjectPreviewTarget } from "../../../../../packages/core/project/preview/project-preview.types";
 import { appState } from "../../../../../packages/core/state/app-state";
 import { crystalIpcChannels } from "../../../../../packages/shared/constants/ipc.constants";
-import { getProjectPreviewState } from "../preview/project-preview-service";
 
 let domSnapshotOperationInFlight = false;
 
@@ -15,7 +15,7 @@ export function getProjectDomSnapshotState(): ProjectDomSnapshotState {
   return appState.getSnapshot().domSnapshot;
 }
 
-export async function buildProjectDomSnapshotFromPreviewTarget(): Promise<ProjectDomSnapshotBuildResult> {
+export async function buildProjectDomSnapshotFromPreviewTarget(target: ProjectPreviewTarget | null): Promise<ProjectDomSnapshotBuildResult> {
   if (domSnapshotOperationInFlight) return failWithCurrentState("unknown", "DOM snapshot build was skipped because another snapshot operation is already running.", null, "Snapshot build already running.");
 
   domSnapshotOperationInFlight = true;
@@ -24,7 +24,6 @@ export async function buildProjectDomSnapshotFromPreviewTarget(): Promise<Projec
   notifyProjectDomSnapshotRenderer(requestedState);
 
   try {
-    const target = getProjectPreviewState().target;
     if (!target) return failSnapshot(createIssue("no-preview-target", "No Preview target is available for DOM snapshot.", null, "Load a Preview target before building a DOM snapshot."));
 
     let html: string;
