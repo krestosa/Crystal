@@ -54,11 +54,28 @@ Covered:
 - typed IPC for watcher/cache control
 - automated local watcher filesystem validation over a temporary project
 
+### Phase 2 — Real Preview foundation
+
+Covered:
+
+- Preview state model, target model, issue model, and reload reason model
+- Preview event and command type definitions
+- Project Graph page target selection
+- secure project-relative Preview path resolver
+- custom `crystal-preview://current/<relative-project-path>` protocol
+- basic MIME serving for HTML, CSS, JavaScript, SVG, images, and fonts
+- typed IPC and preload Preview API
+- minimal renderer Preview panel in the Design view
+- manual Load Preview and Reload Preview
+- target change reload from Project Graph pages
+- controlled Preview reload after relevant watcher-driven Project Graph refreshes
+- non-visual `validate:preview` script
+
 Not covered yet:
 
-- real Chromium preview pipeline for user projects
-- preview reload pipeline
 - DOM snapshot parsing
+- DOM selection
+- DOM tree
 - CSS cascade or specificity analysis
 - framework alias resolution
 - TypeScript semantic analysis
@@ -67,7 +84,9 @@ Not covered yet:
 - visual Design MVP
 - Inspector MVP
 - Developer IDE features
+- browser console integration
 - Electron UI automation framework
+- screenshot testing
 
 ## Required validation before PR merge
 
@@ -77,7 +96,7 @@ Run:
 npm run validate:local
 ```
 
-The runner executes the current install, build, typecheck, Project Graph, watcher/cache, watcher filesystem, and Electron diagnostic checks in sequence. It stops on the first failure and returns a non-zero exit code.
+The runner executes the current install, build, typecheck, Project Graph, watcher/cache, Preview, watcher filesystem, and Electron diagnostic checks in sequence. It stops on the first failure and returns a non-zero exit code.
 
 For the explicit Electron launch check, run:
 
@@ -91,4 +110,4 @@ The validation runner is mandatory before requesting PR merge. It must be update
 
 ## Recommended next module
 
-After this local validation runner PR is merged and `npm run validate:local` passes on Windows, the next module can begin Phase 2 Preview real. Phase 2 should consume the stable Project Graph and watcher/cache foundation without mixing preview implementation back into the tooling PR.
+After this Preview foundation PR passes local validation on Windows, the next module should harden Preview reload/security behavior or add the next Phase 2 primitive explicitly. Do not jump to Design MVP, Inspector MVP, Developer IDE, WebGPU, or Rust/WASM from this PR.
