@@ -1,5 +1,6 @@
 import path from "node:path";
 import type { ProjectDependency, ProjectPage, ProjectScanResult } from "../graph/project-graph.types";
+import { createProjectPreviewIssue } from "./project-preview-issues";
 import { normalizePath, normalizeProjectPreviewRelativePath, resolveProjectPreviewPath } from "./project-preview-path";
 import type { ProjectPreviewIssue, ProjectPreviewTarget } from "./project-preview.types";
 
@@ -59,5 +60,5 @@ function isProjectRelativePath(relativePath: string): boolean {
 }
 
 function fail(code: ProjectPreviewIssue["code"], message: string, issuePath: string | null): ProjectPreviewTargetSelection {
-  return { ok: false, target: null, issue: { code, severity: "error", message, path: issuePath } };
+  return { ok: false, target: null, issue: createProjectPreviewIssue({ code, message, path: issuePath, source: "target" }) };
 }
