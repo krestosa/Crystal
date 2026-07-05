@@ -35,8 +35,8 @@ export async function loadProjectPreview(reason: ProjectPreviewReloadReason = "m
     if (!targetSelection.ok || !targetSelection.target) return failPreview(targetSelection.issue ?? createIssue("no-preview-target", "No preview target could be resolved.", null), reason);
 
     await access(targetSelection.target.absolutePath);
-    const previewUrl = createProjectPreviewUrl(targetSelection.target.relativePath);
     const now = Date.now();
+    const previewUrl = createProjectPreviewUrl(targetSelection.target.relativePath, now);
     const state = patchPreview({
       rootPath: targetSelection.target.rootPath,
       target: targetSelection.target,
@@ -120,17 +120,17 @@ function failPreview(issue: ProjectPreviewIssue, reason: ProjectPreviewReloadRea
 }
 
 function emitPreviewRequestEvent(reason: ProjectPreviewReloadReason): void {
-  const eventType = reason === "watch" || reason === "manual" ? projectPreviewEventTypes.projectPreviewReloadRequested : projectPreviewEventTypes.projectPreviewLoadRequested;
+  const eventType = reason === "watch" ? projectPreviewEventTypes.projectPreviewReloadRequested : projectPreviewEventTypes.projectPreviewLoadRequested;
   eventBus.emit({ type: eventType, payload: { state: getProjectPreviewState() }, createdAt: Date.now() });
 }
 
 function emitPreviewSuccessEvent(reason: ProjectPreviewReloadReason, result: ProjectPreviewLoadResult): void {
-  const eventType = reason === "watch" || reason === "manual" ? projectPreviewEventTypes.projectPreviewReloaded : projectPreviewEventTypes.projectPreviewLoaded;
+  const eventType = reason === "watch" ? projectPreviewEventTypes.projectPreviewReloaded : projectPreviewEventTypes.projectPreviewLoaded;
   eventBus.emit({ type: eventType, payload: { result }, createdAt: Date.now() });
 }
 
 function emitPreviewFailureEvent(reason: ProjectPreviewReloadReason, issue: ProjectPreviewIssue, state: ProjectPreviewState): void {
-  const eventType = reason === "watch" || reason === "manual" ? projectPreviewEventTypes.projectPreviewReloadFailed : projectPreviewEventTypes.projectPreviewLoadFailed;
+  const eventType = reason === "watch" ? projectPreviewEventTypes.projectPreviewReloadFailed : projectPreviewEventTypes.projectPreviewLoadFailed;
   eventBus.emit({ type: eventType, payload: { issue, state }, createdAt: Date.now() });
 }
 
