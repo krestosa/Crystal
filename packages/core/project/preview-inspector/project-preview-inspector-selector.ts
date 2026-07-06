@@ -26,6 +26,11 @@ export function selectProjectPreviewInspectorViewModel(input: ProjectPreviewInsp
     attributesPreview: selectedNode.attributesPreview
   };
 
+  const snapshot = input.domSnapshot.currentDomSnapshot;
+  if (snapshot && input.preview.target && snapshot.rootRelativePath !== input.preview.target.relativePath) {
+    return createViewModel("stale", "DOM Snapshot target does not match the current Preview target.", selectedDetails, null);
+  }
+
   if (input.previewSelection.mappingStatus === "missing-snapshot") {
     return createViewModel("missing-snapshot", "Build DOM Snapshot required.", selectedDetails, null);
   }
@@ -47,7 +52,7 @@ export function selectProjectPreviewInspectorViewModel(input: ProjectPreviewInsp
   }
 
   const mappedPath = input.previewSelection.mappedSnapshotPath;
-  const snapshotRoot = input.domSnapshot.currentDomSnapshot?.rootNode ?? null;
+  const snapshotRoot = snapshot?.rootNode ?? null;
   if (!mappedPath || !snapshotRoot) {
     return createViewModel("defensive", "Matched selection has no available DOM Snapshot node.", selectedDetails, null);
   }
