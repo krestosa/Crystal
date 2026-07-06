@@ -1,5 +1,7 @@
 import { initialProjectDomSnapshotState } from "../project/dom/project-dom-snapshot-state";
 import type { ProjectDomSnapshotState } from "../project/dom/project-dom-snapshot.types";
+import { initialProjectPreviewSelectionState } from "../project/preview-selection/project-preview-selection-state";
+import type { ProjectPreviewSelectionState } from "../project/preview-selection/project-preview-selection.types";
 import { initialProjectPreviewState } from "../project/preview/project-preview-state";
 import type { ProjectPreviewState } from "../project/preview/project-preview.types";
 import type { AppStateSnapshot, ProjectGraphState } from "./app-state.types";
@@ -29,7 +31,8 @@ const initialState: AppStateSnapshot = {
   ui: { activeMode: "design" },
   projectGraph: initialProjectGraphState,
   preview: initialProjectPreviewState,
-  domSnapshot: initialProjectDomSnapshotState
+  domSnapshot: initialProjectDomSnapshotState,
+  previewSelection: initialProjectPreviewSelectionState
 };
 
 export class AppStateStore {
@@ -57,6 +60,11 @@ export class AppStateStore {
 
   patchProjectDomSnapshot(nextState: Partial<ProjectDomSnapshotState>): void {
     this.state = { ...this.state, domSnapshot: { ...this.state.domSnapshot, ...nextState } };
+    this.notify();
+  }
+
+  patchProjectPreviewSelection(nextState: Partial<ProjectPreviewSelectionState>): void {
+    this.state = { ...this.state, previewSelection: { ...this.state.previewSelection, ...nextState } };
     this.notify();
   }
 

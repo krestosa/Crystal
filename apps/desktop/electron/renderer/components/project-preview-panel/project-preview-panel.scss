@@ -31,7 +31,7 @@
 
 .crystal-project-preview-panel__error { color: #ffb4a8; }
 
-.crystal-project-preview-panel__actions { display: flex; gap: 8px; }
+.crystal-project-preview-panel__actions { display: flex; flex-wrap: wrap; gap: 8px; }
 
 .crystal-project-preview-panel__button,
 .crystal-project-preview-panel__target {
@@ -86,6 +86,7 @@
   color: rgba(255, 255, 255, 0.86);
 }
 
+.crystal-project-preview-panel__selection,
 .crystal-project-preview-panel__issues {
   padding: 12px;
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -93,7 +94,58 @@
   background: rgba(0, 0, 0, 0.18);
 }
 
-.crystal-project-preview-panel__issues-title { margin: 0 0 8px; font-size: 13px; line-height: 1.2; }
+.crystal-project-preview-panel__selection-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.crystal-project-preview-panel__selection-title,
+.crystal-project-preview-panel__issues-title { margin: 0; font-size: 13px; line-height: 1.2; }
+
+.crystal-project-preview-panel__selection-mode {
+  margin: 0;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.crystal-project-preview-panel__selection-summary {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.crystal-project-preview-panel__selection-summary div {
+  min-width: 0;
+  padding: 8px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.crystal-project-preview-panel__selection-summary dt {
+  margin-bottom: 4px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.crystal-project-preview-panel__selection-summary dd {
+  overflow: hidden;
+  margin: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.crystal-project-preview-panel__selection-issue {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: #ffb4a8;
+}
+
 .crystal-project-preview-panel__issues-empty { margin: 0; font-size: 12px; color: rgba(255, 255, 255, 0.58); }
 .crystal-project-preview-panel__issues-list { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; list-style: none; }
 

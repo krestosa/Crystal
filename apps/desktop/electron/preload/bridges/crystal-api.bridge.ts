@@ -13,6 +13,10 @@ function invokePreviewTarget(relativePath: string): Promise<CrystalIpcResponseMa
   return ipcRenderer.invoke(crystalIpcChannels.projectPreviewSetTarget, { relativePath }) as Promise<CrystalIpcResponseMap["project:preview-set-target"]>;
 }
 
+function invokePreviewSelectedNode(payload: unknown): Promise<CrystalIpcResponseMap["project:preview-selection:set-selected-node"]> {
+  return ipcRenderer.invoke(crystalIpcChannels.projectPreviewSelectionSetSelectedNode, payload) as Promise<CrystalIpcResponseMap["project:preview-selection:set-selected-node"]>;
+}
+
 function onCrystal<TChannel extends CrystalIpcChannel>(channel: TChannel, listener: (payload: CrystalIpcResponseMap[TChannel]) => void): () => void {
   if (!isCrystalIpcChannel(channel)) throw new Error("Invalid Crystal IPC channel.");
   const subscription = (_event: IpcRendererEvent, payload: CrystalIpcResponseMap[TChannel]) => listener(payload);
@@ -42,9 +46,15 @@ const crystalApi: CrystalPreloadApi = {
     buildDomSnapshot: () => invokeCrystal(crystalIpcChannels.projectDomSnapshotBuild),
     getDomSnapshotState: () => invokeCrystal(crystalIpcChannels.projectDomSnapshotGetState),
     clearDomSnapshot: () => invokeCrystal(crystalIpcChannels.projectDomSnapshotClear),
+    getPreviewSelectionState: () => invokeCrystal(crystalIpcChannels.projectPreviewSelectionGetState),
+    enablePreviewSelection: () => invokeCrystal(crystalIpcChannels.projectPreviewSelectionEnable),
+    disablePreviewSelection: () => invokeCrystal(crystalIpcChannels.projectPreviewSelectionDisable),
+    clearPreviewSelection: () => invokeCrystal(crystalIpcChannels.projectPreviewSelectionClear),
+    setPreviewSelectedNode: (payload) => invokePreviewSelectedNode(payload),
     onWatcherStateChanged: (listener) => onCrystal(crystalIpcChannels.projectWatcherUpdated, listener),
     onPreviewStateChanged: (listener) => onCrystal(crystalIpcChannels.projectPreviewUpdated, listener),
-    onDomSnapshotStateChanged: (listener) => onCrystal(crystalIpcChannels.projectDomSnapshotUpdated, listener)
+    onDomSnapshotStateChanged: (listener) => onCrystal(crystalIpcChannels.projectDomSnapshotUpdated, listener),
+    onPreviewSelectionStateChanged: (listener) => onCrystal(crystalIpcChannels.projectPreviewSelectionStateChanged, listener)
   }
 };
 

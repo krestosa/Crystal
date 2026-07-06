@@ -7,6 +7,7 @@ import { getCurrentProjectRoot, getCurrentProjectScanResult } from "./project-ip
 import { scanProjectRoot } from "./project-scan-service";
 import { clearProjectGraphCache, getProjectWatcherState, refreshProjectGraphFromRenderer, startProjectWatcher, stopProjectWatcher } from "./project-live-service";
 import { getProjectPreviewState, loadProjectPreview, reloadProjectPreview, setProjectPreviewTarget } from "../preview/project-preview-service";
+import { clearProjectPreviewSelection, disableProjectPreviewSelection, enableProjectPreviewSelection, getProjectPreviewSelectionState, setProjectPreviewSelectedNode } from "../preview-selection/project-preview-selection-service";
 
 export function registerProjectIpcHandlers(): void {
   ipcMain.handle(crystalIpcChannels.projectOpenFolder, async () => {
@@ -43,4 +44,9 @@ export function registerProjectIpcHandlers(): void {
   ipcMain.handle(crystalIpcChannels.projectDomSnapshotBuild, () => buildProjectDomSnapshotFromPreviewTarget(getProjectPreviewState().target));
   ipcMain.handle(crystalIpcChannels.projectDomSnapshotGetState, () => getProjectDomSnapshotState());
   ipcMain.handle(crystalIpcChannels.projectDomSnapshotClear, () => clearProjectDomSnapshot());
+  ipcMain.handle(crystalIpcChannels.projectPreviewSelectionGetState, () => getProjectPreviewSelectionState());
+  ipcMain.handle(crystalIpcChannels.projectPreviewSelectionEnable, () => enableProjectPreviewSelection());
+  ipcMain.handle(crystalIpcChannels.projectPreviewSelectionDisable, () => disableProjectPreviewSelection());
+  ipcMain.handle(crystalIpcChannels.projectPreviewSelectionClear, () => clearProjectPreviewSelection());
+  ipcMain.handle(crystalIpcChannels.projectPreviewSelectionSetSelectedNode, (_event, payload: unknown) => setProjectPreviewSelectedNode(payload));
 }
