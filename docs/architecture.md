@@ -45,7 +45,7 @@ Preview issues are coalesced by issue type, safe path, and reason. The state kee
 
 The renderer does not build absolute file paths. It calls explicit preload methods for load, reload, target selection, and state. Main resolves targets from the active Project Graph and returns a safe Preview URL.
 
-The Preview frame is intentionally limited to real HTML rendering, diagnostics, read-only DOM snapshots, basic read-only node selection, and conservative selection-to-snapshot mapping. It is not an Inspector, editor, browser console, canvas, or overlay engine in this phase.
+The Preview frame is intentionally limited to real HTML rendering, diagnostics, read-only DOM snapshots, basic read-only node selection, conservative selection-to-snapshot mapping, and minimal read-only structural inspection. It is not an editor, browser console, canvas, CSS Inspector, or overlay engine in this phase.
 
 ## Preview selection boundary
 
@@ -59,13 +59,23 @@ The Preview iframe remains sandboxed without `allow-same-origin`. Since the ifra
 
 The renderer bridge never reads `iframe.contentDocument`, never reads `iframe.contentWindow.document`, and never exposes Node or filesystem APIs to the iframe. It validates selected-node payloads locally before IPC, then main validates the sanitized payload again.
 
-Selected-node data is read-only UI state. It can show `snapshotPath`, normalized `tagName`, `siblingIndex`, `depth`, limited `attributesPreview`, limited `textPreview`, limited `selectorPreview`, `mappingStatus`, `mappedSnapshotPath`, and `mappingReason`. It cannot edit attributes, mutate project files, compute styles, scroll to source, drive Inspector behavior, or navigate the DOM Tree.
+Selected-node data is read-only UI state. It can show `snapshotPath`, normalized `tagName`, `siblingIndex`, `depth`, limited `attributesPreview`, limited `textPreview`, limited `selectorPreview`, `mappingStatus`, `mappedSnapshotPath`, and `mappingReason`. It cannot edit attributes, mutate project files, compute styles, scroll to source, drive editable Inspector behavior, or navigate the DOM Tree.
 
 Live-DOM `snapshotPath` values can diverge from static DOM snapshot paths because the browser can insert implicit nodes, recover malformed HTML differently, or execute project scripts that mutate the DOM. Crystal now makes that relationship explicit instead of assuming equivalence.
 
 Selection mapping is resolved in core against the current `ProjectDomSnapshotState`. The primary identity is the selected `snapshotPath`. A `matched` result requires a static DOM Snapshot node at that path and a matching `tagName`. If no snapshot exists, the state is `missing-snapshot`. If the snapshot is marked stale or belongs to a different Preview target, the state is `stale`. If the path is absent or the tag differs, the state is `mismatched` with a short reason such as `path not found` or `tag mismatch`.
 
 Diagnostic fallback is intentionally weak. Selector, tag, and attribute hints can only identify ambiguity; they cannot create a `matched` identity. If fallback finds multiple plausible static nodes after the primary path fails, the mapping is `ambiguous` with `ambiguous fallback`. If fallback finds zero or one candidate, the primary failure remains `mismatched`.
+
+## Preview Inspector boundary
+
+The minimal Phase 2 Preview Inspector lives under `packages/core/project/preview-inspector/` and renderer `project-preview-panel/inspector/`. It is a derived read-only view model, not a standalone global state. Its inputs are the existing `previewSelection`, `domSnapshot`, and `preview` states.
+
+The core selector resolves structural Inspector data without Electron or DOM access. For `matched` selections, it looks up `mappedSnapshotPath` inside the current static DOM Snapshot and returns snapshot node details: node type, tag name, `snapshotPath`, depth, sibling index, child count, text preview, attributes, source location when available, and truncation state.
+
+Every other mapping state is defensive. `missing-snapshot` asks for a DOM Snapshot build. `stale` recommends rebuilding the DOM Snapshot. `mismatched` and `ambiguous` keep the selected-node identity visible but do not show snapshot node details. If mapping says `matched` but the path is absent from the current snapshot, the Inspector reports a defensive state instead of fabricating a match.
+
+The renderer re-derives the Inspector when Preview selection changes and when DOM Snapshot state changes. It may also re-render from Preview state so snapshot target mismatches remain visible. The Inspector UI is compact and strictly read-only: no inputs, no textareas, no `contenteditable`, no editing buttons, no attribute mutation, no text mutation, no computed styles, no box model, no layout inspector, no CSS inspector, no scroll-to-node, no hover overlay, no bounding boxes, and no live iframe DOM reads.
 
 ## DOM snapshot boundary
 
@@ -119,4 +129,4 @@ Preview reload is downstream of Project Graph refresh. Watcher events do not rel
 
 ## Current limitations
 
-The current Project Graph is intentionally shallow. It detects files, HTML pages, direct dependencies, basic CSS references, basic script imports, external routes, and missing local routes. It now includes watcher/cache plumbing, conservative semi-incremental refresh planning, the first real Chromium Preview, sanitized Preview diagnostics, a hardened read-only static DOM snapshot foundation, a basic read-only Preview selection bridge, and conservative read-only selection mapping. It does not implement read-only Preview Inspector unless landed in a later PR, visual editing, editable attributes, computed styles, box model inspection, CSS cascade analysis, framework alias resolution, editor features, WebGPU overlay, or Rust/WASM analysis.
+The current Project Graph is intentionally shallow. It detects files, HTML pages, direct dependencies, basic CSS references, basic script imports, external routes, and missing local routes. It now includes watcher/cache plumbing, conservative semi-incremental refresh planning, the first real Chromium Preview, sanitized Preview diagnostics, a hardened read-only static DOM snapshot foundation, a basic read-only Preview selection bridge, conservative read-only selection mapping, and a minimal read-only Preview Inspector. It does not implement Inspector MVP editing, visual editing, editable attributes, computed styles, box model inspection, CSS cascade analysis, framework alias resolution, editor features, WebGPU overlay, or Rust/WASM analysis.
