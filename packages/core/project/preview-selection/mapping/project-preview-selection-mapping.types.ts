@@ -13,3 +13,5 @@ export interface ProjectPreviewSelectionMappingMetadata {
   readonly mappingCheckedAt: number | null;
   readonly snapshotGeneratedAt: number | null;
 }
+
+export type ProjectPreviewSelectionMappingResult = ProjectPreviewSelectionMappingMetadata;
