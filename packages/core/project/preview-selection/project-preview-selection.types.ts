@@ -1,3 +1,5 @@
+import type { ProjectPreviewSelectionMappingMetadata } from "./mapping/project-preview-selection-mapping.types";
+
 export type ProjectPreviewSelectionMode = "idle" | "selecting" | "selected" | "failed";
 
 export type ProjectPreviewSelectionIssueSeverity = "info" | "warning" | "error";
@@ -35,7 +37,7 @@ export interface ProjectPreviewSelectionIssue {
   readonly timestamp: number;
 }
 
-export interface ProjectPreviewSelectionState {
+export interface ProjectPreviewSelectionState extends ProjectPreviewSelectionMappingMetadata {
   readonly enabled: boolean;
   readonly mode: ProjectPreviewSelectionMode;
   readonly selectedNode: ProjectPreviewSelectedNode | null;
