@@ -63,6 +63,7 @@ async function runPreviewNavigationAction(elements: ProjectPreviewPanelElements,
 
 async function runPreviewAction(elements: ProjectPreviewPanelElements, action: () => Promise<ProjectPreviewLoadResult>): Promise<void> {
   setPreviewBusy(elements, true);
+  clearPreviewTransientState(elements);
   try {
     const result = await action();
     renderPreviewState(elements, result.state);
@@ -220,6 +221,14 @@ function createIssuePart(name: string, value: string): HTMLSpanElement {
 
 function getIssueDisplayPath(issue: ProjectPreviewIssue): string {
   return issue.relativePath ?? issue.path ?? issue.requestUrl ?? "preview";
+}
+
+function clearPreviewTransientState(elements: ProjectPreviewPanelElements): void {
+  elements.error.hidden = true;
+  elements.error.textContent = "";
+  elements.issueCount.textContent = "0";
+  elements.lastIssue.textContent = "none";
+  renderPreviewIssues(elements, []);
 }
 
 function renderPreviewError(elements: ProjectPreviewPanelElements, error: unknown): void {
