@@ -1,6 +1,10 @@
 # Roadmap Implementation Status
 
-## Implemented in this bootstrap
+This document tracks implementation status. The complete product roadmap lives in [`docs/full-product-roadmap.md`](./full-product-roadmap.md).
+
+Crystal is a new Electron/Node desktop application for creating, inspecting, and modifying real HTML projects and their dependencies. This status file should stay conservative: it records what has landed, what is intentionally out of scope, and what validation is required before merge.
+
+## Implemented foundations
 
 ### Phase -1 — Physical architecture
 
@@ -54,7 +58,7 @@ Covered:
 - typed IPC for watcher/cache control
 - automated local watcher filesystem validation over a temporary project
 
-### Phase 2 — Real Preview foundation
+### Phase 2 — Real Preview, DOM Snapshot, Preview Selection, and read-only Preview Inspector
 
 Covered:
 
@@ -68,6 +72,7 @@ Covered:
 - missing Preview resource reporting
 - blocked path traversal and outside-root request reporting
 - coalesced Preview issues with bounded recent history
+- active Preview load correlation for stale issue prevention
 - typed IPC and preload Preview API
 - minimal renderer Preview panel in the Design view
 - visible Preview issues section in the Preview panel
@@ -77,30 +82,83 @@ Covered:
 - non-visual `validate:preview` script
 - read-only DOM snapshot state model
 - static HTML DOM snapshot builder
+- hardened DOM snapshot parser for common malformed and edge-case HTML patterns
+- stable DOM snapshot `snapshotPath`, path-based `id`, and `siblingIndex`
 - bounded DOM snapshot issues and limits
 - typed IPC and preload DOM snapshot API
 - minimal read-only DOM Tree panel in the Design view
 - non-visual `validate:dom-snapshot` script
+- injected inactive-by-default Preview selection script for HTML responses
+- sandbox-preserving renderer `postMessage` bridge for Preview selection
+- minimal `previewSelection` state and selected-node summary
+- conservative read-only mapping between selected Preview nodes and DOM Snapshot paths
+- `matched`, `mismatched`, `ambiguous`, `stale`, and `missing-snapshot` mapping states
+- non-visual `validate:preview-selection` script
+- minimal read-only Preview Inspector model and selector
+- mapped DOM Snapshot node details for trusted `matched` selections
+- defensive Inspector states for missing snapshot, stale snapshot, mismatched mapping, ambiguous mapping, and matched path missing from the current snapshot
+- compact read-only Preview Inspector panel
+- non-visual `validate:preview-inspector` script
 
 Not covered yet:
 
-- live iframe DOM inspection
-- DOM visual selection
-- click-to-select
-- iframe overlays
-- bounding boxes
-- DOM tree interaction beyond read-only text output
+- visual Design Canvas MVP
+- Figma-like pan and zoom canvas controls
+- rulers, guides, grids, snapping, measurement overlays, and persistent bounding boxes
+- safe mode surface in Design when Preview fails beyond current diagnostics
+- visual breadcrumbs and DOM Tree interaction
+- layout visualization for block, flex, grid, absolute, fixed, and sticky contexts
+- hover, focus, and active visual state tooling
+- HTML5 element insertion library
+- grouped HTML5 element panel by intent: structure, text, media, forms, lists/tables, interaction, semantic/accessibility
+- Webflow/Pinegrow-like structural editing commands
+- source mutation, save/apply, dirty state, and undo/redo
+- editable attributes or text editing
+- class management and Class Composer
 - CSS cascade or specificity analysis
+- Style Engine and CSS/Sass Inspector
+- visual style editor categories: layout, spacing, size, position, typography, color, background, border, effects, transform, flex, grid, responsive, custom properties, and states
+- style write policy: existing class, new class, selector, stylesheet, Sass partial, CSS variable, and explicit-only inline style
+- responsive breakpoint tooling
+- component/snippet library
+- asset/font/SVG/media management UI
+- Developer Mode / IDE tools
+- separate system terminal and Preview Browser Console
+- browser console integration
+- Project Graph target expansion for DOM, classes, selectors, applied styles, unused files, unused assets, inferred components, and workspace status
+- worker-backed parser/analyzer/asset/css/html/ts/preview-sync/wasm processing
+- fallbacks for WebGPU, WASM, Preview, malformed HTML, failed CSS/assets, blocking scripts, and terminal failure
+- explicit build pipeline for source validation, HTML assembly, SCSS compilation, TypeScript bundling, Rust/WASM compilation, assets, manifest, and dist validation
+- command bus and mutation commands
+- event bus and domain events
+- state domains for workspace, graph, selection, preview, inspector, developer, files, build, history, and UI
+- WebGPU overlay implementation
+- Rust/WASM analyzer implementation
 - framework alias resolution
 - TypeScript semantic analysis
-- Rust/WASM analyzer
-- WebGPU overlay
-- visual Design MVP
-- Inspector MVP
-- Developer IDE features
-- browser console integration
 - Electron UI automation framework
 - screenshot testing
+- pending decisions for bundler, code editor, terminal, parser, UI strategy, plugins, testing, theming, visual/code source maps, Sass editing, external frameworks, and Preview sandbox policy
+
+## Full roadmap summary
+
+The complete roadmap is documented in [`docs/full-product-roadmap.md`](./full-product-roadmap.md). The high-level sequence after the current Preview foundations is:
+
+1. Design Canvas Navigation MVP.
+2. Visual Selection and Overlay MVP.
+3. HTML5 Element Library and Insertion.
+4. Design Editing MVP with commands and undo/redo.
+5. Editable Inspector MVP.
+6. Style Engine and CSS/Sass Inspector.
+7. Responsive Design and Layout Tools.
+8. Components, snippets, and reusable blocks.
+9. Assets, fonts, SVG, and media management.
+10. Developer Mode and IDE tools.
+11. WebGPU Overlay Engine.
+12. Rust/WASM Analyzer.
+13. Automation, assistant workflows, packaging, testing, and product hardening.
+
+Directive-level roadmap details are now tracked in `docs/full-product-roadmap.md`, including Design Mode, Inspector submodules, Developer Mode console separation, workers, fallbacks, build pipeline, command/event/state roadmaps, non-negotiable rules, and pending decisions.
 
 ## Required validation before PR merge
 
@@ -110,7 +168,7 @@ Run:
 npm run validate:local
 ```
 
-The runner executes the current install, build, typecheck, Project Graph, watcher/cache, Preview, DOM snapshot, watcher filesystem, and Electron diagnostic checks in sequence. It stops on the first failure and returns a non-zero exit code.
+The runner executes the current install, build, typecheck, Project Graph, watcher/cache, Preview, DOM snapshot, watcher filesystem, Electron diagnostic checks, and any feature-specific validation scripts that have been wired into it. It stops on the first failure and returns a non-zero exit code.
 
 For the explicit Electron launch check, run:
 
@@ -120,8 +178,8 @@ npm run validate:local -- --with-dev
 
 `--with-dev` opens Electron through `npm run dev`; the user must close the app manually to let the runner finish.
 
-The validation runner is mandatory before requesting PR merge. It must be updated whenever a phase adds new required validation. Manual UI verification remains required only where automation is not yet sufficient.
+The validation runner is mandatory before requesting PR merge. It must be updated whenever a phase adds new required validation. Manual UI verification remains required where automation is not yet sufficient.
 
 ## Recommended next module
 
-After this DOM snapshot PR passes local validation on Windows, the next module should either harden the static snapshot/parser limits or add narrow visual selection primitives. Do not jump to Inspector MVP, Developer IDE, WebGPU, or Rust/WASM from this PR.
+After the current Preview Inspector foundation, move to Design Canvas navigation before broad visual editing. Do not jump directly to editable Inspector, full Design Editing, Developer Mode, WebGPU, or Rust/WASM before the required intermediate foundations are in place.

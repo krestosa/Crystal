@@ -14,6 +14,19 @@ Renderer               -> dist/renderer/index.html + main.css + main.js
 
 The renderer has no direct Node access. Electron security starts with `contextIsolation: true`, `nodeIntegration: false`, `sandbox: true`, `webSecurity: true`, and a controlled preload bridge.
 
+## Product roadmap boundary
+
+The full product roadmap is documented in `docs/full-product-roadmap.md`. It extends beyond the current Preview foundations into Design Canvas navigation, visual overlays, HTML5 element insertion, safe visual editing, editable Inspector, Style Engine, Developer Mode, WebGPU overlays, Rust/WASM analysis, and product hardening.
+
+Those later phases do not change the core architecture boundaries:
+
+- renderer UI must not write project files directly;
+- file mutation must go through validated commands and main/core services;
+- Preview iframe isolation remains the default;
+- WebGPU overlays must belong to Crystal UI, not the user's DOM;
+- Rust/WASM analyzers must be introduced behind typed boundaries;
+- feature modules must remain small, explicit, and replaceable.
+
 ## Project Graph boundary
 
 The Project Graph lives under `packages/core/project/` and is split into graph, file classification, path resolution, dependency detection, scanning, watching, cache, metadata, and refresh modules. The scanner receives a minimal filesystem abstraction and does not depend on Electron.
@@ -81,6 +94,20 @@ The parser is not browser-grade. It does not execute scripts, inspect iframe run
 The snapshot is bounded by `maxNodes`, `maxDepth`, `maxTextPreviewLength`, `maxAttributeValueLength`, and `maxAttributesPerNode`. Limit handling marks affected nodes as truncated, renders `… truncated`, sets `isTruncated`, keeps `nodeCount` aligned with serialized nodes including `#document`, and reports issues such as `text-truncated`, `attributes-truncated`, `max-nodes-reached`, and `max-depth-reached` without absolute paths.
 
 The DOM Tree panel remains read-only text output. It may show subtle path metadata, but it does not implement click-to-select, hover highlight, overlays, bounding boxes, scroll-to-node, breadcrumbs, style inspection, computed styles, or editing.
+
+## Design, editing, and overlay boundaries
+
+Design Canvas, visual overlays, and editing are separate layers. The future Design Canvas should own pan/zoom, viewport state, canvas framing, rulers, guides, and overlay presentation. It should not mutate HTML source by itself.
+
+Visual editing must go through a command pipeline. Commands validate the selected node, mapping state, target source file, allowed operation, and resulting source patch. The renderer may request actions, but main/core services own persistence. Undo/redo must be available before destructive editing becomes normal workflow.
+
+The HTML5 Element Library should produce real HTML through insert commands. It may offer Webflow/Pinegrow-like authoring primitives, but it should not introduce framework lock-in or write opaque proprietary components.
+
+The Style Engine should distinguish authored Sass/SCSS/CSS sources from generated runtime CSS. Style edits must preserve source ownership and should not blindly patch compiled outputs when modular sources exist.
+
+WebGPU overlays belong to Crystal's own technical UI. They may render bounding boxes, handles, guides, rulers, and measurements, but they must not become DOM nodes in the user's project.
+
+Rust/WASM analyzers should accelerate parsing and analysis behind typed boundaries. They should not replace TypeScript core modules wholesale until benchmarks and validation prove the benefit.
 
 ## Adapter boundary
 

@@ -12,6 +12,12 @@ This repository now covers roadmap Phase -1, the minimal Phase 0 tooling foundat
 
 Use the repository `.nvmrc` and see `docs/development.md` for the Windows Electron setup and clean reinstall procedure.
 
+## Product roadmap
+
+The current implementation status is tracked in `docs/roadmap-implementation.md`. The complete product roadmap is documented in `docs/full-product-roadmap.md` and includes the planned Design Canvas, Webflow/Pinegrow-like HTML5 element insertion, visual editing, editable Inspector, Style Engine, Developer Mode, WebGPU overlay, Rust/WASM analyzer, and product hardening phases.
+
+The near-term sequence after the Preview/selection/Inspector foundations is conservative: Design Canvas navigation, visual overlay hardening, HTML5 insertion commands, then safe editing with undo/redo.
+
 ## Install
 
 ```bash
