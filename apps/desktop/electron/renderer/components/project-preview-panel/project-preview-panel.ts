@@ -224,6 +224,7 @@ function getIssueDisplayPath(issue: ProjectPreviewIssue): string {
 }
 
 function clearPreviewTransientState(elements: ProjectPreviewPanelElements): void {
+  elements.frame.src = "about:blank";
   elements.error.hidden = true;
   elements.error.textContent = "";
   elements.issueCount.textContent = "0";

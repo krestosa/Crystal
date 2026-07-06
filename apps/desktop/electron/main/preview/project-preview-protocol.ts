@@ -9,7 +9,7 @@ import { getCurrentProjectRoot } from "../ipc/project-ipc-state";
 import { PROJECT_PREVIEW_SELECTION_SCRIPT } from "../preview-selection/project-preview-selection-script";
 import { getProjectPreviewMimeResult } from "./project-preview-mime";
 import { reportProjectPreviewResourceIssue } from "./project-preview-service";
-import { parseProjectPreviewUrl, projectPreviewScheme, sanitizeProjectPreviewRequestUrl } from "./project-preview-url";
+import { getProjectPreviewLoadIdFromUrl, parseProjectPreviewUrl, projectPreviewScheme, sanitizeProjectPreviewRequestUrl } from "./project-preview-url";
 
 let protocolHandlerRegistered = false;
 
@@ -19,50 +19,53 @@ export function registerProjectPreviewProtocolPrivileges(): void {
 
 export function registerProjectPreviewProtocolHandler(): void {
   if (protocolHandlerRegistered) return;
-  protocol.handle(projectPreviewScheme, async (request) => handleProjectPreviewRequest(request.url));
+  protocol.handle(projectPreviewScheme, async (request) => handleProjectPreviewRequest(request));
   protocolHandlerRegistered = true;
 }
 
-async function handleProjectPreviewRequest(requestUrl: string): Promise<Response> {
+async function handleProjectPreviewRequest(request: Request): Promise<Response> {
+  const requestUrl = request.url;
   const safeRequestUrl = sanitizeProjectPreviewRequestUrl(requestUrl);
+  const requestLoadId = getProjectPreviewRequestLoadId(request);
   const rootPath = getCurrentProjectRoot();
   if (!rootPath) {
-    reportIssue(createProtocolIssue("no-project-root", "No active Crystal project root is available for preview requests.", null, safeRequestUrl));
+    reportIssue(createProtocolIssue("no-project-root", "No active Crystal project root is available for preview requests.", null, safeRequestUrl, requestLoadId));
     return createTextResponse(404, "No active Crystal project root.");
   }
 
   const parsedUrl = parseProjectPreviewUrl(requestUrl);
   if (!parsedUrl.ok) {
-    reportIssue(createProtocolIssue("protocol-error", parsedUrl.reason, null, safeRequestUrl));
+    reportIssue(createProtocolIssue("protocol-error", parsedUrl.reason, null, safeRequestUrl, requestLoadId));
     return createTextResponse(400, parsedUrl.reason);
   }
 
+  const loadId = parsedUrl.loadId ?? requestLoadId;
   const resolution = resolveProjectPreviewPath(rootPath, parsedUrl.relativePath);
   if (!resolution.ok || !resolution.absolutePath || !resolution.relativePath) {
-    const issue = resolution.issue ?? createProtocolIssue("protocol-error", "Preview path rejected.", parsedUrl.relativePath, safeRequestUrl);
-    reportIssue(createProtocolIssue(issue.code, issue.message, issue.relativePath ?? issue.path ?? parsedUrl.relativePath, safeRequestUrl));
+    const issue = resolution.issue ?? createProtocolIssue("protocol-error", "Preview path rejected.", parsedUrl.relativePath, safeRequestUrl, loadId);
+    reportIssue(createProtocolIssue(issue.code, issue.message, issue.relativePath ?? issue.path ?? parsedUrl.relativePath, safeRequestUrl, loadId));
     return createTextResponse(403, issue.message);
   }
 
   const rootRealPath = await realpath(rootPath).catch(() => rootPath);
   const targetRealPath = await realpath(resolution.absolutePath).catch(() => null);
   if (!targetRealPath) {
-    reportIssue(createProtocolIssue("file-not-found", "Preview resource was not found inside the active project root.", resolution.relativePath, safeRequestUrl));
+    reportIssue(createProtocolIssue("file-not-found", "Preview resource was not found inside the active project root.", resolution.relativePath, safeRequestUrl, loadId));
     return createTextResponse(404, "Preview resource was not found inside the active project root.");
   }
 
   if (isOutsideRoot(rootRealPath, targetRealPath)) {
-    reportIssue(createProtocolIssue("outside-project-root", "Preview resource resolves outside the active project root.", resolution.relativePath, safeRequestUrl));
+    reportIssue(createProtocolIssue("outside-project-root", "Preview resource resolves outside the active project root.", resolution.relativePath, safeRequestUrl, loadId));
     return createTextResponse(403, "Preview resource was blocked by Crystal.");
   }
 
   try {
     const file = await readFile(targetRealPath);
     const mime = getProjectPreviewMimeResult(targetRealPath);
-    if (mime.isFallback) reportIssue(createProjectPreviewIssue({ code: "unsupported-mime", severity: "warning", message: "Preview resource uses an unsupported MIME extension and was served with a safe fallback.", path: resolution.relativePath, requestUrl: safeRequestUrl, reason: `Unsupported MIME extension${mime.extension ? `: ${mime.extension}` : "."}`, source: "protocol" }));
+    if (mime.isFallback) reportIssue(createProjectPreviewIssue({ code: "unsupported-mime", severity: "warning", message: "Preview resource uses an unsupported MIME extension and was served with a safe fallback.", path: resolution.relativePath, requestUrl: safeRequestUrl, loadId, reason: `Unsupported MIME extension${mime.extension ? `: ${mime.extension}` : "."}`, source: "protocol" }));
     return createPreviewResourceResponse(file, mime.mimeType);
   } catch {
-    reportIssue(createProtocolIssue("protocol-error", "Preview resource could not be read by Crystal.", resolution.relativePath, safeRequestUrl));
+    reportIssue(createProtocolIssue("protocol-error", "Preview resource could not be read by Crystal.", resolution.relativePath, safeRequestUrl, loadId));
     return createTextResponse(500, "Preview resource could not be read by Crystal.");
   }
 }
@@ -89,8 +92,17 @@ function createTextResponse(status: number, message: string): Response {
   return new Response(message, { status, headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store" } });
 }
 
-function createProtocolIssue(code: ProjectPreviewIssue["code"], message: string, relativePath: string | null, requestUrl: string | null): ProjectPreviewIssue {
-  return createProjectPreviewIssue({ code, message, path: relativePath, requestUrl, source: "protocol" });
+function createProtocolIssue(code: ProjectPreviewIssue["code"], message: string, relativePath: string | null, requestUrl: string | null, loadId: string | null): ProjectPreviewIssue {
+  return createProjectPreviewIssue({ code, message, path: relativePath, requestUrl, loadId, source: "protocol" });
+}
+
+function getProjectPreviewRequestLoadId(request: Request): string | null {
+  return getProjectPreviewLoadIdFromUrl(request.url) ?? getProjectPreviewReferrerLoadId(request);
+}
+
+function getProjectPreviewReferrerLoadId(request: Request): string | null {
+  const referrer = request.headers.get("referer") ?? request.headers.get("referrer");
+  return referrer ? getProjectPreviewLoadIdFromUrl(referrer) : null;
 }
 
 function reportIssue(issue: ProjectPreviewIssue): void {

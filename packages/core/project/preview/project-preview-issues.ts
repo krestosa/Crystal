@@ -1,4 +1,4 @@
-import type { ProjectPreviewIssue, ProjectPreviewIssueCode, ProjectPreviewIssueSeverity, ProjectPreviewIssueSource, ProjectPreviewResourceIssueType } from "./project-preview.types";
+import type { ProjectPreviewIssue, ProjectPreviewIssueCode, ProjectPreviewIssueSeverity, ProjectPreviewIssueSource, ProjectPreviewLoadId, ProjectPreviewResourceIssueType } from "./project-preview.types";
 
 export const maxProjectPreviewIssues = 50;
 
@@ -9,6 +9,7 @@ export interface CreateProjectPreviewIssueInput {
   readonly path?: string | null;
   readonly relativePath?: string | null;
   readonly requestUrl?: string | null;
+  readonly loadId?: ProjectPreviewLoadId | null;
   readonly reason?: string;
   readonly source: ProjectPreviewIssueSource;
   readonly timestamp?: number;
@@ -17,7 +18,7 @@ export interface CreateProjectPreviewIssueInput {
 export function createProjectPreviewIssue(input: CreateProjectPreviewIssueInput): ProjectPreviewIssue {
   const timestamp = input.timestamp ?? Date.now();
   const relativePath = input.relativePath ?? input.path ?? null;
-  return { code: input.code, type: toProjectPreviewResourceIssueType(input.code), severity: input.severity ?? defaultSeverityForIssue(input.code), message: input.message, path: relativePath, relativePath, requestUrl: input.requestUrl ?? null, reason: input.reason ?? input.message, source: input.source, timestamp, lastSeenAt: timestamp, count: 1 };
+  return { code: input.code, type: toProjectPreviewResourceIssueType(input.code), severity: input.severity ?? defaultSeverityForIssue(input.code), message: input.message, path: relativePath, relativePath, requestUrl: input.requestUrl ?? null, loadId: input.loadId ?? null, reason: input.reason ?? input.message, source: input.source, timestamp, lastSeenAt: timestamp, count: 1 };
 }
 
 export function mergeProjectPreviewIssue(issues: readonly ProjectPreviewIssue[], incoming: ProjectPreviewIssue, maxIssues: number = maxProjectPreviewIssues): readonly ProjectPreviewIssue[] {
@@ -25,7 +26,7 @@ export function mergeProjectPreviewIssue(issues: readonly ProjectPreviewIssue[],
   const existingIndex = issues.findIndex((issue) => getProjectPreviewIssueKey(issue) === incomingKey);
   if (existingIndex >= 0) {
     const existing = issues[existingIndex];
-    const merged: ProjectPreviewIssue = { ...existing, severity: mergeSeverity(existing.severity, incoming.severity), message: incoming.message, requestUrl: incoming.requestUrl ?? existing.requestUrl, lastSeenAt: incoming.lastSeenAt, count: existing.count + 1 };
+    const merged: ProjectPreviewIssue = { ...existing, severity: mergeSeverity(existing.severity, incoming.severity), message: incoming.message, requestUrl: incoming.requestUrl ?? existing.requestUrl, loadId: incoming.loadId ?? existing.loadId, lastSeenAt: incoming.lastSeenAt, count: existing.count + 1 };
     return [merged, ...issues.slice(0, existingIndex), ...issues.slice(existingIndex + 1)].slice(0, maxIssues);
   }
   return [incoming, ...issues].slice(0, maxIssues);
@@ -56,7 +57,7 @@ function defaultSeverityForIssue(code: ProjectPreviewIssueCode): ProjectPreviewI
 }
 
 function getProjectPreviewIssueKey(issue: ProjectPreviewIssue): string {
-  return [issue.type, issue.relativePath ?? issue.path ?? issue.requestUrl ?? "preview", issue.reason].join("|");
+  return [issue.loadId ?? "no-load", issue.type, issue.relativePath ?? issue.path ?? issue.requestUrl ?? "preview", issue.reason].join("|");
 }
 
 function mergeSeverity(current: ProjectPreviewIssueSeverity, incoming: ProjectPreviewIssueSeverity): ProjectPreviewIssueSeverity {
