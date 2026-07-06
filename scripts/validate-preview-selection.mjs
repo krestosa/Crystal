@@ -10,12 +10,14 @@ const failures = [];
 
 const scriptPath = "apps/desktop/electron/main/preview-selection/project-preview-selection-script.ts";
 const previewPanelHtmlPath = "apps/desktop/electron/renderer/components/project-preview-panel/project-preview-panel.html";
+const designCanvasHtmlPath = "apps/desktop/electron/renderer/components/design-canvas/project-design-canvas.html";
 const bridgePath = "apps/desktop/electron/renderer/components/project-preview-panel/selection/project-preview-selection-message-bridge.ts";
 const validatorsPath = "packages/core/project/preview-selection/project-preview-selection-validators.ts";
 const mappingPath = "packages/core/project/preview-selection/mapping/project-preview-selection-mapping.ts";
 
 const scriptSource = await readText(scriptPath);
 const previewPanelHtml = await readText(previewPanelHtmlPath);
+const designCanvasHtml = await readText(designCanvasHtmlPath);
 const bridgeSource = await readText(bridgePath);
 const validatorsSource = await readText(validatorsPath);
 const mappingSource = await readText(mappingPath);
@@ -29,8 +31,9 @@ try {
   expect(!scriptSource.includes("`"), "Injected selection script uses template literals.");
   expect(scriptSource.includes("window.__CRYSTAL_PREVIEW_SELECTION__"), "Injected selection script lost its idempotent guard.");
 
-  expect(!previewPanelHtml.includes("allow-same-origin"), "Preview iframe sandbox includes allow-same-origin.");
-  expect(previewPanelHtml.includes("sandbox=\"allow-scripts allow-forms allow-popups\""), "Preview iframe sandbox changed unexpectedly.");
+  const previewFrameHtml = `${previewPanelHtml}\n${designCanvasHtml}`;
+  expect(!previewFrameHtml.includes("allow-same-origin"), "Preview iframe sandbox includes allow-same-origin.");
+  expect(previewFrameHtml.includes("sandbox=\"allow-scripts allow-forms allow-popups\""), "Preview iframe sandbox changed unexpectedly.");
   expect(previewPanelHtml.includes("data-project-preview-selection-mapping-status"), "Preview selection mapping status is not rendered.");
   expect(previewPanelHtml.includes("data-project-preview-mapped-snapshot-path"), "Preview selection mapped snapshotPath is not rendered.");
   expect(previewPanelHtml.includes("data-project-preview-selection-mapping-reason"), "Preview selection mapping reason is not rendered.");
@@ -41,7 +44,7 @@ try {
   expect(bridgeSource.includes("event.source !== frameWindow"), "Preview selection bridge does not validate event.source against iframe.contentWindow.");
   expect(bridgeSource.includes("frameWindow.postMessage"), "Preview selection bridge does not use iframe.contentWindow.postMessage.");
 
-  const previewPanelSource = `${previewPanelHtml}\n${bridgeSource}`;
+  const previewPanelSource = `${previewPanelHtml}\n${designCanvasHtml}\n${bridgeSource}`;
   expect(!previewPanelSource.includes("getComputedStyle"), "Preview selection introduced computed styles.");
   expect(!previewPanelSource.toLowerCase().includes("bounding"), "Preview selection introduced bounding box UI.");
 
@@ -261,6 +264,7 @@ function createElementNode(snapshotPath, tagName, children = [], attributes = []
     children,
     depth: snapshotPath.split("/").length - 1,
     childCount: children.length,
+    sourceLocation: { offset: 12, line: 2, column: 3 },
     truncated: false
   };
 }
