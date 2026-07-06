@@ -1,6 +1,10 @@
 # Roadmap Implementation Status
 
-## Implemented in this bootstrap
+This document tracks implementation status. The complete product roadmap lives in [`docs/full-product-roadmap.md`](./full-product-roadmap.md).
+
+Crystal is a new Electron/Node desktop application for creating, inspecting, and modifying real HTML projects and their dependencies. This status file should stay conservative: it records what has landed, what is intentionally out of scope, and what validation is required before merge.
+
+## Implemented foundations
 
 ### Phase -1 — Physical architecture
 
@@ -54,7 +58,7 @@ Covered:
 - typed IPC for watcher/cache control
 - automated local watcher filesystem validation over a temporary project
 
-### Phase 2 — Real Preview foundation
+### Phase 2 — Real Preview, DOM Snapshot, and Preview Selection
 
 Covered:
 
@@ -68,6 +72,7 @@ Covered:
 - missing Preview resource reporting
 - blocked path traversal and outside-root request reporting
 - coalesced Preview issues with bounded recent history
+- active Preview load correlation for stale issue prevention
 - typed IPC and preload Preview API
 - minimal renderer Preview panel in the Design view
 - visible Preview issues section in the Preview panel
@@ -77,30 +82,61 @@ Covered:
 - non-visual `validate:preview` script
 - read-only DOM snapshot state model
 - static HTML DOM snapshot builder
+- hardened DOM snapshot parser for common malformed and edge-case HTML patterns
+- stable DOM snapshot `snapshotPath`, path-based `id`, and `siblingIndex`
 - bounded DOM snapshot issues and limits
 - typed IPC and preload DOM snapshot API
 - minimal read-only DOM Tree panel in the Design view
 - non-visual `validate:dom-snapshot` script
+- injected inactive-by-default Preview selection script for HTML responses
+- sandbox-preserving renderer `postMessage` bridge for Preview selection
+- minimal `previewSelection` state and selected-node summary
+- conservative read-only mapping between selected Preview nodes and DOM Snapshot paths
+- `matched`, `mismatched`, `ambiguous`, `stale`, and `missing-snapshot` mapping states
+- non-visual `validate:preview-selection` script
 
 Not covered yet:
 
-- live iframe DOM inspection
-- DOM visual selection
-- click-to-select
-- iframe overlays
-- bounding boxes
-- DOM tree interaction beyond read-only text output
+- read-only Preview Inspector, unless landed in a later PR
+- visual Design Canvas MVP
+- Figma-like pan and zoom canvas controls
+- rulers, guides, measurement overlays, and persistent bounding boxes
+- HTML5 element insertion library
+- Webflow/Pinegrow-like structural editing commands
+- source mutation, save/apply, and undo/redo
+- editable attributes or text editing
 - CSS cascade or specificity analysis
+- Style Engine and CSS/Sass Inspector
+- responsive breakpoint tooling
+- component/snippet library
+- asset/font/SVG/media management UI
+- Developer Mode / IDE tools
+- browser console integration
+- WebGPU overlay implementation
+- Rust/WASM analyzer implementation
 - framework alias resolution
 - TypeScript semantic analysis
-- Rust/WASM analyzer
-- WebGPU overlay
-- visual Design MVP
-- Inspector MVP
-- Developer IDE features
-- browser console integration
 - Electron UI automation framework
 - screenshot testing
+
+## Full roadmap summary
+
+The complete roadmap is documented in [`docs/full-product-roadmap.md`](./full-product-roadmap.md). The high-level sequence after the current Preview foundations is:
+
+1. Preview Inspector read-only.
+2. Design Canvas Navigation MVP.
+3. Visual Selection and Overlay MVP.
+4. HTML5 Element Library and Insertion.
+5. Design Editing MVP with commands and undo/redo.
+6. Editable Inspector MVP.
+7. Style Engine and CSS/Sass Inspector.
+8. Responsive Design and Layout Tools.
+9. Components, snippets, and reusable blocks.
+10. Assets, fonts, SVG, and media management.
+11. Developer Mode and IDE tools.
+12. WebGPU Overlay Engine.
+13. Rust/WASM Analyzer.
+14. Automation, assistant workflows, packaging, testing, and product hardening.
 
 ## Required validation before PR merge
 
@@ -110,7 +146,7 @@ Run:
 npm run validate:local
 ```
 
-The runner executes the current install, build, typecheck, Project Graph, watcher/cache, Preview, DOM snapshot, watcher filesystem, and Electron diagnostic checks in sequence. It stops on the first failure and returns a non-zero exit code.
+The runner executes the current install, build, typecheck, Project Graph, watcher/cache, Preview, DOM snapshot, watcher filesystem, Electron diagnostic checks, and any feature-specific validation scripts that have been wired into it. It stops on the first failure and returns a non-zero exit code.
 
 For the explicit Electron launch check, run:
 
@@ -120,8 +156,8 @@ npm run validate:local -- --with-dev
 
 `--with-dev` opens Electron through `npm run dev`; the user must close the app manually to let the runner finish.
 
-The validation runner is mandatory before requesting PR merge. It must be updated whenever a phase adds new required validation. Manual UI verification remains required only where automation is not yet sufficient.
+The validation runner is mandatory before requesting PR merge. It must be updated whenever a phase adds new required validation. Manual UI verification remains required where automation is not yet sufficient.
 
 ## Recommended next module
 
-After this DOM snapshot PR passes local validation on Windows, the next module should either harden the static snapshot/parser limits or add narrow visual selection primitives. Do not jump to Inspector MVP, Developer IDE, WebGPU, or Rust/WASM from this PR.
+After the current Preview selection mapping foundation, the next module should be the minimal read-only Preview Inspector. After that, move to Design Canvas navigation before broad visual editing. Do not jump directly to editable Inspector, full Design Editing, Developer Mode, WebGPU, or Rust/WASM before the required intermediate foundations are in place.
