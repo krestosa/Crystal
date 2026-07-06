@@ -2,7 +2,7 @@
 
 Crystal is a new desktop application for creating, inspecting, and modifying real HTML projects and their related assets.
 
-This repository now covers roadmap Phase -1, the minimal Phase 0 tooling foundation, the Phase 1 Project Graph foundation with watcher/cache support, and the first Phase 2 real project preview with hardened read-only DOM snapshot, basic read-only Preview selection, and conservative selection-to-snapshot mapping support.
+This repository now covers roadmap Phase -1, the minimal Phase 0 tooling foundation, the Phase 1 Project Graph foundation with watcher/cache support, and the first Phase 2 real project preview with hardened read-only DOM snapshot, basic read-only Preview selection, conservative selection-to-snapshot mapping, and a minimal read-only Preview Inspector.
 
 ## Requirements
 
@@ -66,6 +66,7 @@ npm run validate:project-watch
 npm run validate:preview
 npm run validate:dom-snapshot
 npm run validate:preview-selection
+npm run validate:preview-inspector
 npm run validate:local:watch
 npm run doctor:electron
 ```
@@ -101,16 +102,18 @@ Implemented:
 - renderer `postMessage` bridge for read-only Preview selection
 - minimal `previewSelection` state and selected-node summary
 - conservative read-only mapping between selected Preview nodes and DOM Snapshot paths
+- minimal read-only Preview Inspector derived from Preview selection, Preview state, and DOM Snapshot state
 - `validate:preview` for non-visual Preview checks
 - `validate:dom-snapshot` for non-visual DOM snapshot checks
 - `validate:preview-selection` for non-visual Preview selection and mapping checks
+- `validate:preview-inspector` for non-visual Preview Inspector model, UI, and boundary checks
 - local validation runner for pre-merge checks
 - Electron local environment diagnostics
 
 Intentionally out of scope:
 
 - visual Design MVP editing
-- Inspector MVP
+- Inspector MVP editing and CSS analysis
 - Developer IDE features
 - WebGPU overlay implementation
 - Rust/WASM analyzer implementation
@@ -156,7 +159,15 @@ The `snapshotPath` comes from the browser's live DOM at click time. The DOM Tree
 
 Selection mapping is conservative and read-only. `matched` requires an existing DOM Snapshot node at the selected `snapshotPath` plus a matching `tagName`. `missing-snapshot` means no static snapshot is currently available. `stale` means the snapshot was invalidated by Preview reload, target change, or a stale snapshot flag, and stale snapshots are never reported as matched. `mismatched` covers `path not found` and `tag mismatch`. `ambiguous` is diagnostic only: selector, tag, and attribute fallback may identify more than one possible static node, but fallback is never promoted into a match.
 
-This is still not Inspector. It does not compute styles, inspect box model, read live iframe DOM from the renderer, scroll the DOM Tree, focus a node, mutate attributes, write files, draw persistent overlays, or provide bounding boxes.
+## Preview Inspector read-only
+
+The Preview Inspector is a minimal read-only structural panel derived from existing state only: `previewSelection`, `domSnapshot`, and `preview`. It does not introduce an independent global Inspector state for this phase.
+
+The Inspector shows selected-node identity and, only when `mappingStatus` is `matched`, resolves `mappedSnapshotPath` against the current DOM Snapshot to show structural node details: node type, tag name, `snapshotPath`, depth, sibling index, child count, text preview, attributes, source location when available, and truncation state.
+
+If no selection exists, the Inspector shows idle state. If `mappingStatus` is `missing-snapshot`, it shows `Build DOM Snapshot required`. If the mapping or snapshot is stale, it recommends rebuilding the DOM Snapshot. If the mapping is `mismatched` or `ambiguous`, it shows the selected-node identity and mapping reason but does not invent trusted snapshot details. If `mappingStatus` is `matched` but the mapped path no longer exists in the current snapshot, the Inspector shows a defensive state instead of a false match.
+
+The Inspector re-derives when Preview selection changes and when DOM Snapshot state changes. It does not read the live iframe DOM, call `iframe.contentDocument`, read `iframe.contentWindow.document`, query inside the iframe, calculate computed styles, inspect box model, inspect layout, mutate attributes, edit text, write project files, scroll to nodes, draw overlays, or provide bounding boxes.
 
 ## DOM snapshot read-only
 
@@ -170,4 +181,4 @@ The parser is not browser-grade. It does not execute scripts, inspect the live D
 
 The snapshot is bounded by `maxNodes`, `maxDepth`, `maxTextPreviewLength`, `maxAttributeValueLength`, and `maxAttributesPerNode`. When truncation happens, affected nodes are marked, the tree renders `… truncated`, `isTruncated` is set, and issues such as `text-truncated`, `attributes-truncated`, `max-nodes-reached`, or `max-depth-reached` are reported without absolute filesystem paths.
 
-Visual editing, Inspector MVP, computed styles, breadcrumbs, scroll-to-node behavior, persistent overlays, bounding boxes, WebGPU overlay rendering, and source mutation remain out of scope.
+Visual editing, Inspector MVP CSS analysis, computed styles, breadcrumbs, scroll-to-node behavior, persistent overlays, bounding boxes, WebGPU overlay rendering, and source mutation remain out of scope.
