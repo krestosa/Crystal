@@ -1,5 +1,6 @@
-import type { ProjectPreviewInspectorInput, ProjectPreviewInspectorSelectedNodeDetails, ProjectPreviewInspectorSnapshotNodeDetails } from "../../../../../../../packages/core/project/preview-inspector/project-preview-inspector-selector";
+import type { ProjectPreviewInspectorInput } from "../../../../../../../packages/core/project/preview-inspector/project-preview-inspector-selector";
 import { selectProjectPreviewInspectorViewModel } from "../../../../../../../packages/core/project/preview-inspector/project-preview-inspector-selector";
+import type { ProjectPreviewInspectorSelectedNodeDetails, ProjectPreviewInspectorSnapshotNodeDetails } from "../../../../../../../packages/core/project/preview-inspector/project-preview-inspector.types";
 import type { ProjectDomAttribute, ProjectDomSourceLocation } from "../../../../../../../packages/core/project/dom/project-dom-snapshot.types";
 import type { ProjectPreviewSelectedNodeAttribute } from "../../../../../../../packages/core/project/preview-selection/project-preview-selection.types";
 
