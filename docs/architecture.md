@@ -32,11 +32,11 @@ Preview issues are coalesced by issue type, safe path, and reason. The state kee
 
 The renderer does not build absolute file paths. It calls explicit preload methods for load, reload, target selection, and state. Main resolves targets from the active Project Graph and returns a safe Preview URL.
 
-The Preview frame is intentionally limited to real HTML rendering, diagnostics, read-only DOM snapshots, and basic read-only node selection. It is not an Inspector, editor, browser console, canvas, or overlay engine in this phase.
+The Preview frame is intentionally limited to real HTML rendering, diagnostics, read-only DOM snapshots, basic read-only node selection, and conservative selection-to-snapshot mapping. It is not an Inspector, editor, browser console, canvas, or overlay engine in this phase.
 
 ## Preview selection boundary
 
-The Phase 2 Preview selection model lives under `packages/core/project/preview-selection/`. It defines `previewSelection` state separately from Preview load state and DOM snapshot state. The state stores only whether selection mode is enabled, the current mode, a sanitized selected-node summary, the last selected timestamp, and one controlled issue.
+The Phase 2 Preview selection model lives under `packages/core/project/preview-selection/`. It defines `previewSelection` state separately from Preview load state and DOM snapshot state. The state stores whether selection mode is enabled, the current mode, a sanitized selected-node summary, the last selected timestamp, one controlled issue, and read-only mapping metadata.
 
 Electron main owns the authoritative Preview selection state and exposes only explicit IPC channels for get-state, enable, disable, clear, set-selected-node, and state-changed. Main validates every selected-node payload before saving it. Invalid payloads do not replace the current `selectedNode`; they only produce a controlled `lastIssue` without absolute paths or raw dangerous data.
 
@@ -46,9 +46,13 @@ The Preview iframe remains sandboxed without `allow-same-origin`. Since the ifra
 
 The renderer bridge never reads `iframe.contentDocument`, never reads `iframe.contentWindow.document`, and never exposes Node or filesystem APIs to the iframe. It validates selected-node payloads locally before IPC, then main validates the sanitized payload again.
 
-Selected-node data is read-only UI state. It can show `snapshotPath`, normalized `tagName`, `siblingIndex`, `depth`, limited `attributesPreview`, limited `textPreview`, and limited `selectorPreview`. It cannot edit attributes, mutate project files, compute styles, scroll to source, or drive Inspector behavior.
+Selected-node data is read-only UI state. It can show `snapshotPath`, normalized `tagName`, `siblingIndex`, `depth`, limited `attributesPreview`, limited `textPreview`, limited `selectorPreview`, `mappingStatus`, `mappedSnapshotPath`, and `mappingReason`. It cannot edit attributes, mutate project files, compute styles, scroll to source, drive Inspector behavior, or navigate the DOM Tree.
 
-Live-DOM `snapshotPath` values can diverge from static DOM snapshot paths because the browser can insert implicit nodes, recover malformed HTML differently, or execute project scripts that mutate the DOM. Exact live-DOM to static-source mapping is deferred.
+Live-DOM `snapshotPath` values can diverge from static DOM snapshot paths because the browser can insert implicit nodes, recover malformed HTML differently, or execute project scripts that mutate the DOM. Crystal now makes that relationship explicit instead of assuming equivalence.
+
+Selection mapping is resolved in core against the current `ProjectDomSnapshotState`. The primary identity is the selected `snapshotPath`. A `matched` result requires a static DOM Snapshot node at that path and a matching `tagName`. If no snapshot exists, the state is `missing-snapshot`. If the snapshot is marked stale or belongs to a different Preview target, the state is `stale`. If the path is absent or the tag differs, the state is `mismatched` with a short reason such as `path not found` or `tag mismatch`.
+
+Diagnostic fallback is intentionally weak. Selector, tag, and attribute hints can only identify ambiguity; they cannot create a `matched` identity. If fallback finds multiple plausible static nodes after the primary path fails, the mapping is `ambiguous` with `ambiguous fallback`. If fallback finds zero or one candidate, the primary failure remains `mismatched`.
 
 ## DOM snapshot boundary
 
@@ -88,4 +92,4 @@ Preview reload is downstream of Project Graph refresh. Watcher events do not rel
 
 ## Current limitations
 
-The current Project Graph is intentionally shallow. It detects files, HTML pages, direct dependencies, basic CSS references, basic script imports, external routes, and missing local routes. It now includes watcher/cache plumbing, conservative semi-incremental refresh planning, the first real Chromium Preview, sanitized Preview diagnostics, a hardened read-only static DOM snapshot foundation, and a basic read-only Preview selection bridge. It does not implement Inspector MVP, visual editing, editable attributes, computed styles, live/static DOM path reconciliation, CSS cascade analysis, framework alias resolution, editor features, WebGPU overlay, or Rust/WASM analysis.
+The current Project Graph is intentionally shallow. It detects files, HTML pages, direct dependencies, basic CSS references, basic script imports, external routes, and missing local routes. It now includes watcher/cache plumbing, conservative semi-incremental refresh planning, the first real Chromium Preview, sanitized Preview diagnostics, a hardened read-only static DOM snapshot foundation, a basic read-only Preview selection bridge, and conservative read-only selection mapping. It does not implement Inspector MVP, visual editing, editable attributes, computed styles, box model inspection, CSS cascade analysis, framework alias resolution, editor features, WebGPU overlay, or Rust/WASM analysis.

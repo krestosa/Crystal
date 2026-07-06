@@ -4,6 +4,7 @@ export const initialProjectPreviewState: ProjectPreviewState = {
   rootPath: null,
   target: null,
   previewUrl: null,
+  activeLoadId: null,
   status: "idle",
   lastLoadedAt: null,
   lastReloadedAt: null,

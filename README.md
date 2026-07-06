@@ -2,7 +2,7 @@
 
 Crystal is a new desktop application for creating, inspecting, and modifying real HTML projects and their related assets.
 
-This repository now covers roadmap Phase -1, the minimal Phase 0 tooling foundation, the Phase 1 Project Graph foundation with watcher/cache support, and the first Phase 2 real project preview with hardened read-only DOM snapshot and basic read-only Preview selection support.
+This repository now covers roadmap Phase -1, the minimal Phase 0 tooling foundation, the Phase 1 Project Graph foundation with watcher/cache support, and the first Phase 2 real project preview with hardened read-only DOM snapshot, basic read-only Preview selection, and conservative selection-to-snapshot mapping support.
 
 ## Requirements
 
@@ -100,9 +100,10 @@ Implemented:
 - injected inactive-by-default Preview selection script for HTML responses
 - renderer `postMessage` bridge for read-only Preview selection
 - minimal `previewSelection` state and selected-node summary
+- conservative read-only mapping between selected Preview nodes and DOM Snapshot paths
 - `validate:preview` for non-visual Preview checks
 - `validate:dom-snapshot` for non-visual DOM snapshot checks
-- `validate:preview-selection` for non-visual Preview selection checks
+- `validate:preview-selection` for non-visual Preview selection and mapping checks
 - local validation runner for pre-merge checks
 - Electron local environment diagnostics
 
@@ -118,6 +119,7 @@ Intentionally out of scope:
 - DOM visual selection canvas, persistent overlays, or bounding boxes
 - computed styles and visual style editing
 - editable attributes or source mutation from selection
+- scroll-to-node, functional breadcrumbs, or DOM Tree navigation from Preview selection
 - Electron UI automation frameworks such as Playwright, Cypress, or Spectron
 
 ## Project Graph scan
@@ -148,9 +150,13 @@ The Preview iframe remains sandboxed without `allow-same-origin`. Because the sa
 
 The renderer never reads `iframe.contentDocument`, never reads `iframe.contentWindow.document`, never exposes Node or filesystem APIs to the iframe, and never writes to project files. The payload is validated locally in the renderer and again in Electron main before it can update `previewSelection` state.
 
-The selected-node summary is strictly read-only. It shows a bounded `snapshotPath`, normalized `tagName`, `selectorPreview`, limited `attributesPreview`, and limited `textPreview`. `Clear Selection` clears `selectedNode` and the temporary highlight. If selection mode is enabled, clearing returns the state to `selecting`; if it is disabled, clearing returns it to `idle`. Reloading Preview or changing target clears the current selected node so stale live-DOM selections are not presented as valid.
+The selected-node summary is strictly read-only. It shows a bounded `snapshotPath`, normalized `tagName`, `selectorPreview`, limited `attributesPreview`, limited `textPreview`, `mappingStatus`, `mappedSnapshotPath`, and `mappingReason`. `Clear Selection` clears `selectedNode`, resets mapping metadata to `unknown`, and clears the temporary highlight. If selection mode is enabled, clearing returns the state to `selecting`; if it is disabled, clearing returns it to `idle`. Reloading Preview or changing target clears the current selected node so stale live-DOM selections are not presented as valid.
 
-The `snapshotPath` comes from the browser's live DOM at click time. The DOM Tree snapshot is built separately from static HTML source. Those paths usually align for simple static HTML, but they can diverge when the browser inserts implicit nodes, repairs malformed HTML differently, or project scripts mutate the DOM. Exact live-DOM to static-snapshot mapping is intentionally not implemented yet.
+The `snapshotPath` comes from the browser's live DOM at click time. The DOM Tree snapshot is built separately from static HTML source. Those paths usually align for simple static HTML, but they can diverge when the browser inserts implicit nodes, repairs malformed HTML differently, or project scripts mutate the DOM.
+
+Selection mapping is conservative and read-only. `matched` requires an existing DOM Snapshot node at the selected `snapshotPath` plus a matching `tagName`. `missing-snapshot` means no static snapshot is currently available. `stale` means the snapshot was invalidated by Preview reload, target change, or a stale snapshot flag, and stale snapshots are never reported as matched. `mismatched` covers `path not found` and `tag mismatch`. `ambiguous` is diagnostic only: selector, tag, and attribute fallback may identify more than one possible static node, but fallback is never promoted into a match.
+
+This is still not Inspector. It does not compute styles, inspect box model, read live iframe DOM from the renderer, scroll the DOM Tree, focus a node, mutate attributes, write files, draw persistent overlays, or provide bounding boxes.
 
 ## DOM snapshot read-only
 

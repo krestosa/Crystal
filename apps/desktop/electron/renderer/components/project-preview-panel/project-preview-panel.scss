@@ -55,7 +55,23 @@
   color: rgba(255, 255, 255, 0.68);
 }
 
-.crystal-project-preview-panel__target { padding: 8px 10px; }
+.crystal-project-preview-panel__target {
+  padding: 8px 10px;
+  background-color: #17171f;
+  color: rgba(255, 255, 255, 0.92);
+  color-scheme: dark;
+}
+
+.crystal-project-preview-panel__target:focus-visible {
+  outline: 2px solid #7c3aed;
+  outline-offset: 2px;
+  border-color: rgba(124, 58, 237, 0.82);
+}
+
+.crystal-project-preview-panel__target option {
+  background-color: #101018;
+  color: rgba(255, 255, 255, 0.92);
+}
 
 .crystal-project-preview-panel__meta {
   display: grid;

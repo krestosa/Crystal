@@ -5,5 +5,10 @@ export const initialProjectPreviewSelectionState: ProjectPreviewSelectionState =
   mode: "idle",
   selectedNode: null,
   lastSelectedAt: null,
-  lastIssue: null
+  lastIssue: null,
+  mappingStatus: "unknown",
+  mappedSnapshotPath: null,
+  mappingReason: null,
+  mappingCheckedAt: null,
+  snapshotGeneratedAt: null
 };

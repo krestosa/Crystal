@@ -63,6 +63,7 @@ async function runPreviewNavigationAction(elements: ProjectPreviewPanelElements,
 
 async function runPreviewAction(elements: ProjectPreviewPanelElements, action: () => Promise<ProjectPreviewLoadResult>): Promise<void> {
   setPreviewBusy(elements, true);
+  clearPreviewTransientState(elements);
   try {
     const result = await action();
     renderPreviewState(elements, result.state);
@@ -160,6 +161,9 @@ function renderPreviewSelectionState(elements: ProjectPreviewPanelElements, stat
 
   elements.selectedTag.textContent = state.selectedNode?.tagName ?? "none";
   elements.selectedPath.textContent = state.selectedNode?.snapshotPath ?? "none";
+  elements.selectionMappingStatus.textContent = state.mappingStatus;
+  elements.mappedSnapshotPath.textContent = state.mappedSnapshotPath ?? "none";
+  elements.selectionMappingReason.textContent = state.mappingReason ?? "none";
   elements.selectedSelector.textContent = state.selectedNode?.selectorPreview || "none";
   elements.selectedAttributes.textContent = state.selectedNode ? renderAttributesPreview(state.selectedNode) : "none";
   elements.selectedText.textContent = state.selectedNode?.textPreview || "none";
@@ -219,6 +223,15 @@ function getIssueDisplayPath(issue: ProjectPreviewIssue): string {
   return issue.relativePath ?? issue.path ?? issue.requestUrl ?? "preview";
 }
 
+function clearPreviewTransientState(elements: ProjectPreviewPanelElements): void {
+  elements.frame.src = "about:blank";
+  elements.error.hidden = true;
+  elements.error.textContent = "";
+  elements.issueCount.textContent = "0";
+  elements.lastIssue.textContent = "none";
+  renderPreviewIssues(elements, []);
+}
+
 function renderPreviewError(elements: ProjectPreviewPanelElements, error: unknown): void {
   elements.error.hidden = false;
   elements.error.textContent = error instanceof Error ? error.message : String(error);
@@ -244,6 +257,9 @@ function getProjectPreviewPanelElements(panel: HTMLElement): ProjectPreviewPanel
     selectionMode: queryPanelElement(panel, "[data-project-preview-selection-mode]", HTMLElement),
     selectedTag: queryPanelElement(panel, "[data-project-preview-selected-tag]", HTMLElement),
     selectedPath: queryPanelElement(panel, "[data-project-preview-selected-path]", HTMLElement),
+    selectionMappingStatus: queryPanelElement(panel, "[data-project-preview-selection-mapping-status]", HTMLElement),
+    mappedSnapshotPath: queryPanelElement(panel, "[data-project-preview-mapped-snapshot-path]", HTMLElement),
+    selectionMappingReason: queryPanelElement(panel, "[data-project-preview-selection-mapping-reason]", HTMLElement),
     selectedSelector: queryPanelElement(panel, "[data-project-preview-selected-selector]", HTMLElement),
     selectedAttributes: queryPanelElement(panel, "[data-project-preview-selected-attributes]", HTMLElement),
     selectedText: queryPanelElement(panel, "[data-project-preview-selected-text]", HTMLElement),

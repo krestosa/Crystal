@@ -1,5 +1,7 @@
 import type { ProjectDependency, ProjectPath, ProjectRoot } from "../graph/project-graph.types";
 
+export type ProjectPreviewLoadId = string;
+
 export type ProjectPreviewStatus = "idle" | "loading" | "ready" | "reloading" | "failed";
 
 export type ProjectPreviewReloadReason = "manual" | "watch" | "project-open" | "page-change";
@@ -39,6 +41,7 @@ export interface ProjectPreviewResourceIssue {
   readonly path: ProjectPath | null;
   readonly relativePath: ProjectPath | null;
   readonly requestUrl: string | null;
+  readonly loadId: ProjectPreviewLoadId | null;
   readonly reason: string;
   readonly source: ProjectPreviewIssueSource;
   readonly timestamp: number;
@@ -69,6 +72,7 @@ export interface ProjectPreviewState {
   readonly rootPath: ProjectRoot | null;
   readonly target: ProjectPreviewTarget | null;
   readonly previewUrl: string | null;
+  readonly activeLoadId: ProjectPreviewLoadId | null;
   readonly status: ProjectPreviewStatus;
   readonly lastLoadedAt: number | null;
   readonly lastReloadedAt: number | null;
