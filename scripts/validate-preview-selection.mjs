@@ -11,12 +11,16 @@ const failures = [];
 const scriptPath = "apps/desktop/electron/main/preview-selection/project-preview-selection-script.ts";
 const previewPanelHtmlPath = "apps/desktop/electron/renderer/components/project-preview-panel/project-preview-panel.html";
 const bridgePath = "apps/desktop/electron/renderer/components/project-preview-panel/selection/project-preview-selection-message-bridge.ts";
+const validatorsPath = "packages/core/project/preview-selection/project-preview-selection-validators.ts";
+const mappingPath = "packages/core/project/preview-selection/mapping/project-preview-selection-mapping.ts";
 
 const scriptSource = await readText(scriptPath);
 const previewPanelHtml = await readText(previewPanelHtmlPath);
 const bridgeSource = await readText(bridgePath);
-const validators = await loadBundledModule("packages/core/project/preview-selection/project-preview-selection-validators.ts", bundledValidators, "validateProjectPreviewSelectedNodePayload");
-const mapping = await loadBundledModule("packages/core/project/preview-selection/mapping/project-preview-selection-mapping.ts", bundledMapping, "mapProjectPreviewSelectionToDomSnapshot");
+const validatorsSource = await readText(validatorsPath);
+const mappingSource = await readText(mappingPath);
+const validators = await loadBundledModule(validatorsPath, bundledValidators, "validateProjectPreviewSelectedNodePayload");
+const mapping = await loadBundledModule(mappingPath, bundledMapping, "mapProjectPreviewSelectionToDomSnapshot");
 
 try {
   expect(scriptSource.includes("export const PROJECT_PREVIEW_SELECTION_SCRIPT = ["), "Injected selection script is not represented as a string array.");
@@ -40,7 +44,19 @@ try {
   const previewPanelSource = `${previewPanelHtml}\n${bridgeSource}`;
   expect(!previewPanelSource.includes("getComputedStyle"), "Preview selection introduced computed styles.");
   expect(!previewPanelSource.toLowerCase().includes("bounding"), "Preview selection introduced bounding box UI.");
-  expect(!previewPanelSource.includes("Inspector"), "Preview selection introduced Inspector UI.");
+
+  const selectionSources = [
+    ["Injected selection script", scriptSource],
+    ["Preview selection bridge", bridgeSource],
+    ["Preview selection validators", validatorsSource],
+    ["Preview selection mapping", mappingSource]
+  ];
+  for (const [label, source] of selectionSources) {
+    expect(!source.includes("Inspector"), `${label} introduced Inspector UI.`);
+    expect(!source.includes("preview-inspector"), `${label} imports Preview Inspector code.`);
+    expect(!source.includes("data-project-preview-inspector"), `${label} references Preview Inspector DOM.`);
+    expect(!source.includes("renderProjectPreviewInspector"), `${label} references Preview Inspector renderer.`);
+  }
 
   const valid = validators.validateProjectPreviewSelectedNodePayload({
     snapshotPath: "0/1/2",
