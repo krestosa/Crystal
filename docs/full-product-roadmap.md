@@ -4,6 +4,16 @@ This document describes the full product roadmap for Crystal. It is intentionall
 
 Crystal is a new desktop application for creating, inspecting, and modifying real HTML projects and their dependencies. It is not derived from any previous project. Its fixed technology base is Electron, Node, TypeScript, Sass, Rust, WebAssembly, and WebGPU.
 
+## Product definition
+
+Crystal is a multiplatform workbench for real web project files. It is not only a code editor and not only a visual builder. It combines three main modes over the same project model:
+
+1. Design.
+2. Inspector.
+3. Developer.
+
+Those modes must share the same Project Graph, selection state, preview state, command history, file state, and workspace state. They must not become separate applications with duplicated internal truth.
+
 ## Product principles
 
 Crystal should be a robust desktop authoring environment for real web projects, not a toy page builder and not a browser DevTools clone.
@@ -16,9 +26,67 @@ Core principles:
 - Preview runs in a sandboxed iframe and must not expose Node, filesystem access, or internal Crystal APIs.
 - Read-only inspection and destructive editing are separate phases.
 - WebGPU overlays are for Crystal technical UI and should not contaminate the user's DOM.
+- Chromium renders the real web page; Crystal must not attempt to recreate an HTML/CSS rendering engine with WebGPU.
+- Rust/WASM accelerates parsing, analysis, diffing, dependency processing, and other heavy work; it does not own UI.
 - Source modularity stays high: small files, deep folders, and domain-specific modules compiled into compact runtime entrypoints.
 - CSS and JavaScript should generally be build outputs when a project uses Sass/TypeScript or modular source inputs.
-- Features should degrade safely on malformed HTML, missing assets, stale snapshots, ambiguous mapping, and unsupported project structures.
+- Features should degrade safely on malformed HTML, missing assets, stale snapshots, ambiguous mapping, unsupported project structures, unavailable WebGPU, and failed WASM initialization.
+
+## Source and runtime model
+
+The source tree should remain granular while runtime output stays compact:
+
+```txt
+source extremely modular
+        ↓
+build / compile / assemble
+        ↓
+runtime compact
+```
+
+Expected source inputs:
+
+- `.html` partials and templates.
+- `.scss` source styles.
+- `.ts`, `.types.ts`, `.constants.ts`, `.helpers.ts`, `.utils.ts` modules.
+- `.rs` Rust modules.
+- `.wgsl` shaders.
+
+Expected runtime outputs:
+
+- `index.html` or equivalent assembled HTML.
+- `main.css`.
+- `main.js`.
+- context-specific worker bundles.
+- `crystal.wasm`.
+- sourcemaps where useful.
+- copied or processed assets.
+
+Each execution context may have its own entrypoint. Electron main, preload, renderer, workers, and WASM should not be forced into one output file.
+
+## Dependency policy
+
+Crystal should use mature external tools when reimplementing them would be irrational, but dependencies must not define Crystal's architecture.
+
+Accepted structural dependencies include Electron, Node, TypeScript, Sass/Dart Sass, Rust, WebAssembly tooling, and the WebGPU API.
+
+Potentially acceptable dependencies include:
+
+- esbuild or Rollup for bundling.
+- Tree-sitter for serious incremental parsing.
+- Monaco or CodeMirror 6 for Developer Mode editing.
+- xterm.js for an integrated terminal.
+
+Avoid unless strongly justified:
+
+- React, Vue, Angular.
+- Redux, Zustand, or external state managers.
+- Tailwind, Bootstrap, Material UI, Radix, Framer Motion.
+- full Lodash.
+- visual component libraries.
+- packages for trivial debounce/throttle/helpers.
+
+Any accepted dependency should sit behind an adapter, such as `packages/adapters/code-editor/`, `packages/adapters/terminal/`, `packages/adapters/parser/`, or `packages/adapters/bundler/`.
 
 ## Product tracks
 
@@ -26,12 +94,12 @@ Crystal has several parallel product tracks. Each track should land incrementall
 
 - Project understanding: graph, dependencies, assets, cache, watcher, analyzer.
 - Preview and inspection: Chromium preview, diagnostics, DOM snapshot, selection, inspector.
-- Design canvas: Figma-like navigation, overlays, selection, rulers, guides, responsive viewport control.
-- Visual editing: HTML element insertion, reorder, wrap, duplicate, delete, text editing, attribute editing, undo/redo.
-- Style editing: CSS/Sass reading, cascade analysis, selector mapping, design tokens, responsive rules.
-- Developer mode: files, code, console/logs, problems, command output, build integration.
+- Design canvas: Figma-like navigation, overlays, selection, rulers, guides, grids, snapping, responsive viewport control.
+- Visual editing: HTML element insertion, reorder, wrap, duplicate, delete, text editing, attribute editing, class management, undo/redo.
+- Style editing: CSS/Sass reading, cascade analysis, selector mapping, design tokens, responsive rules, style states.
+- Developer mode: files, code, system terminal, browser console, problems, command output, build integration.
 - Native acceleration: WebGPU overlay and Rust/WASM analyzers.
-- Robustness: validation, snapshots/backups, error recovery, accessibility, performance profiling, packaging.
+- Robustness: validation, fallbacks, snapshots/backups, error recovery, accessibility, performance profiling, packaging.
 
 ## Phase -1 — Physical architecture
 
@@ -43,15 +111,17 @@ Included:
 - `/apps` and `/packages` root structure.
 - Electron main, preload, and renderer separation.
 - Modular renderer folders for layout, views, components, styles, and bootstrap.
+- Each visual unit can own HTML, SCSS, TypeScript, types, constants, helpers, utilities, state, and events.
 - Core command, event, state, and project domains.
 - Adapter folders for external tool boundaries.
-- Runtime outputs in `dist/main`, `dist/preload`, and `dist/renderer`.
+- Runtime outputs in `dist/main`, `dist/preload`, `dist/renderer`, future `dist/workers`, and future `dist/wasm`.
 
 Done when:
 
 - Source layout is stable enough for small-file modular growth.
 - Build outputs are compact and explicit.
 - Security boundaries are documented.
+- Files stay domain-specific and avoid vague `utils.ts`, `helpers.ts`, `common.ts`, or undifferentiated managers.
 
 ## Phase 0 — Tooling foundation
 
@@ -68,6 +138,16 @@ Included:
 - Structure validation.
 - Local validation runner.
 - Electron diagnostic script.
+
+Future hardening:
+
+- Source tree boundary validation.
+- Import boundary validation.
+- Dist manifest validation.
+- Worker bundle validation.
+- WASM build validation.
+- HTML include source map support.
+- Circular include reporting.
 
 Done when:
 
@@ -89,6 +169,18 @@ Included:
 - Watcher events and graph refresh planning.
 - In-memory cache and conservative semi-incremental refresh.
 
+Target model expansion:
+
+- Parsed DOM per HTML page.
+- CSS classes used in HTML and stylesheets.
+- Selectors and rule ownership.
+- Applied style candidates where statically resolvable.
+- Broken assets and broken links.
+- Unused files and unused assets.
+- Unused CSS candidates.
+- Inferred components and repeated structures.
+- Workspace status and project health signals.
+
 Future hardening:
 
 - Framework alias resolution.
@@ -97,6 +189,8 @@ Future hardening:
 - npm package asset resolution.
 - Better monorepo/package workspace awareness.
 - Large-project indexing and persistence.
+- Worker-backed scanning and analysis.
+- Rust/WASM acceleration behind typed boundaries.
 
 Done when:
 
@@ -115,6 +209,7 @@ Included:
 - Coalesced and bounded Preview issues.
 - Load Preview and Reload Preview.
 - Watcher-triggered preview reload after graph refresh.
+- Safe mode when Preview fails or target cannot be loaded.
 - Static read-only DOM Snapshot.
 - DOM Tree read-only panel.
 - Preview selection script injected only into HTML responses.
@@ -135,6 +230,7 @@ Done when:
 - Preview can safely render project pages.
 - DOM Snapshot can represent static HTML within limits.
 - Selection can identify nodes conservatively without pretending unreliable mappings are valid.
+- Bad project files produce controlled diagnostics, not crashes.
 
 ## Phase 3 — Preview Inspector read-only
 
@@ -147,6 +243,7 @@ Included:
 - Mapped DOM Snapshot node details when mapping is `matched`.
 - Defensive states for `missing-snapshot`, `stale`, `mismatched`, and `ambiguous`.
 - Attributes, text preview, source location, depth, sibling index, child count, and truncation flags when available.
+- Element identity: tag, ID, classes, attributes, source file, approximate source line when available, and dominant selector candidate where safely known.
 
 Out of scope:
 
@@ -176,6 +273,10 @@ Included:
 - Persistent viewport state per project/session.
 - Device viewport presets.
 - Canvas background, page shadow, and non-destructive framing.
+- Rulers foundation.
+- Guides foundation.
+- Grid display foundation.
+- Safe mode surface if the loaded page fails.
 - Keyboard shortcut registry for canvas commands.
 
 Out of scope:
@@ -202,6 +303,8 @@ Included:
 - Selection handles shown read-only at first.
 - Multi-frame awareness for different preview viewports.
 - Overlay lifecycle tied to Preview reload/loadId.
+- Visual breadcrumbs foundation.
+- Layout type badges for `block`, `flex`, `grid`, `absolute`, `fixed`, and `sticky` when safely derivable.
 - No mutation of user DOM beyond the existing temporary selection script.
 
 Out of scope:
@@ -219,24 +322,60 @@ Done when:
 
 Goal: provide Webflow/Pinegrow-like insertion primitives for real HTML source.
 
-Included elements:
+The panel should be organized by user intent, not as a flat tag list.
 
-- `div`, `section`, `article`, `header`, `main`, `footer`, `nav`.
-- `h1` through `h6`, `p`, `span`, `strong`, `em`, `small`.
-- `a`, `button`.
-- `img`, `picture`, `source`, `video`, `audio`, `svg` references.
-- `ul`, `ol`, `li`.
-- `form`, `label`, `input`, `textarea`, `select`, `option`, `fieldset`, `legend`.
-- Basic `table`, `thead`, `tbody`, `tr`, `th`, `td`.
-- Template snippets for common sections such as hero, card, navbar, footer, gallery, form, and grid.
+Structural elements:
+
+- `div`, `section`, `article`, `main`, `header`, `footer`, `aside`, `nav`.
+
+Text elements:
+
+- `h1` through `h6`, `p`, `span`, `blockquote`, `code`, `pre`, `strong`, `em`, `small`.
+
+Media elements:
+
+- `img`, `picture`, `source`, `video`, `audio`, `svg` references, `canvas`.
+
+Form elements:
+
+- `form`, `label`, `input`, `textarea`, `select`, `option`, `button`, `fieldset`, `legend`.
+
+Lists and table elements:
+
+- `ul`, `ol`, `li`, `table`, `thead`, `tbody`, `tr`, `th`, `td`.
+
+Interaction elements:
+
+- `details`, `summary`, `dialog`.
+
+Semantic and accessibility helpers:
+
+- Landmark presets.
+- Required roles where appropriate.
+- ARIA attribute helpers when appropriate.
+- Label/input pairing helpers.
+
+Presets:
+
+- Hero section.
+- Card.
+- Navbar.
+- Footer.
+- Product grid.
+- Modal.
+- Form group.
+- CTA block.
+- Gallery.
+- Menu/listing section.
 
 Architecture:
 
 - Insertions are commands, not direct renderer writes.
-- Commands validate target, mapping status, insertion position, allowed parent/child constraints, and formatting.
+- Commands validate target, mapping status, insertion position, allowed parent/child constraints, accessibility defaults, and formatting.
 - Source mutation happens in main/core services, not in renderer.
 - Preview and Project Graph refresh after write.
 - Undo/redo records a reversible source patch.
+- Presets generate clean HTML and must not produce builder-specific junk.
 
 Done when:
 
@@ -255,6 +394,9 @@ Included:
 - Move/reorder among siblings.
 - Add before/after/inside selected element.
 - Basic attribute editing for safe attributes: `id`, `class`, `href`, `src`, `alt`, `title`, `aria-*`, `data-*`.
+- Class management: add existing class, remove class, create class through the command system.
+- Breadcrumb functional enough to expose selection ancestry.
+- Hover, focus, and active state preview hooks without writing state-specific CSS by default.
 - Undo/redo for every mutation.
 - Dirty state and save/apply behavior.
 - Source formatting preservation strategy.
@@ -284,15 +426,24 @@ Included:
 - Conflict detection when snapshot or Preview is stale.
 - Disabled editing for ambiguous/mismatched selections.
 
-Out of scope:
+Inspector submodules:
+
+- Identity: tag, ID, classes, attributes, source file, approximate line, inferred component, dominant selector, and current state.
+- Cascade Map: applied rules, source file, winning selector, specificity, overridden properties, inactive properties, active media queries, and origin such as user agent, project, framework, or inline.
+- Class Composer: add class, create class, rename class, detect orphan classes, show class usage, convert inline styles to classes, and extract repeated styles.
+- Layout Intelligence: real layout type, parent flex/grid/block context, affected children, overflow, stacking context, effective z-index, position context, size problems, out-of-ratio images, invisible nodes, and covered nodes.
+- Style Diff: original style, current style, unsaved changes, Crystal-generated changes, and manual code changes.
+- Semantic and Accessibility Inspector: landmarks, missing alt text, heading order, input labels, unnamed buttons, empty links, approximate contrast, and unnecessary roles.
+
+Out of scope initially:
 
 - Full CSS rule editor.
-- Computed style editing.
 - JS event handler editing.
+- Arbitrary script mutation.
 
 Done when:
 
-- The Inspector can safely mutate selected HTML through commands with undo/redo.
+- The Inspector can safely mutate selected HTML through commands with undo/redo and show enough intelligence to explain the selected element in project context.
 
 ## Phase 9 — Style Engine and CSS/Sass Inspector
 
@@ -309,6 +460,33 @@ Included:
 - Design tokens for colors, spacing, typography, radii, shadows, and breakpoints.
 - Safe style insertion location policy.
 - Property editor for common properties.
+
+Visual style editor categories:
+
+- Layout.
+- Spacing.
+- Size.
+- Position.
+- Typography.
+- Color.
+- Background.
+- Border.
+- Effects.
+- Transform.
+- Flex.
+- Grid.
+- Responsive.
+- Custom properties.
+- States.
+
+Style write policy:
+
+- Crystal should not write inline styles by default.
+- Prefer existing reusable classes when safe.
+- Create new classes when needed.
+- Prefer authored stylesheets over generated CSS outputs.
+- Prefer CSS variables/design tokens for repeated values where the project structure supports them.
+- Inline style should require explicit user intent.
 
 Out of scope initially:
 
@@ -332,6 +510,8 @@ Included:
 - CSS media query awareness.
 - Grid/flex visual helpers.
 - Spacing measurement overlays.
+- Snapping foundation.
+- Responsive guides.
 - Safe layout property editing.
 - Responsive issue warnings for overflowing content, missing viewport meta, large fixed widths, and media without responsive attributes.
 
@@ -377,6 +557,8 @@ Included:
 - Alt text and accessibility prompts.
 - Large asset warnings.
 - Basic media optimization recommendations.
+- Broken asset repair suggestions.
+- Unused asset candidates.
 
 Done when:
 
@@ -390,12 +572,22 @@ Included:
 
 - File explorer.
 - Lightweight code editor panel.
+- Multiple open files.
+- Preview side-by-side.
 - Search across project.
 - Problems panel.
-- Preview console/log bridge, if safe and scoped.
+- Browser Console for the Preview, scoped separately from the system terminal.
+- System/project terminal, scoped separately from Browser Console.
 - Build/dev command runner with explicit user configuration.
 - Output panel.
 - Git status read-only at first.
+- Outline.
+- File breadcrumbs.
+- Dependency viewer.
+- Assets panel.
+- Task runner.
+- Jump from element to code.
+- Jump from code to element.
 - Command palette.
 
 Out of scope initially:
@@ -406,7 +598,7 @@ Out of scope initially:
 
 Done when:
 
-- Developers can inspect files, diagnostics, and configured commands without leaving Crystal for simple tasks.
+- Developers can inspect files, diagnostics, and configured commands without leaving Crystal for simple tasks, while terminal and Preview console remain clearly separated.
 
 ## Phase 14 — WebGPU Overlay Engine
 
@@ -418,14 +610,18 @@ Included:
 - Bounding boxes.
 - Handles.
 - Guides and rulers.
+- Grids.
+- Minimap.
 - Measurement lines.
 - Hover and selection overlay layers.
+- Hit-testing visual data.
+- Massive rectangle/line/vector overlay rendering.
 - Invalidation tied to Preview loadId and viewport transform.
-- CPU fallback path if WebGPU is unavailable.
+- Canvas2D fallback path if WebGPU is unavailable.
 
 Out of scope:
 
-- Using WebGPU to render the webpage itself before the analyzer foundation exists.
+- Using WebGPU to render the webpage itself.
 - Mutating user DOM for overlay visuals.
 
 Done when:
@@ -442,14 +638,18 @@ Included:
 - CSS parser/analyzer.
 - Selector matching support for static cases.
 - Dependency graph acceleration.
-- Incremental analysis APIs.
+- Incremental diff and analysis APIs.
+- Asset metadata analysis.
+- Tree-sitter integration evaluation.
 - WASM boundary types.
+- Worker-hosted WASM calls for expensive tasks.
 - Performance benchmarks against TypeScript implementation.
 
 Out of scope initially:
 
 - Replacing the entire TypeScript core at once.
 - Browser-grade full layout/render engine.
+- UI ownership from Rust/WASM.
 
 Done when:
 
@@ -489,7 +689,8 @@ Included:
 
 - Expanded non-visual validation scripts.
 - UI smoke testing when a stable framework is selected.
-- Fixture gallery for Preview, selection, Inspector, design canvas, and editing.
+- Screenshot testing when the UI stabilizes.
+- Fixture gallery for Preview, selection, Inspector, design canvas, editing, Style Engine, Developer Mode, WebGPU overlay, and WASM analyzer.
 - Regression tests for path traversal and sandbox security.
 - Crash recovery.
 - Project backups before destructive writes.
@@ -503,6 +704,134 @@ Included:
 Done when:
 
 - Crystal can be packaged and used on real projects with predictable recovery from errors.
+
+## Workers roadmap
+
+Heavy processing should move off the UI thread when possible.
+
+Potential workers:
+
+- `parser.worker`.
+- `analyzer.worker`.
+- `asset-scanner.worker`.
+- `css.worker`.
+- `html.worker`.
+- `ts.worker`.
+- `preview-sync.worker`.
+- `wasm.worker`.
+
+Rules:
+
+- UI must not block on parsing, scanning, analysis, or expensive computation.
+- Worker boundaries must use typed messages.
+- Worker results must be validated before updating project state.
+
+## Fallback roadmap
+
+Crystal must degrade in controlled ways:
+
+- If WebGPU fails, use Canvas2D overlay or disable overlay with a visible reason.
+- If WASM fails, use TypeScript fallback or limited analysis mode.
+- If Preview fails, show safe mode with diagnostics.
+- If HTML is malformed, use tolerant parsing with issues.
+- If CSS or assets fail to load, show visible diagnostics.
+- If a script blocks or crashes Preview, isolate the failure and show a warning.
+- If terminal or command runner fails, show explicit error state.
+
+## Build pipeline target
+
+The long-term build pipeline should be explicit:
+
+```txt
+1. validate source tree
+2. assemble HTML partials
+3. compile SCSS
+4. bundle TypeScript
+5. compile Rust/WASM
+6. process/copy assets
+7. generate manifest
+8. validate dist
+```
+
+Expected output:
+
+```txt
+dist/
+  main/
+    main.cjs
+  preload/
+    preload.cjs
+  renderer/
+    index.html
+    main.css
+    main.js
+  workers/
+    parser.worker.js
+    analyzer.worker.js
+  wasm/
+    crystal.wasm
+  assets/
+```
+
+## Command system roadmap
+
+All meaningful mutations must pass through commands.
+
+Representative commands:
+
+- `AddHtmlElementCommand`.
+- `RemoveHtmlElementCommand`.
+- `UpdateTextCommand`.
+- `UpdateAttributeCommand`.
+- `AddClassCommand`.
+- `RemoveClassCommand`.
+- `UpdateCssPropertyCommand`.
+- `CreateCssClassCommand`.
+- `RenameCssClassCommand`.
+- `MoveDomNodeCommand`.
+- `DuplicateDomNodeCommand`.
+
+Commands enable undo, redo, history, logging, reproducibility, multi-view synchronization, and a future macro system.
+
+## Event system roadmap
+
+Commands execute actions. Events report changes. The two concepts must remain separate.
+
+Representative events:
+
+- `ProjectOpened`.
+- `ProjectClosed`.
+- `FileChanged`.
+- `FileSaved`.
+- `GraphUpdated`.
+- `PreviewLoaded`.
+- `PreviewCrashed`.
+- `DomSnapshotUpdated`.
+- `SelectionChanged`.
+- `CssRuleChanged`.
+- `AssetMissing`.
+- `BuildStarted`.
+- `BuildCompleted`.
+- `BuildFailed`.
+
+## State roadmap
+
+Crystal should keep explicit project state rather than hiding important data inside UI components.
+
+Major state domains:
+
+- `WorkspaceState`.
+- `ProjectGraphState`.
+- `SelectionState`.
+- `PreviewState`.
+- `InspectorState`.
+- `DeveloperState`.
+- `FileState`.
+- `BuildState`.
+- `CommandHistoryState`.
+- `UIState`.
+
+State can be centralized or modular by domain, but it should remain owned by Crystal modules and exposed through controlled APIs.
 
 ## Cross-cutting robustness features
 
@@ -519,8 +848,49 @@ These features should be considered throughout multiple phases:
 - SEO basics: title, description, canonical, social metadata, headings.
 - Performance basics: large assets, missing dimensions, render-blocking assets, excessive dependency count.
 - Security basics: unsafe external links, inline script warnings, path traversal hardening.
+- Project health score.
+- Compare changes.
+- Clean export.
 - Import/export of snippets and settings.
-- Plugin API only after command/state boundaries are mature.
+- Adapter/plugin API only after command/state boundaries are mature.
+
+## Non-negotiable project rules
+
+- Crystal is a new project from scratch.
+- Crystal does not depend on any previous project.
+- Electron, Node, TypeScript, Sass, Rust, WebAssembly, and WebGPU are fixed technologies.
+- Crystal must be multiplatform.
+- Source architecture must remain highly modular.
+- Each UI unit should have its own folder and may own HTML, SCSS, TypeScript, types, helpers, utilities, constants, state, and events.
+- Modular source must compile or assemble into compact entrypoints.
+- External dependencies must be justified and isolated behind adapters.
+- UI, state, commands, and events belong to Crystal.
+- Chromium renders the real webpage.
+- WebGPU renders Crystal technical overlays.
+- Rust/WASM handles analysis and heavy processing, not UI.
+- Preview must not contaminate the user's DOM with heavy overlays.
+- All important modifications must pass through commands.
+- Crystal must fail in a controlled way when user projects are broken.
+
+## Pending decisions
+
+These decisions are intentionally not frozen yet:
+
+1. Primary bundler beyond current esbuild usage, if a change is needed later.
+2. Code editor adapter: Monaco, CodeMirror 6, or another option.
+3. Integrated terminal adapter: xterm.js or another option.
+4. Incremental parser strategy: Tree-sitter, Rust/WASM parser, or phased internal parser.
+5. UI implementation strategy: native modular UI, Web Components, Lit, Solid, or another justified option.
+6. Exact long-term HTML include syntax and source map strategy.
+7. Plugin and adapter API boundaries.
+8. UI testing strategy and timing.
+9. Theming system and token model.
+10. Exact command bus structure.
+11. Exact Project Graph long-term schema.
+12. Source maps between visual selection and code.
+13. Sass visual editing strategy.
+14. Strategy for external frameworks and generated projects.
+15. Sandbox policy for user scripts and Preview console integration.
 
 ## Validation policy
 
@@ -540,12 +910,12 @@ npm run validate:local -- --with-dev
 
 Feature-specific scripts should be added as phases land, for example:
 
-- `validate:preview-inspector`
-- `validate:design-canvas`
-- `validate:design-editing`
-- `validate:style-engine`
-- `validate:webgpu-overlay`
-- `validate:wasm-analyzer`
+- `validate:preview-inspector`.
+- `validate:design-canvas`.
+- `validate:design-editing`.
+- `validate:style-engine`.
+- `validate:webgpu-overlay`.
+- `validate:wasm-analyzer`.
 
 ## Current priority after Phase 2
 
