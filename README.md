@@ -2,7 +2,7 @@
 
 Crystal is a new desktop application for creating, inspecting, and modifying real HTML projects and their related assets.
 
-This repository now covers roadmap Phase -1, the minimal Phase 0 tooling foundation, the Phase 1 Project Graph foundation with watcher/cache support, and the first Phase 2 real project preview with hardened read-only DOM snapshot, basic read-only Preview selection, conservative selection-to-snapshot mapping, and a minimal read-only Preview Inspector.
+This repository now covers roadmap Phase -1, the minimal Phase 0 tooling foundation, the Phase 1 Project Graph foundation with watcher/cache support, the first Phase 2 real project preview with hardened read-only DOM snapshot, basic read-only Preview selection, conservative selection-to-snapshot mapping, a minimal read-only Preview Inspector, and the first read-only Design Canvas navigation layer.
 
 ## Requirements
 
@@ -73,6 +73,7 @@ npm run validate:preview
 npm run validate:dom-snapshot
 npm run validate:preview-selection
 npm run validate:preview-inspector
+npm run validate:design-canvas
 npm run validate:local:watch
 npm run doctor:electron
 ```
@@ -109,10 +110,15 @@ Implemented:
 - minimal `previewSelection` state and selected-node summary
 - conservative read-only mapping between selected Preview nodes and DOM Snapshot paths
 - minimal read-only Preview Inspector derived from Preview selection, Preview state, and DOM Snapshot state
+- read-only Design Canvas frame around the Preview surface
+- Design Canvas viewport state with pan, wide safe zoom, fit, center, and reset
+- mouse, middle-button, keyboard, and trackpad-aware canvas navigation with normalized wheel deltas
+- Space + drag canvas panning and Ctrl/Cmd + wheel or trackpad canvas zooming while normal wheel and two-finger trackpad scroll remain available to the Preview iframe
 - `validate:preview` for non-visual Preview checks
 - `validate:dom-snapshot` for non-visual DOM snapshot checks
 - `validate:preview-selection` for non-visual Preview selection and mapping checks
 - `validate:preview-inspector` for non-visual Preview Inspector model, UI, and boundary checks
+- `validate:design-canvas` for non-visual Design Canvas navigation and boundary checks
 - local validation runner for pre-merge checks
 - Electron local environment diagnostics
 
@@ -125,9 +131,10 @@ Intentionally out of scope:
 - Rust/WASM analyzer implementation
 - code editor
 - integrated terminal
-- DOM visual selection canvas, persistent overlays, or bounding boxes
+- persistent overlays, rulers, guides, grids, snapping, or bounding boxes
 - computed styles and visual style editing
 - editable attributes or source mutation from selection
+- HTML insertion, text editing, attribute editing, or DOM movement
 - scroll-to-node, functional breadcrumbs, or DOM Tree navigation from Preview selection
 - Electron UI automation frameworks such as Playwright, Cypress, or Spectron
 
@@ -150,6 +157,22 @@ Preview diagnostics are produced by Electron main and the protocol handler. The 
 Repeated issues are coalesced by type, safe path, and reason. Crystal keeps at most 50 recent Preview issues in memory. Unsupported MIME fallbacks are warnings only when an existing file is served with `application/octet-stream`.
 
 Watcher reload is conservative. Preview reload is considered after Project Graph refresh completion and only for the current page or direct dependencies. Ignored paths, including `.crystal-cache`, do not request Preview reload.
+
+## Design Canvas navigation read-only
+
+The Design Canvas wraps only the visual Preview frame. Preview panel controls, target selection, Preview issues, selected-node summary, and Preview Inspector remain outside the transform and are not scaled by pan or zoom.
+
+The current Design Canvas supports Space + drag panning, middle mouse panning where the event reaches the canvas, empty-background drag panning, Ctrl/Cmd + wheel or trackpad zooming, Fit, Center, Reset, visible zoom percentage, a simple desktop page frame, and in-memory viewport state for the current renderer session. Zoom is intentionally broad with explicit safety limits, not mathematically infinite: it supports very large zoom out/in while clamping invalid values, preserving numeric stability, normalizing wheel and trackpad delta modes, and keeping the frame recoverable through pan bounds.
+
+Normal mouse wheel input and normal trackpad two-finger scroll are left to the Preview iframe so the loaded page can scroll. Ctrl/Cmd + wheel or Chromium's Ctrl-emulated trackpad pinch is reserved for Design Canvas zoom. Space + drag is reserved for Design Canvas pan. Trackpad horizontal, vertical, and diagonal deltas can pan the canvas only when canvas navigation is active, such as Space mode or empty canvas background interaction.
+
+The capture layer is external to the user document and has `pointer-events: none` in the normal state. It is enabled only while Space, Ctrl/Cmd, or pan capture is active, then returns to non-blocking mode so the iframe receives normal click, wheel, scroll, and selection interaction again.
+
+Fit, Center, and Reset are recovery controls. Fit brings the frame back into the visible work area, Center recenters at the current zoom, and Reset returns to 100% zoom centered.
+
+This layer does not edit HTML, insert elements, move DOM nodes, edit text, edit attributes, query the live iframe document, call `iframe.contentDocument`, call `iframe.contentWindow.document`, compute styles, inspect box model, draw persistent bounding boxes, use a canvas overlay, access WebGPU, write files, or relax the iframe sandbox.
+
+The next intended step is Visual Selection and Overlay MVP. That must remain read-only until command-backed editing, source mutation policy, and undo/redo are ready.
 
 ## Preview selection read-only
 

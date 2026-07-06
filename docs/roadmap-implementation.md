@@ -100,20 +100,49 @@ Covered:
 - compact read-only Preview Inspector panel
 - non-visual `validate:preview-inspector` script
 
+### Phase 3 foundation — Design Canvas Navigation MVP
+
+Covered:
+
+- pure Design Canvas viewport model under `packages/core/project/design-canvas/`
+- wide safe zoom state with 2% minimum, 6400% maximum, and 100% default
+- wheel and trackpad delta normalization for pixel, line, and page delta modes
+- pan state with transient panning marker and last interaction timestamp
+- fit, center, reset, focal zoom, panning, pan clamp, and finite-number viewport helpers
+- pan recovery margin so the frame cannot be lost completely
+- renderer Design Canvas component around the Preview frame
+- toolbar controls outside the transformed stage
+- Preview visual frame inside the transformed stage only
+- simple desktop page frame at 1280 × 720
+- Space + drag panning
+- middle mouse panning where the event reaches the canvas
+- empty-background drag and wheel/trackpad panning without blocking the iframe
+- Ctrl/Cmd + wheel or trackpad canvas zooming while normal wheel and two-finger trackpad scroll remain available to Preview
+- keyboard zoom, reset, fit, center, and arrow-key pan when the canvas surface has focus
+- Fit, Center, and Reset recovery controls
+- visible zoom percentage
+- temporary Space/Ctrl/Cmd/pan capture states so Preview returns to normal interaction outside canvas gestures
+- external capture layer that defaults to `pointer-events: none`
+- in-memory viewport state persistence for the current renderer session
+- non-visual `validate:design-canvas` script
+- `validate:design-canvas` wired into `validate:local`
+- documentation of read-only Design Canvas limits
+
 Not covered yet:
 
-- visual Design Canvas MVP
-- Figma-like pan and zoom canvas controls
-- rulers, guides, grids, snapping, measurement overlays, and persistent bounding boxes
-- safe mode surface in Design when Preview fails beyond current diagnostics
-- visual breadcrumbs and DOM Tree interaction
-- layout visualization for block, flex, grid, absolute, fixed, and sticky contexts
-- hover, focus, and active visual state tooling
+- visual editing
 - HTML5 element insertion library
 - grouped HTML5 element panel by intent: structure, text, media, forms, lists/tables, interaction, semantic/accessibility
 - Webflow/Pinegrow-like structural editing commands
 - source mutation, save/apply, dirty state, and undo/redo
 - editable attributes or text editing
+- moving DOM nodes
+- persistent bounding boxes
+- rulers, guides, grids, snapping, and measurement overlays
+- safe mode surface in Design when Preview fails beyond current diagnostics
+- visual breadcrumbs and DOM Tree interaction
+- layout visualization for block, flex, grid, absolute, fixed, and sticky contexts
+- hover, focus, and active visual state tooling
 - class management and Class Composer
 - CSS cascade or specificity analysis
 - Style Engine and CSS/Sass Inspector
@@ -142,21 +171,20 @@ Not covered yet:
 
 ## Full roadmap summary
 
-The complete roadmap is documented in [`docs/full-product-roadmap.md`](./full-product-roadmap.md). The high-level sequence after the current Preview foundations is:
+The complete roadmap is documented in [`docs/full-product-roadmap.md`](./full-product-roadmap.md). The high-level sequence after the current Preview and Design Canvas navigation foundations is:
 
-1. Design Canvas Navigation MVP.
-2. Visual Selection and Overlay MVP.
-3. HTML5 Element Library and Insertion.
-4. Design Editing MVP with commands and undo/redo.
-5. Editable Inspector MVP.
-6. Style Engine and CSS/Sass Inspector.
-7. Responsive Design and Layout Tools.
-8. Components, snippets, and reusable blocks.
-9. Assets, fonts, SVG, and media management.
-10. Developer Mode and IDE tools.
-11. WebGPU Overlay Engine.
-12. Rust/WASM Analyzer.
-13. Automation, assistant workflows, packaging, testing, and product hardening.
+1. Visual Selection and Overlay MVP.
+2. HTML5 Element Library and Insertion.
+3. Design Editing MVP with commands and undo/redo.
+4. Editable Inspector MVP.
+5. Style Engine and CSS/Sass Inspector.
+6. Responsive Design and Layout Tools.
+7. Components, snippets, and reusable blocks.
+8. Assets, fonts, SVG, and media management.
+9. Developer Mode and IDE tools.
+10. WebGPU Overlay Engine.
+11. Rust/WASM Analyzer.
+12. Automation, assistant workflows, packaging, testing, and product hardening.
 
 Directive-level roadmap details are now tracked in `docs/full-product-roadmap.md`, including Design Mode, Inspector submodules, Developer Mode console separation, workers, fallbacks, build pipeline, command/event/state roadmaps, non-negotiable rules, and pending decisions.
 
@@ -168,7 +196,7 @@ Run:
 npm run validate:local
 ```
 
-The runner executes the current install, build, typecheck, Project Graph, watcher/cache, Preview, DOM snapshot, watcher filesystem, Electron diagnostic checks, and any feature-specific validation scripts that have been wired into it. It stops on the first failure and returns a non-zero exit code.
+The runner executes the current install, build, typecheck, Project Graph, watcher/cache, Preview, DOM snapshot, Preview selection, Preview Inspector, Design Canvas, watcher filesystem, Electron diagnostic checks, and any feature-specific validation scripts that have been wired into it. It stops on the first failure and returns a non-zero exit code.
 
 For the explicit Electron launch check, run:
 
@@ -182,4 +210,4 @@ The validation runner is mandatory before requesting PR merge. It must be update
 
 ## Recommended next module
 
-After the current Preview Inspector foundation, move to Design Canvas navigation before broad visual editing. Do not jump directly to editable Inspector, full Design Editing, Developer Mode, WebGPU, or Rust/WASM before the required intermediate foundations are in place.
+After the current Design Canvas navigation foundation, move to Visual Selection and Overlay MVP before HTML insertion or broad visual editing. Do not jump directly to editable Inspector, full Design Editing, Developer Mode, WebGPU, or Rust/WASM before the required intermediate foundations are in place.
