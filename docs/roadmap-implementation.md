@@ -100,24 +100,41 @@ Not covered yet:
 - read-only Preview Inspector, unless landed in a later PR
 - visual Design Canvas MVP
 - Figma-like pan and zoom canvas controls
-- rulers, guides, measurement overlays, and persistent bounding boxes
+- rulers, guides, grids, snapping, measurement overlays, and persistent bounding boxes
+- safe mode surface in Design when Preview fails beyond current diagnostics
+- visual breadcrumbs and DOM Tree interaction
+- layout visualization for block, flex, grid, absolute, fixed, and sticky contexts
+- hover, focus, and active visual state tooling
 - HTML5 element insertion library
+- grouped HTML5 element panel by intent: structure, text, media, forms, lists/tables, interaction, semantic/accessibility
 - Webflow/Pinegrow-like structural editing commands
-- source mutation, save/apply, and undo/redo
+- source mutation, save/apply, dirty state, and undo/redo
 - editable attributes or text editing
+- class management and Class Composer
 - CSS cascade or specificity analysis
 - Style Engine and CSS/Sass Inspector
+- visual style editor categories: layout, spacing, size, position, typography, color, background, border, effects, transform, flex, grid, responsive, custom properties, and states
+- style write policy: existing class, new class, selector, stylesheet, Sass partial, CSS variable, and explicit-only inline style
 - responsive breakpoint tooling
 - component/snippet library
 - asset/font/SVG/media management UI
 - Developer Mode / IDE tools
+- separate system terminal and Preview Browser Console
 - browser console integration
+- Project Graph target expansion for DOM, classes, selectors, applied styles, unused files, unused assets, inferred components, and workspace status
+- worker-backed parser/analyzer/asset/css/html/ts/preview-sync/wasm processing
+- fallbacks for WebGPU, WASM, Preview, malformed HTML, failed CSS/assets, blocking scripts, and terminal failure
+- explicit build pipeline for source validation, HTML assembly, SCSS compilation, TypeScript bundling, Rust/WASM compilation, assets, manifest, and dist validation
+- command bus and mutation commands
+- event bus and domain events
+- state domains for workspace, graph, selection, preview, inspector, developer, files, build, history, and UI
 - WebGPU overlay implementation
 - Rust/WASM analyzer implementation
 - framework alias resolution
 - TypeScript semantic analysis
 - Electron UI automation framework
 - screenshot testing
+- pending decisions for bundler, code editor, terminal, parser, UI strategy, plugins, testing, theming, visual/code source maps, Sass editing, external frameworks, and Preview sandbox policy
 
 ## Full roadmap summary
 
@@ -137,6 +154,8 @@ The complete roadmap is documented in [`docs/full-product-roadmap.md`](./full-pr
 12. WebGPU Overlay Engine.
 13. Rust/WASM Analyzer.
 14. Automation, assistant workflows, packaging, testing, and product hardening.
+
+Directive-level roadmap details are now tracked in `docs/full-product-roadmap.md`, including Design Mode, Inspector submodules, Developer Mode console separation, workers, fallbacks, build pipeline, command/event/state roadmaps, non-negotiable rules, and pending decisions.
 
 ## Required validation before PR merge
 
