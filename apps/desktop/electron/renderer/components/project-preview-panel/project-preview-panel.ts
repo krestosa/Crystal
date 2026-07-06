@@ -264,17 +264,19 @@ function getProjectPreviewPanelElements(panel: HTMLElement): ProjectPreviewPanel
   };
 }
 
-function queryPanelElement<TElement extends Element>(root: HTMLElement, selector: string, constructor: { new(): TElement }): TElement {
-  const element = root.querySelector(selector);
-  if (!(element instanceof constructor)) throw new Error(`Missing Project Preview panel element: ${selector}`);
+function queryPanelElement<TElement extends HTMLElement>(panel: HTMLElement, selector: string, elementType: new () => TElement): TElement {
+  const element = panel.querySelector(selector);
+  if (!(element instanceof elementType)) throw new Error(`Missing Project Preview panel element: ${selector}`);
   return element;
 }
 
 function renderPreviewStatus(state: ProjectPreviewState): string {
-  if (state.status === "ready" && !state.isSyncedWithProjectGraph) return "ready - graph stale";
+  if (state.status === "ready" && state.issueCount > 0) return "ready with issues";
+  if (state.status === "ready" && state.isSyncedWithProjectGraph) return "ready";
+  if (state.status === "ready") return "ready, graph pending";
   return state.status;
 }
 
-function formatTimestamp(value: number): string {
-  return new Date(value).toLocaleTimeString();
+function formatTimestamp(timestamp: number): string {
+  return new Date(timestamp).toLocaleTimeString();
 }
