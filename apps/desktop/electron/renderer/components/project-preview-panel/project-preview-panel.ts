@@ -1,6 +1,8 @@
+import type { ProjectDomSnapshotState } from "../../../../../../packages/core/project/dom/project-dom-snapshot.types";
 import type { ProjectGraph } from "../../../../../../packages/core/project/graph/project-graph.types";
 import type { ProjectPreviewIssue, ProjectPreviewLoadResult, ProjectPreviewState } from "../../../../../../packages/core/project/preview/project-preview.types";
 import type { ProjectPreviewSelectedNode, ProjectPreviewSelectionState } from "../../../../../../packages/core/project/preview-selection/project-preview-selection.types";
+import { renderProjectPreviewInspector } from "./inspector/project-preview-inspector-renderer";
 import type { ProjectPreviewPanelElements } from "./project-preview-panel.types";
 import { createProjectPreviewSelectionMessageBridge, type ProjectPreviewSelectionMessageBridge } from "./selection/project-preview-selection-message-bridge";
 
@@ -14,19 +16,44 @@ export function initializeProjectPreviewPanel(): void {
 
   const cleanup: Array<() => void> = [];
   const elements = getProjectPreviewPanelElements(panel);
+  let latestPreviewState: ProjectPreviewState | null = null;
+  let latestDomSnapshotState: ProjectDomSnapshotState | null = null;
+  let latestPreviewSelectionState: ProjectPreviewSelectionState | null = null;
+  const renderInspectorFromLatestState = () => {
+    if (!latestPreviewState || !latestDomSnapshotState || !latestPreviewSelectionState) return;
+    renderProjectPreviewInspector(elements, {
+      preview: latestPreviewState,
+      domSnapshot: latestDomSnapshotState,
+      previewSelection: latestPreviewSelectionState
+    });
+  };
+  const renderPreviewAndInspector = (state: ProjectPreviewState) => {
+    latestPreviewState = state;
+    renderPreviewState(elements, state);
+    renderInspectorFromLatestState();
+  };
+  const renderDomSnapshotAndInspector = (state: ProjectDomSnapshotState) => {
+    latestDomSnapshotState = state;
+    renderInspectorFromLatestState();
+  };
+  const renderSelectionAndInspector = (state: ProjectPreviewSelectionState) => {
+    latestPreviewSelectionState = state;
+    renderPreviewSelectionState(elements, state);
+    renderInspectorFromLatestState();
+  };
   const selectionBridge = createProjectPreviewSelectionMessageBridge({
     frame: elements.frame,
-    onSelectedNode: (selectedNode) => { void setSelectedNodeFromPreview(elements, selectedNode); },
-    onInvalidPayload: () => { void reportInvalidSelectedNodePayload(elements); }
+    onSelectedNode: (selectedNode) => { void setSelectedNodeFromPreview(elements, selectedNode, renderSelectionAndInspector); },
+    onInvalidPayload: () => { void reportInvalidSelectedNodePayload(elements, renderSelectionAndInspector); }
   });
   cleanup.push(() => selectionBridge.destroy());
 
-  const handleLoadPreview = () => { void runPreviewNavigationAction(elements, selectionBridge, () => window.crystal.project.loadPreview()); };
-  const handleReloadPreview = () => { void runPreviewNavigationAction(elements, selectionBridge, () => window.crystal.project.reloadPreview()); };
-  const handleTargetChange = () => { void runPreviewNavigationAction(elements, selectionBridge, () => window.crystal.project.setPreviewTarget(elements.target.value)); };
-  const handleToggleSelection = () => { void togglePreviewSelectionMode(elements, selectionBridge); };
-  const handleClearSelection = () => { void clearPreviewSelection(elements, selectionBridge); };
-  const handleFrameLoad = () => { void syncPreviewSelectionAfterFrameLoad(elements, selectionBridge); };
+  const handleLoadPreview = () => { void runPreviewNavigationAction(elements, selectionBridge, renderPreviewAndInspector, renderSelectionAndInspector, () => window.crystal.project.loadPreview()); };
+  const handleReloadPreview = () => { void runPreviewNavigationAction(elements, selectionBridge, renderPreviewAndInspector, renderSelectionAndInspector, () => window.crystal.project.reloadPreview()); };
+  const handleTargetChange = () => { void runPreviewNavigationAction(elements, selectionBridge, renderPreviewAndInspector, renderSelectionAndInspector, () => window.crystal.project.setPreviewTarget(elements.target.value)); };
+  const handleToggleSelection = () => { void togglePreviewSelectionMode(elements, selectionBridge, renderSelectionAndInspector); };
+  const handleClearSelection = () => { void clearPreviewSelection(elements, selectionBridge, renderSelectionAndInspector); };
+  const handleFrameLoad = () => { void syncPreviewSelectionAfterFrameLoad(elements, selectionBridge, renderSelectionAndInspector); };
 
   elements.loadButton.addEventListener("click", handleLoadPreview);
   elements.reloadButton.addEventListener("click", handleReloadPreview);
@@ -42,8 +69,9 @@ export function initializeProjectPreviewPanel(): void {
   cleanup.push(() => elements.clearSelectionButton.removeEventListener("click", handleClearSelection));
   cleanup.push(() => elements.frame.removeEventListener("load", handleFrameLoad));
 
-  cleanup.push(window.crystal.project.onPreviewStateChanged((state) => renderPreviewState(elements, state)));
-  cleanup.push(window.crystal.project.onPreviewSelectionStateChanged((state) => renderPreviewSelectionState(elements, state)));
+  cleanup.push(window.crystal.project.onPreviewStateChanged(renderPreviewAndInspector));
+  cleanup.push(window.crystal.project.onDomSnapshotStateChanged(renderDomSnapshotAndInspector));
+  cleanup.push(window.crystal.project.onPreviewSelectionStateChanged(renderSelectionAndInspector));
   cleanup.push(window.crystal.project.onWatcherStateChanged(() => { void refreshPreviewTargets(elements); }));
 
   activeProjectPreviewPanelCleanup = () => {
@@ -51,22 +79,23 @@ export function initializeProjectPreviewPanel(): void {
     activeProjectPreviewPanelCleanup = null;
   };
 
-  void window.crystal.project.getPreviewState().then((state) => renderPreviewState(elements, state)).catch((error) => renderPreviewError(elements, error));
-  void window.crystal.project.getPreviewSelectionState().then((state) => renderPreviewSelectionState(elements, state)).catch((error) => renderPreviewError(elements, error));
+  void window.crystal.project.getPreviewState().then(renderPreviewAndInspector).catch((error) => renderPreviewError(elements, error));
+  void window.crystal.project.getDomSnapshotState().then(renderDomSnapshotAndInspector).catch((error) => renderPreviewError(elements, error));
+  void window.crystal.project.getPreviewSelectionState().then(renderSelectionAndInspector).catch((error) => renderPreviewError(elements, error));
   void refreshPreviewTargets(elements);
 }
 
-async function runPreviewNavigationAction(elements: ProjectPreviewPanelElements, selectionBridge: ProjectPreviewSelectionMessageBridge, action: () => Promise<ProjectPreviewLoadResult>): Promise<void> {
-  await clearPreviewSelection(elements, selectionBridge);
-  await runPreviewAction(elements, action);
+async function runPreviewNavigationAction(elements: ProjectPreviewPanelElements, selectionBridge: ProjectPreviewSelectionMessageBridge, renderPreviewAndInspector: (state: ProjectPreviewState) => void, renderSelectionAndInspector: (state: ProjectPreviewSelectionState) => void, action: () => Promise<ProjectPreviewLoadResult>): Promise<void> {
+  await clearPreviewSelection(elements, selectionBridge, renderSelectionAndInspector);
+  await runPreviewAction(elements, renderPreviewAndInspector, action);
 }
 
-async function runPreviewAction(elements: ProjectPreviewPanelElements, action: () => Promise<ProjectPreviewLoadResult>): Promise<void> {
+async function runPreviewAction(elements: ProjectPreviewPanelElements, renderPreviewAndInspector: (state: ProjectPreviewState) => void, action: () => Promise<ProjectPreviewLoadResult>): Promise<void> {
   setPreviewBusy(elements, true);
   clearPreviewTransientState(elements);
   try {
     const result = await action();
-    renderPreviewState(elements, result.state);
+    renderPreviewAndInspector(result.state);
     await refreshPreviewTargets(elements);
     if (!result.ok && result.issue) renderPreviewError(elements, result.issue.message);
   } catch (error) {
@@ -84,35 +113,35 @@ async function refreshPreviewTargets(elements: ProjectPreviewPanelElements): Pro
   }
 }
 
-async function togglePreviewSelectionMode(elements: ProjectPreviewPanelElements, selectionBridge: ProjectPreviewSelectionMessageBridge): Promise<void> {
+async function togglePreviewSelectionMode(elements: ProjectPreviewPanelElements, selectionBridge: ProjectPreviewSelectionMessageBridge, renderSelectionAndInspector: (state: ProjectPreviewSelectionState) => void): Promise<void> {
   try {
     const current = await window.crystal.project.getPreviewSelectionState();
     if (current.enabled) {
       selectionBridge.disable();
-      renderPreviewSelectionState(elements, await window.crystal.project.disablePreviewSelection());
+      renderSelectionAndInspector(await window.crystal.project.disablePreviewSelection());
       return;
     }
 
-    renderPreviewSelectionState(elements, await window.crystal.project.enablePreviewSelection());
+    renderSelectionAndInspector(await window.crystal.project.enablePreviewSelection());
     selectionBridge.enable();
   } catch (error) {
     renderPreviewError(elements, error);
   }
 }
 
-async function clearPreviewSelection(elements: ProjectPreviewPanelElements, selectionBridge: ProjectPreviewSelectionMessageBridge): Promise<void> {
+async function clearPreviewSelection(elements: ProjectPreviewPanelElements, selectionBridge: ProjectPreviewSelectionMessageBridge, renderSelectionAndInspector: (state: ProjectPreviewSelectionState) => void): Promise<void> {
   try {
     selectionBridge.clear();
-    renderPreviewSelectionState(elements, await window.crystal.project.clearPreviewSelection());
+    renderSelectionAndInspector(await window.crystal.project.clearPreviewSelection());
   } catch (error) {
     renderPreviewError(elements, error);
   }
 }
 
-async function syncPreviewSelectionAfterFrameLoad(elements: ProjectPreviewPanelElements, selectionBridge: ProjectPreviewSelectionMessageBridge): Promise<void> {
+async function syncPreviewSelectionAfterFrameLoad(elements: ProjectPreviewPanelElements, selectionBridge: ProjectPreviewSelectionMessageBridge, renderSelectionAndInspector: (state: ProjectPreviewSelectionState) => void): Promise<void> {
   try {
     const state = await window.crystal.project.clearPreviewSelection();
-    renderPreviewSelectionState(elements, state);
+    renderSelectionAndInspector(state);
     selectionBridge.clear();
     if (state.enabled) selectionBridge.enable();
   } catch (error) {
@@ -120,17 +149,17 @@ async function syncPreviewSelectionAfterFrameLoad(elements: ProjectPreviewPanelE
   }
 }
 
-async function setSelectedNodeFromPreview(elements: ProjectPreviewPanelElements, selectedNode: ProjectPreviewSelectedNode): Promise<void> {
+async function setSelectedNodeFromPreview(elements: ProjectPreviewPanelElements, selectedNode: ProjectPreviewSelectedNode, renderSelectionAndInspector: (state: ProjectPreviewSelectionState) => void): Promise<void> {
   try {
-    renderPreviewSelectionState(elements, await window.crystal.project.setPreviewSelectedNode(selectedNode));
+    renderSelectionAndInspector(await window.crystal.project.setPreviewSelectedNode(selectedNode));
   } catch (error) {
     renderPreviewError(elements, error);
   }
 }
 
-async function reportInvalidSelectedNodePayload(elements: ProjectPreviewPanelElements): Promise<void> {
+async function reportInvalidSelectedNodePayload(elements: ProjectPreviewPanelElements, renderSelectionAndInspector: (state: ProjectPreviewSelectionState) => void): Promise<void> {
   try {
-    renderPreviewSelectionState(elements, await window.crystal.project.setPreviewSelectedNode({}));
+    renderSelectionAndInspector(await window.crystal.project.setPreviewSelectedNode({}));
   } catch (error) {
     renderPreviewError(elements, error);
   }
@@ -174,7 +203,7 @@ function renderPreviewSelectionState(elements: ProjectPreviewPanelElements, stat
 
 function renderAttributesPreview(selectedNode: ProjectPreviewSelectedNode): string {
   if (selectedNode.attributesPreview.length === 0) return "none";
-  return selectedNode.attributesPreview.map((attribute) => attribute.value === null ? attribute.name : `${attribute.name}="${attribute.value}"`).join(" ");
+  return selectedNode.attributesPreview.map((attribute) => attribute.value === null ? attribute.name : `${attribute.name}=\"${attribute.value}\"`).join(" ");
 }
 
 function renderTargetOptions(elements: ProjectPreviewPanelElements, graph: ProjectGraph | null): void {
@@ -264,6 +293,11 @@ function getProjectPreviewPanelElements(panel: HTMLElement): ProjectPreviewPanel
     selectedAttributes: queryPanelElement(panel, "[data-project-preview-selected-attributes]", HTMLElement),
     selectedText: queryPanelElement(panel, "[data-project-preview-selected-text]", HTMLElement),
     selectionIssue: queryPanelElement(panel, "[data-project-preview-selection-issue]", HTMLElement),
+    inspectorStatus: queryPanelElement(panel, "[data-project-preview-inspector-status]", HTMLElement),
+    inspectorMessage: queryPanelElement(panel, "[data-project-preview-inspector-message]", HTMLElement),
+    inspectorSelectedDetails: queryPanelElement(panel, "[data-project-preview-inspector-selected-details]", HTMLDListElement),
+    inspectorSnapshotDetails: queryPanelElement(panel, "[data-project-preview-inspector-snapshot-details]", HTMLDListElement),
+    inspectorSnapshotEmpty: queryPanelElement(panel, "[data-project-preview-inspector-snapshot-empty]", HTMLElement),
     issuesEmpty: queryPanelElement(panel, "[data-project-preview-issues-empty]", HTMLElement),
     issuesList: queryPanelElement(panel, "[data-project-preview-issues-list]", HTMLUListElement),
     frame: queryPanelElement(panel, "[data-project-preview-frame]", HTMLIFrameElement),
