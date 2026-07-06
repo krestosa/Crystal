@@ -58,7 +58,7 @@ Covered:
 - typed IPC for watcher/cache control
 - automated local watcher filesystem validation over a temporary project
 
-### Phase 2 — Real Preview, DOM Snapshot, and Preview Selection
+### Phase 2 — Real Preview, DOM Snapshot, Preview Selection, and read-only Preview Inspector
 
 Covered:
 
@@ -94,10 +94,14 @@ Covered:
 - conservative read-only mapping between selected Preview nodes and DOM Snapshot paths
 - `matched`, `mismatched`, `ambiguous`, `stale`, and `missing-snapshot` mapping states
 - non-visual `validate:preview-selection` script
+- minimal read-only Preview Inspector model and selector
+- mapped DOM Snapshot node details for trusted `matched` selections
+- defensive Inspector states for missing snapshot, stale snapshot, mismatched mapping, ambiguous mapping, and matched path missing from the current snapshot
+- compact read-only Preview Inspector panel
+- non-visual `validate:preview-inspector` script
 
 Not covered yet:
 
-- read-only Preview Inspector, unless landed in a later PR
 - visual Design Canvas MVP
 - Figma-like pan and zoom canvas controls
 - rulers, guides, grids, snapping, measurement overlays, and persistent bounding boxes
@@ -140,20 +144,19 @@ Not covered yet:
 
 The complete roadmap is documented in [`docs/full-product-roadmap.md`](./full-product-roadmap.md). The high-level sequence after the current Preview foundations is:
 
-1. Preview Inspector read-only.
-2. Design Canvas Navigation MVP.
-3. Visual Selection and Overlay MVP.
-4. HTML5 Element Library and Insertion.
-5. Design Editing MVP with commands and undo/redo.
-6. Editable Inspector MVP.
-7. Style Engine and CSS/Sass Inspector.
-8. Responsive Design and Layout Tools.
-9. Components, snippets, and reusable blocks.
-10. Assets, fonts, SVG, and media management.
-11. Developer Mode and IDE tools.
-12. WebGPU Overlay Engine.
-13. Rust/WASM Analyzer.
-14. Automation, assistant workflows, packaging, testing, and product hardening.
+1. Design Canvas Navigation MVP.
+2. Visual Selection and Overlay MVP.
+3. HTML5 Element Library and Insertion.
+4. Design Editing MVP with commands and undo/redo.
+5. Editable Inspector MVP.
+6. Style Engine and CSS/Sass Inspector.
+7. Responsive Design and Layout Tools.
+8. Components, snippets, and reusable blocks.
+9. Assets, fonts, SVG, and media management.
+10. Developer Mode and IDE tools.
+11. WebGPU Overlay Engine.
+12. Rust/WASM Analyzer.
+13. Automation, assistant workflows, packaging, testing, and product hardening.
 
 Directive-level roadmap details are now tracked in `docs/full-product-roadmap.md`, including Design Mode, Inspector submodules, Developer Mode console separation, workers, fallbacks, build pipeline, command/event/state roadmaps, non-negotiable rules, and pending decisions.
 
@@ -179,4 +182,4 @@ The validation runner is mandatory before requesting PR merge. It must be update
 
 ## Recommended next module
 
-After the current Preview selection mapping foundation, the next module should be the minimal read-only Preview Inspector. After that, move to Design Canvas navigation before broad visual editing. Do not jump directly to editable Inspector, full Design Editing, Developer Mode, WebGPU, or Rust/WASM before the required intermediate foundations are in place.
+After the current Preview Inspector foundation, move to Design Canvas navigation before broad visual editing. Do not jump directly to editable Inspector, full Design Editing, Developer Mode, WebGPU, or Rust/WASM before the required intermediate foundations are in place.
