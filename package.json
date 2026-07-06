@@ -22,6 +22,7 @@
     "validate:preview": "node scripts/validate-preview.mjs",
     "validate:dom-snapshot": "node scripts/validate-dom-snapshot.mjs",
     "validate:preview-selection": "node scripts/validate-preview-selection.mjs",
+    "validate:preview-inspector": "node scripts/validate-preview-inspector.mjs",
     "validate:local": "node scripts/validate-local.mjs",
     "validate:local:watch": "node scripts/validate-local-watch.mjs",
     "doctor:electron": "node scripts/doctor-electron.mjs"

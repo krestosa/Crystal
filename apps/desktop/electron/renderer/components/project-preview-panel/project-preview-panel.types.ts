@@ -18,6 +18,11 @@ export interface ProjectPreviewPanelElements {
   readonly selectedAttributes: HTMLElement;
   readonly selectedText: HTMLElement;
   readonly selectionIssue: HTMLElement;
+  readonly inspectorStatus: HTMLElement;
+  readonly inspectorMessage: HTMLElement;
+  readonly inspectorSelectedDetails: HTMLDListElement;
+  readonly inspectorSnapshotDetails: HTMLDListElement;
+  readonly inspectorSnapshotEmpty: HTMLElement;
   readonly issuesEmpty: HTMLElement;
   readonly issuesList: HTMLUListElement;
   readonly frame: HTMLIFrameElement;

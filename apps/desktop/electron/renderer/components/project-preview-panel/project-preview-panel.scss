@@ -103,6 +103,7 @@
 }
 
 .crystal-project-preview-panel__selection,
+.crystal-project-preview-panel__inspector,
 .crystal-project-preview-panel__issues {
   padding: 12px;
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -110,7 +111,8 @@
   background: rgba(0, 0, 0, 0.18);
 }
 
-.crystal-project-preview-panel__selection-header {
+.crystal-project-preview-panel__selection-header,
+.crystal-project-preview-panel__inspector-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -119,35 +121,41 @@
 }
 
 .crystal-project-preview-panel__selection-title,
+.crystal-project-preview-panel__inspector-title,
 .crystal-project-preview-panel__issues-title { margin: 0; font-size: 13px; line-height: 1.2; }
 
-.crystal-project-preview-panel__selection-mode {
+.crystal-project-preview-panel__selection-mode,
+.crystal-project-preview-panel__inspector-status {
   margin: 0;
   font-size: 12px;
   color: rgba(255, 255, 255, 0.62);
 }
 
-.crystal-project-preview-panel__selection-summary {
+.crystal-project-preview-panel__selection-summary,
+.crystal-project-preview-panel__inspector-details {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 8px;
   margin: 0;
 }
 
-.crystal-project-preview-panel__selection-summary div {
+.crystal-project-preview-panel__selection-summary div,
+.crystal-project-preview-panel__inspector-details div {
   min-width: 0;
   padding: 8px;
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.045);
 }
 
-.crystal-project-preview-panel__selection-summary dt {
+.crystal-project-preview-panel__selection-summary dt,
+.crystal-project-preview-panel__inspector-details dt {
   margin-bottom: 4px;
   font-size: 11px;
   color: rgba(255, 255, 255, 0.55);
 }
 
-.crystal-project-preview-panel__selection-summary dd {
+.crystal-project-preview-panel__selection-summary dd,
+.crystal-project-preview-panel__inspector-details dd {
   overflow: hidden;
   margin: 0;
   text-overflow: ellipsis;
@@ -160,6 +168,34 @@
   margin: 8px 0 0;
   font-size: 12px;
   color: #ffb4a8;
+}
+
+.crystal-project-preview-panel__inspector-message,
+.crystal-project-preview-panel__inspector-empty {
+  margin: 0 0 10px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.crystal-project-preview-panel__inspector-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: 10px;
+}
+
+.crystal-project-preview-panel__inspector-block { min-width: 0; }
+
+.crystal-project-preview-panel__inspector-subtitle {
+  margin: 0 0 8px;
+  font-size: 11px;
+  line-height: 1.2;
+  color: rgba(255, 255, 255, 0.55);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.crystal-project-preview-panel__inspector-details {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .crystal-project-preview-panel__issues-empty { margin: 0; font-size: 12px; color: rgba(255, 255, 255, 0.58); }
