@@ -160,6 +160,9 @@ function renderPreviewSelectionState(elements: ProjectPreviewPanelElements, stat
 
   elements.selectedTag.textContent = state.selectedNode?.tagName ?? "none";
   elements.selectedPath.textContent = state.selectedNode?.snapshotPath ?? "none";
+  elements.selectionMappingStatus.textContent = state.mappingStatus;
+  elements.mappedSnapshotPath.textContent = state.mappedSnapshotPath ?? "none";
+  elements.selectionMappingReason.textContent = state.mappingReason ?? "none";
   elements.selectedSelector.textContent = state.selectedNode?.selectorPreview || "none";
   elements.selectedAttributes.textContent = state.selectedNode ? renderAttributesPreview(state.selectedNode) : "none";
   elements.selectedText.textContent = state.selectedNode?.textPreview || "none";
@@ -244,6 +247,9 @@ function getProjectPreviewPanelElements(panel: HTMLElement): ProjectPreviewPanel
     selectionMode: queryPanelElement(panel, "[data-project-preview-selection-mode]", HTMLElement),
     selectedTag: queryPanelElement(panel, "[data-project-preview-selected-tag]", HTMLElement),
     selectedPath: queryPanelElement(panel, "[data-project-preview-selected-path]", HTMLElement),
+    selectionMappingStatus: queryPanelElement(panel, "[data-project-preview-selection-mapping-status]", HTMLElement),
+    mappedSnapshotPath: queryPanelElement(panel, "[data-project-preview-mapped-snapshot-path]", HTMLElement),
+    selectionMappingReason: queryPanelElement(panel, "[data-project-preview-selection-mapping-reason]", HTMLElement),
     selectedSelector: queryPanelElement(panel, "[data-project-preview-selected-selector]", HTMLElement),
     selectedAttributes: queryPanelElement(panel, "[data-project-preview-selected-attributes]", HTMLElement),
     selectedText: queryPanelElement(panel, "[data-project-preview-selected-text]", HTMLElement),
@@ -258,19 +264,17 @@ function getProjectPreviewPanelElements(panel: HTMLElement): ProjectPreviewPanel
   };
 }
 
-function queryPanelElement<TElement extends HTMLElement>(panel: HTMLElement, selector: string, elementType: new () => TElement): TElement {
-  const element = panel.querySelector(selector);
-  if (!(element instanceof elementType)) throw new Error(`Missing Project Preview panel element: ${selector}`);
+function queryPanelElement<TElement extends Element>(root: HTMLElement, selector: string, constructor: { new(): TElement }): TElement {
+  const element = root.querySelector(selector);
+  if (!(element instanceof constructor)) throw new Error(`Missing Project Preview panel element: ${selector}`);
   return element;
 }
 
 function renderPreviewStatus(state: ProjectPreviewState): string {
-  if (state.status === "ready" && state.issueCount > 0) return "ready with issues";
-  if (state.status === "ready" && state.isSyncedWithProjectGraph) return "ready";
-  if (state.status === "ready") return "ready, graph pending";
+  if (state.status === "ready" && !state.isSyncedWithProjectGraph) return "ready - graph stale";
   return state.status;
 }
 
-function formatTimestamp(timestamp: number): string {
-  return new Date(timestamp).toLocaleTimeString();
+function formatTimestamp(value: number): string {
+  return new Date(value).toLocaleTimeString();
 }

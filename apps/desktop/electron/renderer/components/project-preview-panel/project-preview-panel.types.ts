@@ -11,6 +11,9 @@ export interface ProjectPreviewPanelElements {
   readonly selectionMode: HTMLElement;
   readonly selectedTag: HTMLElement;
   readonly selectedPath: HTMLElement;
+  readonly selectionMappingStatus: HTMLElement;
+  readonly mappedSnapshotPath: HTMLElement;
+  readonly selectionMappingReason: HTMLElement;
   readonly selectedSelector: HTMLElement;
   readonly selectedAttributes: HTMLElement;
   readonly selectedText: HTMLElement;
