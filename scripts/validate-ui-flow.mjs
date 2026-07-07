@@ -37,7 +37,8 @@ expect(!source.appShellHtml.includes("activity-bar"), "App shell still renders t
 expect(source.mainWindow.includes("autoHideMenuBar: true"), "Main window does not hide the default menu chrome.");
 expect(source.mainWindow.includes('titleBarStyle: "hidden"'), "Main window does not integrate the title bar into the carbon shell.");
 expect(source.mainWindow.includes("titleBarOverlay"), "Main window does not expose native controls over the carbon title area.");
-expect(source.mainWindow.includes("height: 28"), "Native titlebar overlay does not match the compact chrome height.");
+expect(source.mainWindow.includes("CRYSTAL_TITLE_BAR_OVERLAY_HEIGHT = 32"), "Native titlebar overlay is not aligned to the compact chrome height.");
+expect(source.mainWindow.includes("height: CRYSTAL_TITLE_BAR_OVERLAY_HEIGHT"), "Native titlebar overlay height is not routed through the chrome constant.");
 expect(source.mainWindow.includes("webPreferences: getSecureWebPreferences()"), "Main window security preferences were not preserved.");
 expect(source.appShellHtml.includes("data-crystal-app-chrome"), "App shell does not expose a compact chrome drag region.");
 expect(source.appShellHtml.includes("data-crystal-diagnostics-toggle"), "Diagnostics trigger is not integrated into the app chrome.");
@@ -45,11 +46,15 @@ expect(source.appShellHtml.includes("aria-label=\"Toggle diagnostics\""), "Diagn
 expect(source.appShellHtml.includes("<svg") && source.appShellHtml.includes("data-crystal-diagnostics-toggle"), "Diagnostics chrome trigger is not icon-only.");
 expect(!source.designHtml.includes("data-crystal-diagnostics-toggle"), "Diagnostics trigger still renders as a design-view floating button.");
 expect(source.appShellScss.includes("--crystal-window-controls-width"), "App chrome does not reserve space for native window controls.");
+expect(source.appShellScss.includes("--crystal-window-controls-fallback-width: 178px"), "App chrome does not keep a safe fallback width for native window controls.");
+expect(source.appShellScss.includes("env(titlebar-area-width"), "App chrome does not use native titlebar area env data when available.");
 expect(source.appShellScss.includes("padding: 0 var(--crystal-window-controls-width) 0 8px"), "App chrome content can still invade native window controls.");
-expect(source.appShellScss.includes("right: var(--crystal-window-controls-width)"), "App chrome divider still runs under native window controls.");
+expect(source.appShellScss.includes("padding-right: calc(var(--crystal-window-controls-width) + 12px)"), "App chrome does not add breathing room before native window controls.");
+expect(source.appShellScss.includes("right: calc(var(--crystal-window-controls-width) + 1px)"), "App chrome divider still runs under native window controls.");
 expect(source.appShellScss.includes("-webkit-app-region: drag"), "App shell chrome is not draggable.");
 expect(source.appShellScss.includes("-webkit-app-region: no-drag"), "App shell interactive chrome controls may be captured by the drag region.");
-expect(source.appShellScss.includes("grid-template-rows: 28px minmax(0, 1fr) 20px"), "App shell chrome/status rows are not compactly integrated.");
+expect(source.appShellScss.includes("--crystal-app-chrome-height: 32px"), "App shell chrome height is not aligned to native overlay controls.");
+expect(source.appShellScss.includes("grid-template-rows: var(--crystal-app-chrome-height) minmax(0, 1fr) 20px"), "App shell chrome/status rows are not compactly integrated.");
 expect(source.appShellScss.includes("height: 100vh"), "App shell does not lock to the viewport height.");
 expect(source.appShellScss.includes("overflow: hidden"), "App shell does not prevent global overflow.");
 expect(source.reset.includes("overflow: hidden"), "Document reset does not prevent window-level app scrolling.");
@@ -96,6 +101,8 @@ expect(source.designScss.includes("data-crystal-diagnostics-pinned"), "Floating 
 expect(source.designScss.includes(".crystal-design-view__diagnostics-resize-handle"), "Diagnostics resize handles are not styled.");
 expect(!source.designScss.includes(".crystal-design-view__diagnostics-resize-handle::after"), "Diagnostics resize handles should not draw an explicit marker.");
 expect(source.designScss.includes("top: -10px") && source.designScss.includes("right: -10px") && source.designScss.includes("bottom: -10px") && source.designScss.includes("left: -10px"), "Diagnostics resize hit areas are not kept outside the scrollable content area.");
+expect(source.designScss.includes("width: 10px") && source.designScss.includes("height: 10px"), "Diagnostics corner resize handles may still overlap internal controls.");
+expect(source.designScss.includes("right: 10px") && source.designScss.includes("left: 10px"), "Diagnostics edge resize handles do not leave corner controls isolated.");
 expect(source.designScss.includes("scrollbar-gutter: stable both-edges"), "Diagnostics scroll areas do not reserve stable scrollbar space.");
 expect(source.designScss.includes("repeat(auto-fit, minmax(min(100%, 220px), 1fr))"), "Diagnostics grid is not compact and responsive to panel width.");
 expect(source.designScss.includes("@container (min-width: 980px)"), "Diagnostics grid does not use expanded panel width.");
@@ -189,7 +196,7 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log("UI flow validation passed: integrated carbon chrome controls, chrome diagnostics trigger, full-height workspace, central canvas, clean sidebars, resizable shell panels, viewport-bounded floating diagnostics, eight-way external diagnostics resize, auto-unpin drag behavior, compact responsive diagnostics sections, styled UI scrollbars, dependency guard, and iframe safety boundaries.");
+console.log("UI flow validation passed: integrated carbon chrome controls, chrome diagnostics trigger, native-control-safe chrome divider, full-height workspace, central canvas, clean sidebars, resizable shell panels, viewport-bounded floating diagnostics, eight-way external diagnostics resize, auto-unpin drag behavior, compact responsive diagnostics sections, styled UI scrollbars, dependency guard, and iframe safety boundaries.");
 
 async function readText(filePath) {
   return readFile(path.resolve(filePath), "utf8");
