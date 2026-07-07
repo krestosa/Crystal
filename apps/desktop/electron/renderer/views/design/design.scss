@@ -88,6 +88,7 @@
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: rgba(8, 6, 4, 0.96);
   box-shadow: 0 28px 90px rgba(0, 0, 0, 0.58);
+  container-type: inline-size;
 }
 
 .crystal-design-view__diagnostics-popover[hidden] {
@@ -268,6 +269,7 @@
   overflow: auto;
   overscroll-behavior: contain;
   padding: 6px;
+  scrollbar-gutter: stable both-edges;
 }
 
 .crystal-design-view__workspace--resizing-right,
@@ -381,7 +383,8 @@
 
 .crystal-design-view__debug-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  align-items: start;
   gap: 5px;
 }
 
@@ -488,7 +491,7 @@
 }
 
 .crystal-design-view__debug-meta--dl {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(108px, 1fr));
   gap: 3px 6px;
 }
 
@@ -519,21 +522,22 @@
 .crystal-design-view__debug-list {
   display: grid;
   gap: 1px;
-  max-height: 132px;
+  max-height: clamp(84px, 18vh, 260px);
   margin: 0;
   padding-left: 12px;
   overflow: auto;
   color: rgba(247, 242, 236, 0.54);
   font-size: 9px;
   line-height: 1.25;
+  scrollbar-gutter: stable both-edges;
 }
 
 .crystal-design-view__debug-list--compact {
-  max-height: 86px;
+  max-height: clamp(64px, 12vh, 180px);
 }
 
 .crystal-design-view__debug-list--events {
-  max-height: 260px;
+  max-height: clamp(120px, 32vh, 420px);
 }
 
 .crystal-design-view__debug-empty,
@@ -551,7 +555,7 @@
 
 .crystal-design-view__debug-tree {
   max-width: 100%;
-  max-height: 220px;
+  max-height: clamp(140px, 30vh, 420px);
   margin: 0;
   padding: 4px;
   overflow: auto;
@@ -562,4 +566,22 @@
   font-size: 9px;
   line-height: 1.25;
   white-space: pre;
+  scrollbar-gutter: stable both-edges;
+}
+
+@container (min-width: 980px) {
+  .crystal-design-view__debug-grid {
+    grid-template-columns: minmax(260px, 1fr) minmax(280px, 1.1fr) minmax(260px, 1fr) minmax(220px, 0.85fr);
+  }
+}
+
+@container (max-width: 520px) {
+  .crystal-design-view__diagnostics-header {
+    align-items: flex-start;
+  }
+
+  .crystal-design-view__debug-panel-header,
+  .crystal-design-view__debug-meta--dl {
+    grid-template-columns: 1fr;
+  }
 }
