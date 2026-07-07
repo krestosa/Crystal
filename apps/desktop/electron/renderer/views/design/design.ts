@@ -4,12 +4,9 @@ import { initializeProjectDesignCanvasSelectionOverlay } from "../../components/
 const CRYSTAL_RIGHT_SIDEBAR_MIN_WIDTH = 220;
 const CRYSTAL_RIGHT_SIDEBAR_MAX_WIDTH = 420;
 const CRYSTAL_MIN_CANVAS_WIDTH = 560;
-const CRYSTAL_DIAGNOSTICS_PANEL_MIN_WIDTH = 360;
-const CRYSTAL_DIAGNOSTICS_PANEL_MIN_HEIGHT = 220;
-const CRYSTAL_DIAGNOSTICS_PANEL_MAX_WIDTH = 1040;
-const CRYSTAL_DIAGNOSTICS_PANEL_MAX_HEIGHT = 640;
+const CRYSTAL_DIAGNOSTICS_PANEL_MIN_WIDTH = 320;
+const CRYSTAL_DIAGNOSTICS_PANEL_MIN_HEIGHT = 190;
 const CRYSTAL_DIAGNOSTICS_PANEL_MARGIN = 12;
-const CRYSTAL_DIAGNOSTICS_PINNED_BOTTOM = 48;
 const CRYSTAL_RESIZE_KEYBOARD_STEP = 12;
 
 type CrystalWorkspaceInteractionKind =
@@ -104,8 +101,8 @@ function initializeWorkspaceResize(): void {
   let interactionSession: CrystalWorkspaceInteractionSession | null = null;
 
   const getMaxRightWidth = (): number => Math.max(CRYSTAL_RIGHT_SIDEBAR_MIN_WIDTH, Math.min(CRYSTAL_RIGHT_SIDEBAR_MAX_WIDTH, workspace.getBoundingClientRect().width - CRYSTAL_MIN_CANVAS_WIDTH));
-  const getMaxDiagnosticsWidth = (): number => Math.max(240, Math.min(CRYSTAL_DIAGNOSTICS_PANEL_MAX_WIDTH, window.innerWidth - CRYSTAL_DIAGNOSTICS_PANEL_MARGIN * 2));
-  const getMaxDiagnosticsHeight = (): number => Math.max(180, Math.min(CRYSTAL_DIAGNOSTICS_PANEL_MAX_HEIGHT, window.innerHeight - CRYSTAL_DIAGNOSTICS_PANEL_MARGIN * 2));
+  const getMaxDiagnosticsWidth = (): number => Math.max(CRYSTAL_DIAGNOSTICS_PANEL_MIN_WIDTH, window.innerWidth - CRYSTAL_DIAGNOSTICS_PANEL_MARGIN * 2);
+  const getMaxDiagnosticsHeight = (): number => Math.max(CRYSTAL_DIAGNOSTICS_PANEL_MIN_HEIGHT, window.innerHeight - CRYSTAL_DIAGNOSTICS_PANEL_MARGIN * 2);
 
   const setRightWidth = (nextWidth: number): void => {
     rightWidth = clampResizeValue(nextWidth, CRYSTAL_RIGHT_SIDEBAR_MIN_WIDTH, getMaxRightWidth());
@@ -142,7 +139,8 @@ function initializeWorkspaceResize(): void {
     diagnosticsPinned = isPinned;
     diagnosticsPopover.setAttribute("data-crystal-diagnostics-pinned", String(isPinned));
     diagnosticsPin.setAttribute("aria-pressed", String(isPinned));
-    diagnosticsPin.textContent = isPinned ? "Pinned" : "Unpinned";
+    diagnosticsPin.setAttribute("aria-label", isPinned ? "Unpin diagnostics" : "Pin diagnostics");
+    diagnosticsPin.title = isPinned ? "Unpin diagnostics" : "Pin diagnostics";
     if (!isPinned) setDiagnosticsPosition(diagnosticsLeft, diagnosticsTop);
   };
 
@@ -158,7 +156,10 @@ function initializeWorkspaceResize(): void {
 
   const startInteraction = (event: PointerEvent, kind: CrystalWorkspaceInteractionKind): void => {
     if (event.button !== 0) return;
-    if (kind === "diagnostics-drag" && (diagnosticsPinned || isInteractiveDiagnosticsTarget(event.target))) return;
+    if (kind === "diagnostics-drag") {
+      if (isInteractiveDiagnosticsTarget(event.target)) return;
+      if (diagnosticsPinned) setDiagnosticsPinned(false);
+    }
     event.preventDefault();
     event.stopPropagation();
     interactionSession = {
@@ -316,7 +317,7 @@ function getInteractionHandle(
 ): HTMLElement {
   if (kind === "right-resize") return rightResizer;
   if (kind === "diagnostics-drag") return diagnosticsDragHandle;
-  return diagnosticsResizeHandles.find((resizeHandle) => resizeHandle.kind === kind)?.element ?? diagnosticsResizeHandles[0].element;
+  return diagnosticsResizeHandles.find((resizeHandle) => resizeHandle.kind === kind)?.element ?? diagnosticsDragHandle;
 }
 
 function isDiagnosticsResizeKind(kind: CrystalWorkspaceInteractionKind): boolean {

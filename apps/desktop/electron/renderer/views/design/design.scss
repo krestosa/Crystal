@@ -73,40 +73,6 @@
   box-shadow: 0 0 0 2px var(--crystal-focus-ring);
 }
 
-.crystal-design-view__diagnostics-toggle {
-  position: fixed;
-  z-index: 83;
-  right: 12px;
-  bottom: 12px;
-  min-height: 30px;
-  padding: 6px 10px;
-  border: 1px solid var(--crystal-color-border-soft);
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--crystal-color-text);
-  font: inherit;
-  font-size: 11px;
-  font-weight: 650;
-  letter-spacing: 0.02em;
-  cursor: pointer;
-  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.32);
-}
-
-.crystal-design-view__diagnostics-toggle:hover,
-.crystal-design-view__diagnostics-toggle:focus-visible {
-  border-color: var(--crystal-color-accent-border);
-  background: rgba(255, 255, 255, 0.07);
-}
-
-.crystal-design-view__diagnostics-toggle[aria-expanded="true"] {
-  border-color: var(--crystal-color-accent-border);
-  background: var(--crystal-color-accent-soft);
-}
-
-.crystal-design-view__diagnostics-toggle:focus-visible {
-  outline: 2px solid var(--crystal-focus-ring);
-  outline-offset: 2px;
-}
-
 .crystal-design-view__diagnostics-popover {
   position: fixed;
   z-index: 82;
@@ -116,8 +82,8 @@
   grid-template-rows: auto minmax(0, 1fr);
   width: min(var(--crystal-diagnostics-panel-width, 760px), calc(100vw - 24px));
   height: min(var(--crystal-diagnostics-panel-height, 360px), calc(100vh - 24px));
-  min-width: min(360px, calc(100vw - 24px));
-  min-height: min(220px, calc(100vh - 24px));
+  min-width: min(320px, calc(100vw - 24px));
+  min-height: min(190px, calc(100vh - 24px));
   overflow: visible;
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: rgba(8, 6, 4, 0.96);
@@ -152,64 +118,64 @@
 .crystal-design-view__diagnostics-resize-handle--top-right,
 .crystal-design-view__diagnostics-resize-handle--bottom-left,
 .crystal-design-view__diagnostics-resize-handle--bottom-right {
-  width: 14px;
-  height: 14px;
+  width: 12px;
+  height: 12px;
 }
 
 .crystal-design-view__diagnostics-resize-handle--top,
 .crystal-design-view__diagnostics-resize-handle--bottom {
-  right: 14px;
-  left: 14px;
-  height: 8px;
+  right: 12px;
+  left: 12px;
+  height: 10px;
   cursor: ns-resize;
 }
 
 .crystal-design-view__diagnostics-resize-handle--right,
 .crystal-design-view__diagnostics-resize-handle--left {
-  top: 14px;
-  bottom: 14px;
-  width: 8px;
+  top: 12px;
+  bottom: 12px;
+  width: 10px;
   cursor: ew-resize;
 }
 
 .crystal-design-view__diagnostics-resize-handle--top-left {
-  top: -4px;
-  left: -4px;
+  top: -10px;
+  left: -10px;
   cursor: nwse-resize;
 }
 
 .crystal-design-view__diagnostics-resize-handle--top {
-  top: -4px;
+  top: -10px;
 }
 
 .crystal-design-view__diagnostics-resize-handle--top-right {
-  top: -4px;
-  right: -4px;
+  top: -10px;
+  right: -10px;
   cursor: nesw-resize;
 }
 
 .crystal-design-view__diagnostics-resize-handle--right {
-  right: -4px;
+  right: -10px;
 }
 
 .crystal-design-view__diagnostics-resize-handle--bottom-right {
-  right: -4px;
-  bottom: -4px;
+  right: -10px;
+  bottom: -10px;
   cursor: nwse-resize;
 }
 
 .crystal-design-view__diagnostics-resize-handle--bottom {
-  bottom: -4px;
+  bottom: -10px;
 }
 
 .crystal-design-view__diagnostics-resize-handle--bottom-left {
-  bottom: -4px;
-  left: -4px;
+  bottom: -10px;
+  left: -10px;
   cursor: nesw-resize;
 }
 
 .crystal-design-view__diagnostics-resize-handle--left {
-  left: -4px;
+  left: -10px;
 }
 
 .crystal-design-view__diagnostics-header {
@@ -221,9 +187,6 @@
   padding: 7px 8px;
   border-bottom: 1px solid var(--crystal-color-border-soft);
   background: var(--crystal-color-surface-strong);
-}
-
-.crystal-design-view__diagnostics-popover[data-crystal-diagnostics-pinned="false"] .crystal-design-view__diagnostics-header {
   cursor: grab;
 }
 
@@ -257,16 +220,26 @@
   gap: 4px;
 }
 
-.crystal-design-view__diagnostics-pin,
-.crystal-design-view__diagnostics-close {
-  min-height: 21px;
-  padding: 3px 6px;
+.crystal-design-view__diagnostics-icon-button {
+  display: grid;
+  place-items: center;
+  width: 21px;
+  height: 21px;
+  padding: 0;
   border: 1px solid var(--crystal-color-border-soft);
-  background: rgba(255, 255, 255, 0.04);
-  color: rgba(247, 242, 236, 0.74);
-  font: inherit;
-  font-size: 9px;
+  background: rgba(255, 255, 255, 0.035);
+  color: rgba(247, 242, 236, 0.68);
   cursor: pointer;
+}
+
+.crystal-design-view__diagnostics-icon-button svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+  stroke-width: 1.15;
 }
 
 .crystal-design-view__diagnostics-pin[aria-pressed="true"] {
@@ -275,17 +248,14 @@
   color: var(--crystal-color-text);
 }
 
-.crystal-design-view__diagnostics-pin:hover,
-.crystal-design-view__diagnostics-pin:focus-visible,
-.crystal-design-view__diagnostics-close:hover,
-.crystal-design-view__diagnostics-close:focus-visible {
+.crystal-design-view__diagnostics-icon-button:hover,
+.crystal-design-view__diagnostics-icon-button:focus-visible {
   border-color: var(--crystal-color-accent-border);
   background: rgba(255, 255, 255, 0.06);
   color: var(--crystal-color-text);
 }
 
-.crystal-design-view__diagnostics-pin:focus-visible,
-.crystal-design-view__diagnostics-close:focus-visible {
+.crystal-design-view__diagnostics-icon-button:focus-visible {
   outline: 2px solid var(--crystal-focus-ring);
   outline-offset: 1px;
 }

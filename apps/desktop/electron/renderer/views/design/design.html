@@ -25,8 +25,21 @@
           <p>Graph · Preview · DOM · Events</p>
         </div>
         <div class="crystal-design-view__diagnostics-actions">
-          <button class="crystal-design-view__diagnostics-pin" type="button" aria-pressed="true" data-crystal-diagnostics-pin>Pinned</button>
-          <button class="crystal-design-view__diagnostics-close" type="button" aria-label="Close diagnostics" data-crystal-diagnostics-close>Close</button>
+          <button class="crystal-design-view__diagnostics-icon-button crystal-design-view__diagnostics-pin" type="button" aria-label="Unpin diagnostics" aria-pressed="true" title="Unpin diagnostics" data-crystal-diagnostics-pin>
+            <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+              <path d="M6.25 2.75h4.5" />
+              <path d="M8.5 2.75v4.75" />
+              <path d="M5 7.5h7" />
+              <path d="M8.5 7.5 6.75 12" />
+              <path d="M8.5 7.5 10.25 12" />
+            </svg>
+          </button>
+          <button class="crystal-design-view__diagnostics-icon-button crystal-design-view__diagnostics-close" type="button" aria-label="Close diagnostics" title="Close diagnostics" data-crystal-diagnostics-close>
+            <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+              <path d="M5 5l6 6" />
+              <path d="M11 5l-6 6" />
+            </svg>
+          </button>
         </div>
       </header>
       <div class="crystal-design-view__diagnostics-body">
