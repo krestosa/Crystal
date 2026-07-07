@@ -1,25 +1,12 @@
 <section class="crystal-project-dom-tree-panel" data-project-dom-tree-panel>
   <div class="crystal-project-dom-tree-panel__header">
     <div>
-      <h2 class="crystal-project-dom-tree-panel__title">DOM Tree</h2>
-      <p class="crystal-project-dom-tree-panel__status" data-project-dom-tree-status>idle</p>
-    </div>
-    <div class="crystal-project-dom-tree-panel__actions">
-      <button class="crystal-project-dom-tree-panel__button" type="button" data-project-dom-tree-build>Build DOM Snapshot</button>
-      <button class="crystal-project-dom-tree-panel__button" type="button" data-project-dom-tree-clear>Clear Snapshot</button>
+      <h2 class="crystal-project-dom-tree-panel__title">DOM Snapshot</h2>
+      <p class="crystal-project-dom-tree-panel__status" data-project-dom-tree-status>No DOM Snapshot built.</p>
     </div>
   </div>
-  <dl class="crystal-project-dom-tree-panel__meta">
-    <div><dt>Target</dt><dd data-project-dom-tree-target>None</dd></div>
-    <div><dt>Nodes</dt><dd data-project-dom-tree-node-count>0</dd></div>
-    <div><dt>Max depth</dt><dd data-project-dom-tree-max-depth>0</dd></div>
-    <div><dt>Issues</dt><dd data-project-dom-tree-issue-count>0</dd></div>
-  </dl>
-  <p class="crystal-project-dom-tree-panel__error" data-project-dom-tree-error hidden></p>
-  <section class="crystal-project-dom-tree-panel__issues" aria-label="DOM snapshot issues">
-    <h3 class="crystal-project-dom-tree-panel__issues-title">Snapshot issues</h3>
-    <p class="crystal-project-dom-tree-panel__issues-empty" data-project-dom-tree-issues-empty>No DOM snapshot issues.</p>
-    <ul class="crystal-project-dom-tree-panel__issues-list" data-project-dom-tree-issues-list></ul>
-  </section>
-  <pre class="crystal-project-dom-tree-panel__tree" data-project-dom-tree-output>No DOM snapshot built.</pre>
+  <div class="crystal-project-dom-tree-panel__actions" aria-label="DOM Snapshot actions">
+    <button class="crystal-project-dom-tree-panel__button crystal-project-dom-tree-panel__button--primary" type="button" data-project-dom-tree-build>Build</button>
+    <button class="crystal-project-dom-tree-panel__button" type="button" data-project-dom-tree-clear>Clear</button>
+  </div>
 </section>

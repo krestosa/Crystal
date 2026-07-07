@@ -10,6 +10,7 @@ const failures = [];
 
 const scriptPath = "apps/desktop/electron/main/preview-selection/project-preview-selection-script.ts";
 const previewPanelHtmlPath = "apps/desktop/electron/renderer/components/project-preview-panel/project-preview-panel.html";
+const designViewHtmlPath = "apps/desktop/electron/renderer/views/design/design.html";
 const designCanvasHtmlPath = "apps/desktop/electron/renderer/components/design-canvas/project-design-canvas.html";
 const bridgePath = "apps/desktop/electron/renderer/components/project-preview-panel/selection/project-preview-selection-message-bridge.ts";
 const validatorsPath = "packages/core/project/preview-selection/project-preview-selection-validators.ts";
@@ -17,6 +18,7 @@ const mappingPath = "packages/core/project/preview-selection/mapping/project-pre
 
 const scriptSource = await readText(scriptPath);
 const previewPanelHtml = await readText(previewPanelHtmlPath);
+const designViewHtml = await readText(designViewHtmlPath);
 const designCanvasHtml = await readText(designCanvasHtmlPath);
 const bridgeSource = await readText(bridgePath);
 const validatorsSource = await readText(validatorsPath);
@@ -32,11 +34,12 @@ try {
   expect(scriptSource.includes("window.__CRYSTAL_PREVIEW_SELECTION__"), "Injected selection script lost its idempotent guard.");
 
   const previewFrameHtml = `${previewPanelHtml}\n${designCanvasHtml}`;
+  const previewSelectionUiHtml = `${previewPanelHtml}\n${designViewHtml}\n${designCanvasHtml}`;
   expect(!previewFrameHtml.includes("allow-same-origin"), "Preview iframe sandbox includes allow-same-origin.");
   expect(previewFrameHtml.includes("sandbox=\"allow-scripts allow-forms allow-popups\""), "Preview iframe sandbox changed unexpectedly.");
-  expect(previewPanelHtml.includes("data-project-preview-selection-mapping-status"), "Preview selection mapping status is not rendered.");
-  expect(previewPanelHtml.includes("data-project-preview-mapped-snapshot-path"), "Preview selection mapped snapshotPath is not rendered.");
-  expect(previewPanelHtml.includes("data-project-preview-selection-mapping-reason"), "Preview selection mapping reason is not rendered.");
+  expect(previewSelectionUiHtml.includes("data-project-preview-selection-mapping-status"), "Preview selection mapping status is not rendered in the Crystal UI.");
+  expect(previewSelectionUiHtml.includes("data-project-preview-mapped-snapshot-path"), "Preview selection mapped snapshotPath is not rendered in the Crystal UI.");
+  expect(previewSelectionUiHtml.includes("data-project-preview-selection-mapping-reason"), "Preview selection mapping reason is not rendered in the Crystal UI.");
 
   expect(!bridgeSource.includes("contentDocument"), "Preview selection bridge accesses iframe.contentDocument.");
   expect(!bridgeSource.includes("contentWindow.document"), "Preview selection bridge accesses iframe.contentWindow.document.");
@@ -44,9 +47,9 @@ try {
   expect(bridgeSource.includes("event.source !== frameWindow"), "Preview selection bridge does not validate event.source against iframe.contentWindow.");
   expect(bridgeSource.includes("frameWindow.postMessage"), "Preview selection bridge does not use iframe.contentWindow.postMessage.");
 
-  const previewPanelSource = `${previewPanelHtml}\n${designCanvasHtml}\n${bridgeSource}`;
-  expect(!previewPanelSource.includes("getComputedStyle"), "Preview selection introduced computed styles.");
-  expect(!previewPanelSource.toLowerCase().includes("bounding"), "Preview selection introduced bounding box UI.");
+  const previewSelectionSource = `${previewSelectionUiHtml}\n${bridgeSource}`;
+  expect(!previewSelectionSource.includes("getComputedStyle"), "Preview selection introduced computed styles.");
+  expect(!previewSelectionSource.toLowerCase().includes("bounding"), "Preview selection introduced bounding box UI.");
 
   const selectionSources = [
     ["Injected selection script", scriptSource],
@@ -175,7 +178,7 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log("Preview selection validation passed: injected script shape, sandbox constraints, renderer bridge guards, payload validation, selection mapping states, and preview limits.");
+console.log("Preview selection validation passed: injected script shape, sandbox constraints, renderer bridge guards, compact-shell UI hooks, payload validation, selection mapping states, and preview limits.");
 
 async function readText(filePath) {
   return readFile(path.resolve(filePath), "utf8");

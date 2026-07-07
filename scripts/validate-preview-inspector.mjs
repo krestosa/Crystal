@@ -130,10 +130,14 @@ async function loadBundledModule(entryPoint, outfile, expectedExport) {
 }
 
 function extractPreviewInspectorSection(source) {
-  const start = source.indexOf("<section class=\"crystal-project-preview-panel__inspector\"");
-  const end = source.indexOf("<section class=\"crystal-project-preview-panel__issues\"", start);
+  const marker = "data-project-preview-inspector";
+  const markerIndex = source.indexOf(marker);
+  if (markerIndex < 0) return "";
+  const start = source.lastIndexOf("<section", markerIndex);
+  const closeToken = "</section>";
+  const end = source.indexOf(closeToken, markerIndex);
   if (start < 0 || end < 0) return "";
-  return source.slice(start, end);
+  return source.slice(start, end + closeToken.length);
 }
 
 function createPreviewState(overrides = {}) {

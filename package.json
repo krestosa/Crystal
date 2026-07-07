@@ -25,6 +25,7 @@
     "validate:preview-inspector": "node scripts/validate-preview-inspector.mjs",
     "validate:design-canvas": "node scripts/validate-design-canvas.mjs",
     "validate:visual-selection-overlay": "node scripts/validate-visual-selection-overlay.mjs",
+    "validate:ui-flow": "node scripts/validate-ui-flow.mjs",
     "validate:local": "node scripts/validate-local.mjs",
     "validate:local:watch": "node scripts/validate-local-watch.mjs",
     "doctor:electron": "node scripts/doctor-electron.mjs"

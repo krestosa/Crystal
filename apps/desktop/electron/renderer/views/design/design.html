@@ -1,6 +1,80 @@
 <section class="crystal-view crystal-design-view" data-crystal-view="design">
-  <h1 class="crystal-view__title">Diseño</h1>
-  <p class="crystal-view__description">Phase 2 adds a real Chromium preview for the active HTML project. Visual editing remains intentionally out of scope.</p>
-  <crystal-include src="../../components/project-preview-panel/project-preview-panel.html"></crystal-include>
-  <crystal-include src="../../components/project-dom-tree-panel/project-dom-tree-panel.html"></crystal-include>
+  <div class="crystal-design-view__workspace" data-crystal-workspace data-crystal-project-open="false">
+    <section class="crystal-design-view__canvas" aria-label="Canvas workspace">
+      <crystal-include src="../../components/design-canvas/project-design-canvas.html"></crystal-include>
+    </section>
+
+    <aside class="crystal-design-view__right-sidebar" aria-label="Inspector sidebar">
+      <crystal-include src="../../components/project-preview-panel/project-preview-panel.html"></crystal-include>
+      <crystal-include src="../../components/project-dom-tree-panel/project-dom-tree-panel.html"></crystal-include>
+    </aside>
+
+    <section class="crystal-design-view__bottom-diagnostics" aria-label="Workspace diagnostics">
+      <details class="crystal-design-view__debug-dock" data-workspace-bottom-diagnostics>
+        <summary>
+          <span>Diagnostics</span>
+          <span>Graph · Preview · DOM · Events</span>
+        </summary>
+        <div class="crystal-design-view__debug-grid">
+          <section class="crystal-design-view__debug-panel" aria-label="Project diagnostics">
+            <h3>Graph</h3>
+            <div class="crystal-design-view__debug-row">
+              <button class="crystal-design-view__debug-button" type="button" data-project-refresh>Refresh</button>
+              <button class="crystal-design-view__debug-button" type="button" data-project-start-watcher>Watch</button>
+              <button class="crystal-design-view__debug-button" type="button" data-project-stop-watcher>Stop</button>
+              <button class="crystal-design-view__debug-button" type="button" data-project-clear-cache>Clear cache</button>
+            </div>
+            <div class="crystal-design-view__debug-meta">
+              <p data-project-watcher-state>Watcher: idle</p>
+              <p data-project-cache-state>Cache: empty</p>
+              <p data-project-last-refresh>Last refresh: none</p>
+              <p data-project-refresh-mode>Refresh mode: none</p>
+            </div>
+            <ul class="crystal-design-view__debug-list" data-project-watch-events></ul>
+            <ul class="crystal-design-view__debug-list" data-project-files></ul>
+            <ul class="crystal-design-view__debug-list" data-project-issues></ul>
+          </section>
+
+          <section class="crystal-design-view__debug-panel" aria-label="Preview diagnostics">
+            <h3>Preview</h3>
+            <dl class="crystal-design-view__debug-meta crystal-design-view__debug-meta--dl">
+              <div><dt>Target</dt><dd data-project-preview-page>None</dd></div>
+              <div><dt>Load</dt><dd data-project-preview-last-load>none</dd></div>
+              <div><dt>Reload</dt><dd data-project-preview-last-reload>none</dd></div>
+              <div><dt>Reason</dt><dd data-project-preview-reason>none</dd></div>
+              <div><dt>Issues</dt><dd data-project-preview-issue-count>0</dd></div>
+              <div><dt>Last issue</dt><dd data-project-preview-last-issue>none</dd></div>
+            </dl>
+            <dl class="crystal-design-view__debug-meta crystal-design-view__debug-meta--dl">
+              <div><dt>Tag</dt><dd data-project-preview-selected-tag>none</dd></div>
+              <div><dt>Path</dt><dd data-project-preview-selected-path>none</dd></div>
+              <div><dt>Map</dt><dd data-project-preview-selection-mapping-status>unknown</dd></div>
+              <div><dt>Mapped</dt><dd data-project-preview-mapped-snapshot-path>none</dd></div>
+              <div><dt>Reason</dt><dd data-project-preview-selection-mapping-reason>none</dd></div>
+              <div><dt>Selector</dt><dd data-project-preview-selected-selector>none</dd></div>
+              <div><dt>Attrs</dt><dd data-project-preview-selected-attributes>none</dd></div>
+              <div><dt>Text</dt><dd data-project-preview-selected-text>none</dd></div>
+            </dl>
+            <p class="crystal-design-view__debug-warning" data-project-preview-selection-issue hidden></p>
+            <p class="crystal-design-view__debug-empty" data-project-preview-issues-empty>No preview issues.</p>
+            <ul class="crystal-design-view__debug-list" data-project-preview-issues-list></ul>
+          </section>
+
+          <section class="crystal-design-view__debug-panel" aria-label="DOM diagnostics">
+            <h3>DOM</h3>
+            <dl class="crystal-design-view__debug-meta crystal-design-view__debug-meta--dl">
+              <div><dt>Target</dt><dd data-project-dom-tree-target>None</dd></div>
+              <div><dt>Nodes</dt><dd data-project-dom-tree-node-count>0</dd></div>
+              <div><dt>Depth</dt><dd data-project-dom-tree-max-depth>0</dd></div>
+              <div><dt>Issues</dt><dd data-project-dom-tree-issue-count>0</dd></div>
+            </dl>
+            <p class="crystal-design-view__debug-warning" data-project-dom-tree-error hidden></p>
+            <p class="crystal-design-view__debug-empty" data-project-dom-tree-issues-empty>No DOM snapshot issues.</p>
+            <ul class="crystal-design-view__debug-list" data-project-dom-tree-issues-list></ul>
+            <pre class="crystal-design-view__debug-tree" data-project-dom-tree-output>No DOM snapshot built.</pre>
+          </section>
+        </div>
+      </details>
+    </section>
+  </div>
 </section>

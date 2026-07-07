@@ -1,10 +1,89 @@
-.crystal-project-graph-panel { display: grid; gap: 14px; }
-.crystal-project-graph-panel__actions { display: grid; gap: 8px; }
-.crystal-project-graph-panel__button { width: 100%; padding: 8px 10px; border: 1px solid var(--crystal-color-border); border-radius: 8px; color: var(--crystal-color-text); background: var(--crystal-color-surface-raised); font: inherit; text-align: left; }
-.crystal-project-graph-panel__status, .crystal-project-graph-panel__meta, .crystal-project-graph-panel__list, .crystal-project-graph-panel__counts { margin: 0; color: var(--crystal-color-muted); font-size: 12px; line-height: 1.4; }
-.crystal-project-graph-panel__meta { padding: 6px 8px; border: 1px solid var(--crystal-color-border); border-radius: 8px; background: var(--crystal-color-surface-raised); }
-.crystal-project-graph-panel__section { display: grid; gap: 6px; }
-.crystal-project-graph-panel__heading { margin: 0; color: var(--crystal-color-text); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; }
-.crystal-project-graph-panel__list { display: grid; gap: 4px; max-height: 150px; padding-left: 16px; overflow: auto; }
-.crystal-project-graph-panel__counts { display: grid; grid-template-columns: 1fr auto; gap: 4px 8px; }
-.crystal-project-graph-panel__counts dt, .crystal-project-graph-panel__counts dd { margin: 0; }
+.crystal-feature-shell {
+  --crystal-feature-shell-panel-border: rgba(255, 255, 255, 0.08);
+}
+
+.crystal-feature-shell__eyebrow { display: none; }
+
+.crystal-project-graph-panel {
+  display: grid;
+  gap: 9px;
+}
+
+.crystal-project-graph-panel__actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.crystal-project-graph-panel__button {
+  width: 100%;
+  min-height: 30px;
+  padding: 6px 7px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.045);
+  color: rgba(255, 255, 255, 0.76);
+  font: inherit;
+  font-size: 11px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.crystal-project-graph-panel__button--primary {
+  border-color: rgba(147, 197, 253, 0.22);
+  background: rgba(147, 197, 253, 0.08);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.crystal-project-graph-panel__status,
+.crystal-project-graph-panel__list,
+.crystal-project-graph-panel__counts {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.crystal-project-graph-panel__status {
+  overflow: hidden;
+  padding: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.075);
+  background: rgba(255, 255, 255, 0.03);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crystal-project-graph-panel__section {
+  display: grid;
+  gap: 5px;
+}
+
+.crystal-project-graph-panel__heading {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.66);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.crystal-project-graph-panel__list {
+  display: grid;
+  gap: 3px;
+  max-height: 132px;
+  padding-left: 14px;
+  overflow: auto;
+}
+
+.crystal-project-graph-panel__list--pages {
+  max-height: 160px;
+}
+
+.crystal-project-graph-panel__counts {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 3px 8px;
+}
+
+.crystal-project-graph-panel__counts dt,
+.crystal-project-graph-panel__counts dd {
+  margin: 0;
+}

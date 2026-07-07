@@ -43,7 +43,7 @@ async function runClearSnapshot(elements: ProjectDomTreePanelElements): Promise<
 
 function renderDomSnapshotState(elements: ProjectDomTreePanelElements, state: ProjectDomSnapshotState): void {
   const snapshot = state.currentDomSnapshot;
-  elements.status.textContent = state.isStale ? `${state.status} - rebuild recommended` : state.status;
+  elements.status.textContent = state.isStale ? `${state.status} · stale` : renderSnapshotStatus(state.status);
   elements.target.textContent = snapshot?.rootRelativePath ?? "None";
   elements.nodeCount.textContent = snapshot ? String(snapshot.nodeCount) : "0";
   elements.maxDepth.textContent = snapshot ? String(snapshot.maxDepth) : "0";
@@ -55,6 +55,14 @@ function renderDomSnapshotState(elements: ProjectDomTreePanelElements, state: Pr
   renderSnapshotIssues(elements, state.issues);
 }
 
+function renderSnapshotStatus(status: ProjectDomSnapshotState["status"]): string {
+  if (status === "idle") return "idle";
+  if (status === "building") return "building";
+  if (status === "ready") return "ready";
+  if (status === "failed") return "failed";
+  return status;
+}
+
 function renderPreviewTarget(elements: ProjectDomTreePanelElements, state: ProjectPreviewState): void {
   if (elements.target.textContent === "None") elements.target.textContent = state.target?.relativePath ?? "None";
   elements.buildButton.disabled = !state.target;
@@ -62,7 +70,7 @@ function renderPreviewTarget(elements: ProjectDomTreePanelElements, state: Proje
 
 function renderSnapshotIssues(elements: ProjectDomTreePanelElements, issues: readonly ProjectDomSnapshotIssue[]): void {
   elements.issuesEmpty.hidden = issues.length > 0;
-  elements.issuesList.replaceChildren(...issues.slice(0, 10).map(createSnapshotIssueItem));
+  elements.issuesList.replaceChildren(...issues.slice(0, 8).map(createSnapshotIssueItem));
 }
 
 function createSnapshotIssueItem(issue: ProjectDomSnapshotIssue): HTMLLIElement {
@@ -128,23 +136,24 @@ function setSnapshotBusy(elements: ProjectDomTreePanelElements, busy: boolean): 
 }
 
 function getProjectDomTreePanelElements(panel: HTMLElement): ProjectDomTreePanelElements {
+  const query = <TElement extends HTMLElement>(selector: string, elementType: new () => TElement) => queryDomTreeElement(panel, selector, elementType);
   return {
-    status: queryPanelElement(panel, "[data-project-dom-tree-status]", HTMLElement),
-    target: queryPanelElement(panel, "[data-project-dom-tree-target]", HTMLElement),
-    nodeCount: queryPanelElement(panel, "[data-project-dom-tree-node-count]", HTMLElement),
-    maxDepth: queryPanelElement(panel, "[data-project-dom-tree-max-depth]", HTMLElement),
-    issueCount: queryPanelElement(panel, "[data-project-dom-tree-issue-count]", HTMLElement),
-    error: queryPanelElement(panel, "[data-project-dom-tree-error]", HTMLElement),
-    issuesEmpty: queryPanelElement(panel, "[data-project-dom-tree-issues-empty]", HTMLElement),
-    issuesList: queryPanelElement(panel, "[data-project-dom-tree-issues-list]", HTMLUListElement),
-    tree: queryPanelElement(panel, "[data-project-dom-tree-output]", HTMLElement),
-    buildButton: queryPanelElement(panel, "[data-project-dom-tree-build]", HTMLButtonElement),
-    clearButton: queryPanelElement(panel, "[data-project-dom-tree-clear]", HTMLButtonElement)
+    status: query("[data-project-dom-tree-status]", HTMLElement),
+    target: query("[data-project-dom-tree-target]", HTMLElement),
+    nodeCount: query("[data-project-dom-tree-node-count]", HTMLElement),
+    maxDepth: query("[data-project-dom-tree-max-depth]", HTMLElement),
+    issueCount: query("[data-project-dom-tree-issue-count]", HTMLElement),
+    error: query("[data-project-dom-tree-error]", HTMLElement),
+    issuesEmpty: query("[data-project-dom-tree-issues-empty]", HTMLElement),
+    issuesList: query("[data-project-dom-tree-issues-list]", HTMLUListElement),
+    tree: query("[data-project-dom-tree-output]", HTMLElement),
+    buildButton: query("[data-project-dom-tree-build]", HTMLButtonElement),
+    clearButton: query("[data-project-dom-tree-clear]", HTMLButtonElement)
   };
 }
 
-function queryPanelElement<TElement extends HTMLElement>(panel: HTMLElement, selector: string, elementType: new () => TElement): TElement {
-  const element = panel.querySelector(selector);
-  if (!(element instanceof elementType)) throw new Error(`Missing Project DOM tree panel element: ${selector}`);
+function queryDomTreeElement<TElement extends HTMLElement>(panel: HTMLElement, selector: string, elementType: new () => TElement): TElement {
+  const element = panel.querySelector(selector) ?? document.querySelector(selector);
+  if (!(element instanceof elementType)) throw new Error(`Missing Project DOM tree element: ${selector}`);
   return element;
 }
