@@ -6,8 +6,9 @@
 }
 
 .crystal-design-view__workspace {
+  position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 284px;
+  grid-template-columns: minmax(0, 1fr) var(--crystal-right-sidebar-width, 284px);
   grid-template-rows: minmax(0, 1fr) auto;
   width: 100%;
   height: 100%;
@@ -42,12 +43,94 @@
   overscroll-behavior: contain;
 }
 
+.crystal-design-view__right-resizer {
+  position: absolute;
+  z-index: 12;
+  top: 0;
+  right: calc(var(--crystal-right-sidebar-width, 284px) - 3px);
+  bottom: 0;
+  width: 6px;
+  border: 0;
+  background: transparent;
+  cursor: col-resize;
+  outline: none;
+  touch-action: none;
+}
+
+.crystal-design-view__right-resizer::after {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 3px;
+  width: 1px;
+  background: transparent;
+  content: "";
+}
+
+.crystal-design-view__right-resizer:hover::after,
+.crystal-design-view__right-resizer:focus-visible::after,
+.crystal-design-view__workspace--resizing-right .crystal-design-view__right-resizer::after {
+  background: var(--crystal-color-accent);
+}
+
+.crystal-design-view__right-resizer:focus-visible {
+  box-shadow: 0 0 0 2px var(--crystal-focus-ring);
+}
+
 .crystal-design-view__bottom-diagnostics {
+  position: relative;
   grid-column: 1 / -1;
   min-width: 0;
   border-top: 1px solid var(--crystal-color-border-soft);
   background: var(--crystal-color-surface-strong);
   overflow: hidden;
+}
+
+.crystal-design-view__bottom-resizer {
+  position: absolute;
+  z-index: 12;
+  top: -3px;
+  right: 0;
+  left: 0;
+  height: 6px;
+  border: 0;
+  background: transparent;
+  cursor: row-resize;
+  outline: none;
+  touch-action: none;
+}
+
+.crystal-design-view__bottom-resizer::after {
+  position: absolute;
+  top: 3px;
+  right: 0;
+  left: 0;
+  height: 1px;
+  background: transparent;
+  content: "";
+}
+
+.crystal-design-view__bottom-resizer:hover::after,
+.crystal-design-view__bottom-resizer:focus-visible::after,
+.crystal-design-view__workspace--resizing-bottom .crystal-design-view__bottom-resizer::after {
+  background: var(--crystal-color-accent);
+}
+
+.crystal-design-view__bottom-resizer:focus-visible {
+  box-shadow: 0 0 0 2px var(--crystal-focus-ring);
+}
+
+.crystal-design-view__workspace--resizing-right,
+.crystal-design-view__workspace--resizing-bottom {
+  user-select: none;
+}
+
+.crystal-design-view__workspace--resizing-right {
+  cursor: col-resize;
+}
+
+.crystal-design-view__workspace--resizing-bottom {
+  cursor: row-resize;
 }
 
 .crystal-design-view__workspace[data-crystal-project-open="false"] .crystal-design-view__bottom-diagnostics {
@@ -181,14 +264,14 @@
 }
 
 .crystal-design-view__debug-dock[open] {
-  max-height: 184px;
+  max-height: var(--crystal-bottom-diagnostics-height, 184px);
 }
 
 .crystal-design-view__debug-grid {
   display: grid;
   grid-template-columns: 0.9fr 1.2fr 1fr;
   gap: 6px;
-  max-height: 158px;
+  max-height: calc(var(--crystal-bottom-diagnostics-height, 184px) - 26px);
   padding: 0 6px 6px;
   overflow: auto;
   overscroll-behavior: contain;
