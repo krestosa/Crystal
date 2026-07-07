@@ -1,0 +1,44 @@
+.crystal-project-design-canvas .crystal-project-preview-panel__frame-wrap {
+  position: relative;
+}
+
+.crystal-project-design-canvas__selection-overlay {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.crystal-project-design-canvas__selection-box {
+  position: absolute;
+  top: 0;
+  left: 0;
+  box-sizing: border-box;
+  border: 2px solid rgba(124, 58, 237, 0.95);
+  background: rgba(124, 58, 237, 0.14);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.82), 0 8px 24px rgba(0, 0, 0, 0.28);
+  transform-origin: 0 0;
+}
+
+.crystal-project-design-canvas__selection-message {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  max-width: min(360px, calc(100% - 24px));
+  padding: 8px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.9);
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 12px;
+  line-height: 1.35;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.28);
+}
+
+.crystal-project-design-canvas__selection-overlay[data-project-design-canvas-selection-overlay-status="missing-snapshot"] .crystal-project-design-canvas__selection-message,
+.crystal-project-design-canvas__selection-overlay[data-project-design-canvas-selection-overlay-status="stale"] .crystal-project-design-canvas__selection-message,
+.crystal-project-design-canvas__selection-overlay[data-project-design-canvas-selection-overlay-status="ambiguous"] .crystal-project-design-canvas__selection-message,
+.crystal-project-design-canvas__selection-overlay[data-project-design-canvas-selection-overlay-status="unavailable"] .crystal-project-design-canvas__selection-message {
+  display: block;
+}

@@ -13,7 +13,18 @@ export type ProjectPreviewSelectionIssueCode =
   | "invalid-attributes-preview"
   | "invalid-text-preview"
   | "invalid-selector-preview"
+  | "invalid-selection-rect"
   | "unknown";
+
+export type ProjectPreviewSelectionRectCoordinateSpace = "iframe-viewport";
+
+export interface ProjectPreviewSelectionRect {
+  readonly coordinateSpace: ProjectPreviewSelectionRectCoordinateSpace;
+  readonly x: number;
+  readonly y: number;
+  readonly width: number;
+  readonly height: number;
+}
 
 export interface ProjectPreviewSelectedNodeAttribute {
   readonly name: string;
@@ -28,6 +39,7 @@ export interface ProjectPreviewSelectedNode {
   readonly attributesPreview: readonly ProjectPreviewSelectedNodeAttribute[];
   readonly textPreview: string;
   readonly selectorPreview: string;
+  readonly selectionRect: ProjectPreviewSelectionRect | null;
 }
 
 export interface ProjectPreviewSelectionIssue {

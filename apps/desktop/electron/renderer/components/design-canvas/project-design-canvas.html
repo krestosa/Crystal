@@ -8,6 +8,7 @@
       <button class="crystal-project-design-canvas__button" type="button" data-project-design-canvas-fit>Fit</button>
       <button class="crystal-project-design-canvas__button" type="button" data-project-design-canvas-center>Center</button>
       <button class="crystal-project-design-canvas__button" type="button" data-project-design-canvas-reset>Reset</button>
+      <button class="crystal-project-design-canvas__button" type="button" data-project-design-canvas-selection-overlay-toggle aria-pressed="true">Overlay On</button>
       <span class="crystal-project-design-canvas__zoom" data-project-design-canvas-zoom>100%</span>
     </div>
   </div>
@@ -20,6 +21,10 @@
         </div>
         <div class="crystal-project-preview-panel__frame-wrap">
           <iframe class="crystal-project-preview-panel__frame" data-project-preview-frame title="Crystal project preview" sandbox="allow-scripts allow-forms allow-popups"></iframe>
+          <div class="crystal-project-design-canvas__selection-overlay" data-project-design-canvas-selection-overlay data-project-design-canvas-selection-overlay-status="hidden" aria-hidden="true" hidden>
+            <div class="crystal-project-design-canvas__selection-box" data-project-design-canvas-selection-box hidden></div>
+            <div class="crystal-project-design-canvas__selection-message" data-project-design-canvas-selection-message hidden></div>
+          </div>
         </div>
       </div>
     </div>
