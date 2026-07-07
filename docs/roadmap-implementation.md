@@ -107,7 +107,9 @@ Covered:
 - pure Design Canvas viewport model under `packages/core/project/design-canvas/`
 - wide safe zoom state with 2% minimum, 6400% maximum, and 100% default
 - wheel and trackpad delta normalization for pixel, line, and page delta modes
-- explicit wheel/trackpad/pinch classification for zoom, pan, iframe scroll passthrough, and safe ignore
+- explicit wheel/trackpad/pinch classification for zoom, free pan, iframe scroll passthrough, and safe ignore
+- explicit pointer classification for canvas pan, zoom-drag, and safe ignore
+- explicit navigation modes: `idle`, `panning`, `zooming-wheel`, and `zooming-drag`
 - pan state with transient panning marker and last interaction timestamp
 - fit, center, reset, focal zoom, panning, pan clamp, and finite-number viewport helpers
 - pan recovery margin so the frame cannot be lost completely
@@ -115,16 +117,19 @@ Covered:
 - toolbar controls outside the transformed stage
 - Preview visual frame inside the transformed stage only
 - simple desktop page frame at 1280 × 720
-- no scrollbars as the primary Design Canvas navigation model
+- no scrollbars, straight vertical scroll, or straight horizontal scroll as the primary Design Canvas navigation model
 - overflow-hidden and overscroll-contained Design Canvas surface
+- free pan vector handling so diagonal canvas gestures move diagonally instead of mapping to page scroll
 - Space + drag panning
 - middle mouse panning where the event reaches the canvas
 - empty-background drag and wheel/trackpad panning without blocking the iframe
 - Ctrl/Cmd + wheel or Chromium-emulated pinch canvas zooming while normal wheel and two-finger trackpad scroll remain available to Preview
+- double tap/click plus upward or downward movement for focal zoom-drag when Chromium/Electron exposes a detectable pointer sequence
+- safe zoom-drag cancellation on pointer release, pointer cancel, blur, or Escape
 - focused-canvas keyboard zoom, reset, fit, center, and arrow-key pan
 - Fit, Center, and Reset recovery controls
 - visible zoom percentage
-- temporary Space/Ctrl/Cmd/pan/zoom capture states so Preview returns to normal interaction outside canvas gestures
+- temporary Space/Ctrl/Cmd/pan/wheel-zoom/zoom-drag capture states so Preview returns to normal interaction outside canvas gestures
 - external capture layer that defaults to `pointer-events: none`
 - in-memory viewport state persistence for the current renderer session
 - non-visual `validate:design-canvas` script

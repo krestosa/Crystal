@@ -50,19 +50,36 @@ try {
   expect(designCanvasHtml.includes("data-project-design-canvas-surface"), "Design Canvas surface is missing.");
   expect(designCanvasHtml.includes("data-project-design-canvas-stage"), "Design Canvas transform stage is missing.");
   expect(designCanvasHtml.includes("data-project-design-canvas-capture"), "Design Canvas capture layer is missing.");
+  expect(designCanvasHtml.includes("Double-tap drag up/down zooms"), "Design Canvas UI does not expose zoom-drag fallback guidance.");
   expect(designCanvasHtml.includes("tabindex=\"0\""), "Design Canvas surface cannot receive focus for keyboard navigation.");
   expect(designCanvasHtml.includes("data-project-preview-frame"), "Preview iframe is not inside the Design Canvas frame.");
   expect(designCanvasHtml.includes("sandbox=\"allow-scripts allow-forms allow-popups\""), "Preview iframe sandbox changed unexpectedly.");
   expect(previewPanelHtml.includes("../design-canvas/project-design-canvas.html"), "Preview panel does not include the Design Canvas frame partial.");
   expect(!previewPanelHtml.includes("data-project-design-canvas-stage"), "Preview panel owns the transform stage instead of delegating to Design Canvas.");
 
+  expect(designCanvasSource.includes("ProjectDesignCanvasNavigationMode"), "Explicit Design Canvas navigation mode is missing.");
+  expect(designCanvasSource.includes('"idle" | "panning" | "zooming-wheel" | "zooming-drag"'), "Design Canvas navigation mode does not cover idle, panning, wheel zoom, and drag zoom.");
   expect(designCanvasSource.includes("classifyCanvasWheelGesture"), "Explicit wheel/trackpad/pinch gesture classifier is missing.");
+  expect(designCanvasSource.includes("classifyCanvasPointerGesture"), "Explicit pointer gesture classifier is missing.");
   expect(designCanvasSource.includes('"zoom-canvas"'), "Gesture classifier does not expose zoom-canvas.");
+  expect(designCanvasSource.includes('"zoom-canvas-drag"'), "Pointer gesture classifier does not expose zoom-canvas-drag.");
   expect(designCanvasSource.includes('"pan-canvas"'), "Gesture classifier does not expose pan-canvas.");
   expect(designCanvasSource.includes('"pass-through-iframe-scroll"'), "Gesture classifier does not expose pass-through iframe scroll.");
   expect(designCanvasSource.includes('"ignore"'), "Gesture classifier does not expose ignore.");
   expect(designCanvasSource.includes("isCanvasZoomGesture"), "Canvas zoom gesture helper is missing.");
+  expect(designCanvasSource.includes("isCanvasZoomDragPointerGesture"), "Canvas zoom-drag gesture helper is missing.");
   expect(designCanvasSource.includes("event.ctrlKey || event.metaKey || modifierPressed"), "Ctrl/Cmd/pinch wheel gesture is not consistently classified as zoom.");
+  expect(designCanvasSource.includes("event.detail >= PROJECT_DESIGN_CANVAS_DOUBLE_TAP_CLICK_DETAIL"), "Double click/tap detail is not used to start zoom-drag when available.");
+  expect(designCanvasSource.includes("PROJECT_DESIGN_CANVAS_DOUBLE_TAP_WINDOW_MS"), "Double tap fallback window is missing.");
+  expect(designCanvasSource.includes("startZoomDrag"), "Zoom-drag start handler is missing.");
+  expect(designCanvasSource.includes("finishZoomDrag"), "Zoom-drag finish handler is missing.");
+  expect(designCanvasSource.includes("cancelZoomDrag"), "Zoom-drag cancel handler is missing.");
+  expect(designCanvasSource.includes("event.key === \"Escape\""), "Escape cancellation for active canvas navigation is missing.");
+  expect(designCanvasSource.includes("event.clientY - zoomDragSession.startClientY"), "Zoom-drag does not derive zoom from vertical movement.");
+  expect(designCanvasSource.includes("calculateProjectDesignCanvasWheelZoom(zoomDragSession.startZoom, dragDeltaY)"), "Zoom-drag does not use multiplicative/logarithmic zoom from the starting zoom.");
+  expect(designCanvasSource.includes("zoomDragSession.startViewport"), "Zoom-drag does not use the starting viewport for stable focal zoom.");
+  expect(designCanvasSource.includes("zoomDragSession.focusPoint"), "Zoom-drag does not preserve the double-tap focus point.");
+  expect(designCanvasSource.includes("navigationMode = \"idle\""), "Design Canvas navigation mode does not return to idle after active gestures.");
   expect(designCanvasSource.includes("normalizeProjectDesignCanvasWheelDelta"), "Renderer does not normalize wheel/trackpad delta.");
   expect(designCanvasSource.includes("deltaX: event.deltaX"), "Renderer does not pass trackpad horizontal delta.");
   expect(designCanvasSource.includes("deltaY: event.deltaY"), "Renderer does not pass trackpad vertical delta.");
@@ -74,6 +91,7 @@ try {
   expect(/gesture\.kind === "zoom-canvas"[\s\S]*event\.preventDefault\(\);[\s\S]*event\.stopPropagation\(\);[\s\S]*activateZoomCapture\(\);/.test(designCanvasSource), "Zoom gesture does not prevent default, contain propagation, and activate capture.");
   expect(designCanvasSource.includes("calculateProjectDesignCanvasZoomAtPoint(viewportState, bounds, gesture.focusPoint"), "Zoom does not use pointer-focused coordinates.");
   expect(designCanvasSource.includes("panCanvasBy(-gesture.delta.x, -gesture.delta.y"), "Wheel/trackpad pan does not use normalized X/Y deltas naturally.");
+  expect(designCanvasSource.includes("keepPanningState = source === \"space\" || source === \"middle\" || source === \"background\""), "Wheel/trackpad pan should not leave permanent panning capture state.");
   expect(designCanvasSource.includes("event.button === 1"), "Middle mouse pan support is missing.");
   expect(designCanvasSource.includes("event.code !== \"Space\""), "Space + drag pan reservation is missing.");
   expect(designCanvasSource.includes("setPointerCapture"), "Design Canvas pan pointer capture is missing.");
@@ -133,6 +151,10 @@ try {
   expect(zoomedIn.zoom === viewport.PROJECT_DESIGN_CANVAS_MAX_ZOOM, "Zoom helper did not clamp above wide maximum zoom.");
   const zoomedOut = viewport.calculateProjectDesignCanvasZoomAtPoint(viewport.createProjectDesignCanvasViewportState(), { viewportWidth: 800, viewportHeight: 600, frameWidth: 1280, frameHeight: 748 }, { x: 100, y: 80 }, 0.001, 20);
   expect(zoomedOut.zoom === viewport.PROJECT_DESIGN_CANVAS_MIN_ZOOM, "Zoom helper did not clamp below safe minimum zoom.");
+  const zoomDragUp = viewport.calculateProjectDesignCanvasWheelZoom(1, -80);
+  expect(zoomDragUp > 1, "Zoom-drag upward movement should zoom in.");
+  const zoomDragDown = viewport.calculateProjectDesignCanvasWheelZoom(1, 80);
+  expect(zoomDragDown < 1, "Zoom-drag downward movement should zoom out.");
   const panned = viewport.calculateProjectDesignCanvasPannedViewport(viewport.createProjectDesignCanvasViewportState({ panX: 0, panY: 0, zoom: 1 }), { viewportWidth: 800, viewportHeight: 600, frameWidth: 1280, frameHeight: 748 }, 100000, -100000, 30);
   expect(panned.panX <= 704 && panned.panY >= -652, "Pan clamp did not keep the frame recoverable.");
   const reset = viewport.calculateProjectDesignCanvasResetViewport({ viewportWidth: 1280, viewportHeight: 720, frameWidth: 1280, frameHeight: 748 }, 40);
@@ -151,7 +173,7 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log("Design Canvas validation passed: natural mouse, trackpad, pinch classification, scroll containment, wide safe zoom, pan recovery clamp, transient capture layer, sandbox limits, read-only boundaries, and local validation integration.");
+console.log("Design Canvas validation passed: natural free pan, zoom-drag, mouse, trackpad, pinch classification, scroll containment, wide safe zoom, pan recovery clamp, transient capture layer, sandbox limits, read-only boundaries, and local validation integration.");
 
 async function readText(filePath) {
   return readFile(path.resolve(filePath), "utf8");

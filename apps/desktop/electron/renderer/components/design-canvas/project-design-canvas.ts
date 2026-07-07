@@ -18,14 +18,39 @@ import { measureProjectDesignCanvasBounds, type ProjectDesignCanvasElements, typ
 const PROJECT_DESIGN_CANVAS_KEYBOARD_ZOOM_STEP = 1.2;
 const PROJECT_DESIGN_CANVAS_KEYBOARD_PAN_STEP = 64;
 const PROJECT_DESIGN_CANVAS_ZOOM_CAPTURE_RELEASE_DELAY = 180;
+const PROJECT_DESIGN_CANVAS_DOUBLE_TAP_WINDOW_MS = 320;
+const PROJECT_DESIGN_CANVAS_DOUBLE_TAP_DISTANCE = 14;
+const PROJECT_DESIGN_CANVAS_DOUBLE_TAP_CLICK_DETAIL = 2;
 
+type ProjectDesignCanvasNavigationMode = "idle" | "panning" | "zooming-wheel" | "zooming-drag";
 type ProjectDesignCanvasWheelGestureKind = "zoom-canvas" | "pan-canvas" | "pass-through-iframe-scroll" | "ignore";
+type ProjectDesignCanvasPointerGestureKind = "zoom-canvas-drag" | "pan-canvas" | "ignore";
 
 interface ProjectDesignCanvasWheelGesture {
   readonly kind: ProjectDesignCanvasWheelGestureKind;
   readonly delta: ProjectDesignCanvasPoint;
   readonly zoomDelta: number;
   readonly focusPoint: ProjectDesignCanvasPoint;
+}
+
+interface ProjectDesignCanvasPointerGesture {
+  readonly kind: ProjectDesignCanvasPointerGestureKind;
+  readonly panSource?: ProjectDesignCanvasPanSource;
+}
+
+interface ProjectDesignCanvasZoomDragSession {
+  readonly pointerId: number;
+  readonly startClientY: number;
+  readonly startZoom: number;
+  readonly focusPoint: ProjectDesignCanvasPoint;
+  readonly startViewport: ProjectDesignCanvasViewportState;
+}
+
+interface ProjectDesignCanvasNavigationTap {
+  readonly timestamp: number;
+  readonly clientX: number;
+  readonly clientY: number;
+  readonly pointerType: string;
 }
 
 let activeProjectDesignCanvasCleanup: (() => void) | null = null;
@@ -40,21 +65,27 @@ export function initializeProjectDesignCanvas(): void {
   const elements = getProjectDesignCanvasElements(root);
   const cleanup: Array<() => void> = [];
   let viewportState = sessionViewportState ?? createProjectDesignCanvasViewportState();
+  let navigationMode: ProjectDesignCanvasNavigationMode = "idle";
   let spacePressed = false;
   let modifierPressed = false;
   let zoomGestureActive = false;
   let zoomCaptureReleaseTimer: number | null = null;
   let panSession: ProjectDesignCanvasPanSession | null = null;
+  let zoomDragSession: ProjectDesignCanvasZoomDragSession | null = null;
+  let lastNavigationTap: ProjectDesignCanvasNavigationTap | null = null;
 
   const render = (): void => {
+    const zooming = zoomGestureActive || navigationMode === "zooming-wheel" || navigationMode === "zooming-drag";
+    const panning = navigationMode === "panning" || viewportState.isPanning;
     sessionViewportState = viewportState;
     elements.stage.style.transform = `translate(${viewportState.panX}px, ${viewportState.panY}px) scale(${viewportState.zoom})`;
     elements.zoomDisplay.textContent = `${Math.round(viewportState.zoom * 100)}%`;
     elements.root.classList.toggle("crystal-project-design-canvas--space-active", spacePressed);
     elements.root.classList.toggle("crystal-project-design-canvas--modifier-active", modifierPressed);
-    elements.root.classList.toggle("crystal-project-design-canvas--zoom-active", zoomGestureActive);
-    elements.root.classList.toggle("crystal-project-design-canvas--panning", viewportState.isPanning);
-    elements.root.classList.toggle("crystal-project-design-canvas--capture-active", spacePressed || modifierPressed || zoomGestureActive || viewportState.isPanning);
+    elements.root.classList.toggle("crystal-project-design-canvas--zoom-active", zooming);
+    elements.root.classList.toggle("crystal-project-design-canvas--zoom-dragging", navigationMode === "zooming-drag");
+    elements.root.classList.toggle("crystal-project-design-canvas--panning", panning);
+    elements.root.classList.toggle("crystal-project-design-canvas--capture-active", spacePressed || modifierPressed || zooming || panning);
   };
 
   const setViewportState = (nextState: ProjectDesignCanvasViewportState): void => {
@@ -70,16 +101,18 @@ export function initializeProjectDesignCanvas(): void {
 
   const releaseZoomCaptureSoon = (): void => {
     clearZoomCaptureReleaseTimer();
-    if (modifierPressed) return;
+    if (modifierPressed || zoomDragSession) return;
     zoomCaptureReleaseTimer = window.setTimeout(() => {
       zoomCaptureReleaseTimer = null;
       zoomGestureActive = false;
+      if (navigationMode === "zooming-wheel") navigationMode = "idle";
       render();
     }, PROJECT_DESIGN_CANVAS_ZOOM_CAPTURE_RELEASE_DELAY);
   };
 
   const activateZoomCapture = (): void => {
     zoomGestureActive = true;
+    navigationMode = "zooming-wheel";
     render();
     releaseZoomCaptureSoon();
   };
@@ -87,6 +120,7 @@ export function initializeProjectDesignCanvas(): void {
   const clearZoomCapture = (): void => {
     clearZoomCaptureReleaseTimer();
     zoomGestureActive = false;
+    if (navigationMode === "zooming-wheel" || navigationMode === "zooming-drag") navigationMode = "idle";
   };
 
   const fitCanvas = (): void => setViewportState(calculateProjectDesignCanvasFitViewport(measureProjectDesignCanvasBounds(elements), Date.now()));
@@ -98,7 +132,9 @@ export function initializeProjectDesignCanvas(): void {
   };
 
   const panCanvasBy = (deltaX: number, deltaY: number, source: ProjectDesignCanvasPanSource): void => {
-    setViewportState(calculateProjectDesignCanvasPannedViewport({ ...viewportState, isPanning: source !== "keyboard" }, measureProjectDesignCanvasBounds(elements), deltaX, deltaY, Date.now()));
+    const keepPanningState = source === "space" || source === "middle" || source === "background";
+    const nextState = calculateProjectDesignCanvasPannedViewport({ ...viewportState, isPanning: keepPanningState }, measureProjectDesignCanvasBounds(elements), deltaX, deltaY, Date.now());
+    setViewportState({ ...nextState, isPanning: keepPanningState });
   };
 
   const handleWheel = (event: WheelEvent): void => {
@@ -126,18 +162,52 @@ export function initializeProjectDesignCanvas(): void {
     panCanvasBy(-gesture.delta.x, -gesture.delta.y, "trackpad");
   };
 
+  const startZoomDrag = (event: PointerEvent): void => {
+    clearZoomCaptureReleaseTimer();
+    zoomGestureActive = true;
+    navigationMode = "zooming-drag";
+    zoomDragSession = {
+      pointerId: event.pointerId,
+      startClientY: event.clientY,
+      startZoom: viewportState.zoom,
+      focusPoint: getProjectDesignCanvasPointerFocusPoint(event, elements),
+      startViewport: viewportState
+    };
+    elements.surface.setPointerCapture(event.pointerId);
+    setViewportState({ ...viewportState, isPanning: false, lastInteractionAt: Date.now() });
+  };
+
   const handlePointerDown = (event: PointerEvent): void => {
-    const panSource = getProjectDesignCanvasPointerPanSource(event, elements, spacePressed, modifierPressed);
-    if (!panSource) return;
+    const pointerGesture = classifyCanvasPointerGesture(event, elements, spacePressed, modifierPressed, lastNavigationTap);
+    if (pointerGesture.kind === "ignore") return;
     event.preventDefault();
     event.stopPropagation();
     elements.surface.focus({ preventScroll: true });
-    panSession = { pointerId: event.pointerId, lastClientX: event.clientX, lastClientY: event.clientY, source: panSource };
+
+    if (pointerGesture.kind === "zoom-canvas-drag") {
+      lastNavigationTap = null;
+      startZoomDrag(event);
+      return;
+    }
+
+    if (!pointerGesture.panSource) return;
+    lastNavigationTap = shouldRememberCanvasNavigationTap(event, elements, spacePressed, modifierPressed) ? createProjectDesignCanvasNavigationTap(event) : null;
+    navigationMode = "panning";
+    panSession = { pointerId: event.pointerId, lastClientX: event.clientX, lastClientY: event.clientY, source: pointerGesture.panSource };
     elements.surface.setPointerCapture(event.pointerId);
     setViewportState({ ...viewportState, isPanning: true, lastInteractionAt: Date.now() });
   };
 
   const handlePointerMove = (event: PointerEvent): void => {
+    if (zoomDragSession && zoomDragSession.pointerId === event.pointerId) {
+      event.preventDefault();
+      event.stopPropagation();
+      const dragDeltaY = event.clientY - zoomDragSession.startClientY;
+      const nextZoom = calculateProjectDesignCanvasWheelZoom(zoomDragSession.startZoom, dragDeltaY);
+      setViewportState(calculateProjectDesignCanvasZoomAtPoint(zoomDragSession.startViewport, measureProjectDesignCanvasBounds(elements), zoomDragSession.focusPoint, nextZoom, Date.now()));
+      return;
+    }
+
     if (!panSession || panSession.pointerId !== event.pointerId) return;
     event.preventDefault();
     event.stopPropagation();
@@ -147,18 +217,58 @@ export function initializeProjectDesignCanvas(): void {
     setViewportState(calculateProjectDesignCanvasPannedViewport(viewportState, measureProjectDesignCanvasBounds(elements), deltaX, deltaY, Date.now()));
   };
 
+  const finishZoomDrag = (event: PointerEvent): void => {
+    if (!zoomDragSession || zoomDragSession.pointerId !== event.pointerId) return;
+    event.stopPropagation();
+    zoomDragSession = null;
+    zoomGestureActive = false;
+    navigationMode = "idle";
+    if (elements.surface.hasPointerCapture(event.pointerId)) elements.surface.releasePointerCapture(event.pointerId);
+    setViewportState({ ...viewportState, isPanning: false, lastInteractionAt: Date.now() });
+  };
+
   const finishPanning = (event: PointerEvent): void => {
     if (!panSession || panSession.pointerId !== event.pointerId) return;
     event.stopPropagation();
     panSession = null;
+    navigationMode = "idle";
     if (elements.surface.hasPointerCapture(event.pointerId)) elements.surface.releasePointerCapture(event.pointerId);
     setViewportState(finishProjectDesignCanvasPanning(viewportState, measureProjectDesignCanvasBounds(elements), Date.now()));
+  };
+
+  const handlePointerRelease = (event: PointerEvent): void => {
+    if (zoomDragSession?.pointerId === event.pointerId) {
+      finishZoomDrag(event);
+      return;
+    }
+    finishPanning(event);
+  };
+
+  const cancelZoomDrag = (): void => {
+    if (zoomDragSession && elements.surface.hasPointerCapture(zoomDragSession.pointerId)) elements.surface.releasePointerCapture(zoomDragSession.pointerId);
+    zoomDragSession = null;
+    zoomGestureActive = false;
+    if (navigationMode === "zooming-drag") navigationMode = "idle";
+    setViewportState({ ...viewportState, isPanning: false, lastInteractionAt: Date.now() });
   };
 
   const cancelPanning = (): void => {
     if (panSession && elements.surface.hasPointerCapture(panSession.pointerId)) elements.surface.releasePointerCapture(panSession.pointerId);
     panSession = null;
+    if (navigationMode === "panning") navigationMode = "idle";
     setViewportState(finishProjectDesignCanvasPanning(viewportState, measureProjectDesignCanvasBounds(elements), Date.now()));
+  };
+
+  const cancelActiveNavigation = (): void => {
+    const hadZoomDrag = !!zoomDragSession;
+    const hadPan = !!panSession;
+    if (hadZoomDrag) cancelZoomDrag();
+    if (hadPan) cancelPanning();
+    if (!hadZoomDrag && !hadPan) {
+      clearZoomCapture();
+      lastNavigationTap = null;
+      render();
+    }
   };
 
   const handleAuxClick = (event: MouseEvent): void => {
@@ -166,6 +276,11 @@ export function initializeProjectDesignCanvas(): void {
   };
 
   const handleKeyDown = (event: KeyboardEvent): void => {
+    if (event.key === "Escape" && (panSession || zoomDragSession || navigationMode !== "idle")) {
+      event.preventDefault();
+      cancelActiveNavigation();
+      return;
+    }
     if ((event.key === "Control" || event.key === "Meta") && !isCrystalUiEditingTarget(event.target)) {
       modifierPressed = true;
       clearZoomCaptureReleaseTimer();
@@ -250,9 +365,12 @@ export function initializeProjectDesignCanvas(): void {
   const handleWindowBlur = (): void => {
     spacePressed = false;
     modifierPressed = false;
-    clearZoomCapture();
-    if (panSession) cancelPanning();
-    else render();
+    lastNavigationTap = null;
+    if (zoomDragSession || panSession || navigationMode !== "idle") cancelActiveNavigation();
+    else {
+      clearZoomCapture();
+      render();
+    }
   };
 
   const handleWindowResize = (): void => setViewportState(clampProjectDesignCanvasPan(viewportState, measureProjectDesignCanvasBounds(elements)));
@@ -263,8 +381,8 @@ export function initializeProjectDesignCanvas(): void {
   elements.surface.addEventListener("wheel", handleWheel, { passive: false });
   elements.surface.addEventListener("pointerdown", handlePointerDown);
   elements.surface.addEventListener("pointermove", handlePointerMove);
-  elements.surface.addEventListener("pointerup", finishPanning);
-  elements.surface.addEventListener("pointercancel", finishPanning);
+  elements.surface.addEventListener("pointerup", handlePointerRelease);
+  elements.surface.addEventListener("pointercancel", handlePointerRelease);
   elements.surface.addEventListener("auxclick", handleAuxClick);
   document.addEventListener("keydown", handleKeyDown);
   document.addEventListener("keyup", handleKeyUp);
@@ -277,8 +395,8 @@ export function initializeProjectDesignCanvas(): void {
   cleanup.push(() => elements.surface.removeEventListener("wheel", handleWheel));
   cleanup.push(() => elements.surface.removeEventListener("pointerdown", handlePointerDown));
   cleanup.push(() => elements.surface.removeEventListener("pointermove", handlePointerMove));
-  cleanup.push(() => elements.surface.removeEventListener("pointerup", finishPanning));
-  cleanup.push(() => elements.surface.removeEventListener("pointercancel", finishPanning));
+  cleanup.push(() => elements.surface.removeEventListener("pointerup", handlePointerRelease));
+  cleanup.push(() => elements.surface.removeEventListener("pointercancel", handlePointerRelease));
   cleanup.push(() => elements.surface.removeEventListener("auxclick", handleAuxClick));
   cleanup.push(() => document.removeEventListener("keydown", handleKeyDown));
   cleanup.push(() => document.removeEventListener("keyup", handleKeyUp));
@@ -326,8 +444,34 @@ function classifyCanvasWheelGesture(event: WheelEvent, elements: ProjectDesignCa
   return { kind: "ignore", delta, zoomDelta, focusPoint };
 }
 
+function classifyCanvasPointerGesture(event: PointerEvent, elements: ProjectDesignCanvasElements, spacePressed: boolean, modifierPressed: boolean, lastNavigationTap: ProjectDesignCanvasNavigationTap | null): ProjectDesignCanvasPointerGesture {
+  if (!shouldUseCanvasNavigationTarget(event.target, elements)) return { kind: "ignore" };
+  if (isCanvasZoomDragPointerGesture(event, lastNavigationTap)) return { kind: "zoom-canvas-drag" };
+  if (spacePressed && event.button === 0) return { kind: "pan-canvas", panSource: "space" };
+  if (event.button === 1) return { kind: "pan-canvas", panSource: "middle" };
+  if (!modifierPressed && event.button === 0) return { kind: "pan-canvas", panSource: "background" };
+  return { kind: "ignore" };
+}
+
 function isCanvasZoomGesture(event: WheelEvent, modifierPressed: boolean): boolean {
   return event.ctrlKey || event.metaKey || modifierPressed;
+}
+
+function isCanvasZoomDragPointerGesture(event: PointerEvent, lastNavigationTap: ProjectDesignCanvasNavigationTap | null): boolean {
+  if (event.button !== 0) return false;
+  if (event.detail >= PROJECT_DESIGN_CANVAS_DOUBLE_TAP_CLICK_DETAIL) return true;
+  if (!lastNavigationTap) return false;
+  if (event.pointerType !== lastNavigationTap.pointerType) return false;
+  if (Date.now() - lastNavigationTap.timestamp > PROJECT_DESIGN_CANVAS_DOUBLE_TAP_WINDOW_MS) return false;
+  return Math.hypot(event.clientX - lastNavigationTap.clientX, event.clientY - lastNavigationTap.clientY) <= PROJECT_DESIGN_CANVAS_DOUBLE_TAP_DISTANCE;
+}
+
+function createProjectDesignCanvasNavigationTap(event: PointerEvent): ProjectDesignCanvasNavigationTap {
+  return { timestamp: Date.now(), clientX: event.clientX, clientY: event.clientY, pointerType: event.pointerType };
+}
+
+function shouldRememberCanvasNavigationTap(event: PointerEvent, elements: ProjectDesignCanvasElements, spacePressed: boolean, modifierPressed: boolean): boolean {
+  return event.button === 0 && !spacePressed && !modifierPressed && shouldUseCanvasNavigationTarget(event.target, elements);
 }
 
 function getProjectDesignCanvasPointerFocusPoint(event: MouseEvent, elements: ProjectDesignCanvasElements): ProjectDesignCanvasPoint {
@@ -336,10 +480,9 @@ function getProjectDesignCanvasPointerFocusPoint(event: MouseEvent, elements: Pr
 }
 
 function getProjectDesignCanvasPointerPanSource(event: PointerEvent, elements: ProjectDesignCanvasElements, spacePressed: boolean, modifierPressed: boolean): ProjectDesignCanvasPanSource | null {
-  if (spacePressed && event.button === 0) return "space";
-  if (event.button === 1 && shouldUseCanvasNavigationTarget(event.target, elements)) return "middle";
-  if (!modifierPressed && event.button === 0 && shouldUseCanvasNavigationTarget(event.target, elements)) return "background";
-  return null;
+  const pointerGesture = classifyCanvasPointerGesture(event, elements, spacePressed, modifierPressed, null);
+  if (pointerGesture.kind !== "pan-canvas") return null;
+  return pointerGesture.panSource ?? null;
 }
 
 function shouldUseCanvasNavigationTarget(target: ProjectDesignCanvasInteractionTarget, elements: ProjectDesignCanvasElements): boolean {
