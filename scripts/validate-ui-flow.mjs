@@ -46,14 +46,23 @@ expect(source.appShellTs.includes("setPointerCapture"), "App shell resize handle
 expect(source.designHtml.includes("crystal-design-view__workspace"), "Design view does not expose a workspace shell.");
 expect(source.designHtml.includes("crystal-design-view__canvas"), "Design view does not reserve a central canvas area.");
 expect(source.designHtml.includes("crystal-design-view__right-sidebar"), "Design view does not expose a right sidebar.");
-expect(source.designHtml.includes("crystal-design-view__bottom-diagnostics"), "Design view does not expose a bottom diagnostics dock.");
 expect(source.designHtml.includes("data-crystal-right-sidebar-resizer"), "Design view does not expose the right sidebar resize handle.");
-expect(source.designHtml.includes("data-crystal-bottom-diagnostics-resizer"), "Design view does not expose the diagnostics resize handle.");
+expect(source.designHtml.includes("data-crystal-diagnostics-toggle"), "Design view does not expose the floating diagnostics toggle.");
+expect(source.designHtml.includes("data-crystal-diagnostics-popover"), "Design view does not expose the floating diagnostics panel.");
+expect(source.designHtml.includes("data-crystal-diagnostics-close"), "Design view does not expose the floating diagnostics close action.");
+expect(source.designHtml.includes("data-crystal-diagnostics-resizer"), "Design view does not expose the floating diagnostics resize handle.");
+expect(!source.designHtml.includes("crystal-design-view__bottom-diagnostics"), "Diagnostics still render as a fixed bottom layout row.");
+expect(!source.designHtml.includes("data-crystal-bottom-diagnostics-resizer"), "Diagnostics still use the old fixed bottom resize handle.");
 expect(source.designScss.includes("grid-template-columns: minmax(0, 1fr) var(--crystal-right-sidebar-width, 284px)"), "Canvas is not the dominant central column with a resizable right sidebar.");
-expect(source.designScss.includes("grid-template-rows: minmax(0, 1fr) auto"), "Bottom diagnostics are not separated from the main workspace row.");
-expect(source.designScss.includes("max-height: var(--crystal-bottom-diagnostics-height, 184px)"), "Bottom diagnostics height is not controlled by a clamped resize variable.");
+expect(source.designScss.includes("grid-template-rows: minmax(0, 1fr)"), "Workspace should not reserve a fixed diagnostics row.");
+expect(source.designScss.includes(".crystal-design-view__diagnostics-popover"), "Floating diagnostics panel is not styled.");
+expect(source.designScss.includes("position: absolute"), "Floating diagnostics panel does not use overlay positioning.");
+expect(source.designScss.includes(".crystal-design-view__diagnostics-popover[hidden]"), "Closed diagnostics panel may still intercept clicks.");
+expect(source.designScss.includes("--crystal-diagnostics-panel-height"), "Floating diagnostics height is not controlled by a clamped resize variable.");
+expect(source.designTs.includes("data-crystal-diagnostics-toggle"), "Floating diagnostics toggle is not wired.");
+expect(source.designTs.includes("data-crystal-diagnostics-close"), "Floating diagnostics close action is not wired.");
 expect(source.designTs.includes("CRYSTAL_MIN_CANVAS_WIDTH"), "Right sidebar resize logic does not clamp against a minimum canvas width.");
-expect(source.designTs.includes("CRYSTAL_MIN_CANVAS_HEIGHT"), "Bottom diagnostics resize logic does not clamp against a minimum canvas height.");
+expect(source.designTs.includes("CRYSTAL_DIAGNOSTICS_PANEL_MAX_HEIGHT"), "Floating diagnostics resize logic does not clamp maximum height.");
 expect(source.designTs.includes("setPointerCapture"), "Design resize handles do not capture pointer drags.");
 expect(!source.appShellTs.includes("localStorage") && !source.designTs.includes("localStorage"), "Resizable shell panels introduced persistence without a preferences contract.");
 
@@ -81,7 +90,7 @@ for (const requiredDebugHook of [
   "data-project-preview-issues-list",
   "data-project-dom-tree-output"
 ]) {
-  expect(source.designHtml.includes(requiredDebugHook), `Bottom diagnostics are missing hook: ${requiredDebugHook}`);
+  expect(source.designHtml.includes(requiredDebugHook), `Floating diagnostics are missing hook: ${requiredDebugHook}`);
 }
 
 for (const forbidden of [
@@ -115,7 +124,7 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log("UI flow validation passed: no internal top bar, full-height workspace, central canvas, clean sidebars, resizable shell panels, bottom diagnostics, styled UI scrollbars, dependency guard, and iframe safety boundaries.");
+console.log("UI flow validation passed: no internal top bar, full-height workspace, central canvas, clean sidebars, resizable shell panels, floating diagnostics, styled UI scrollbars, dependency guard, and iframe safety boundaries.");
 
 async function readText(filePath) {
   return readFile(path.resolve(filePath), "utf8");
