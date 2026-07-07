@@ -64,19 +64,24 @@ function validateSelectionRectPayload(value: unknown): ProjectPreviewSelectionRe
   if (!isRecord(value)) return { ok: false, rect: null };
   if (value.coordinateSpace !== "iframe-viewport") return { ok: false, rect: null };
 
-  if (!isFiniteNumberInRange(value.x, -projectPreviewSelectionLimits.maxRectCoordinateAbs, projectPreviewSelectionLimits.maxRectCoordinateAbs)) return { ok: false, rect: null };
-  if (!isFiniteNumberInRange(value.y, -projectPreviewSelectionLimits.maxRectCoordinateAbs, projectPreviewSelectionLimits.maxRectCoordinateAbs)) return { ok: false, rect: null };
-  if (!isFiniteNumberInRange(value.width, 0, projectPreviewSelectionLimits.maxRectSize)) return { ok: false, rect: null };
-  if (!isFiniteNumberInRange(value.height, 0, projectPreviewSelectionLimits.maxRectSize)) return { ok: false, rect: null };
+  const x = value.x;
+  const y = value.y;
+  const width = value.width;
+  const height = value.height;
+
+  if (!isFiniteNumberInRange(x, -projectPreviewSelectionLimits.maxRectCoordinateAbs, projectPreviewSelectionLimits.maxRectCoordinateAbs)) return { ok: false, rect: null };
+  if (!isFiniteNumberInRange(y, -projectPreviewSelectionLimits.maxRectCoordinateAbs, projectPreviewSelectionLimits.maxRectCoordinateAbs)) return { ok: false, rect: null };
+  if (!isFiniteNumberInRange(width, 0, projectPreviewSelectionLimits.maxRectSize)) return { ok: false, rect: null };
+  if (!isFiniteNumberInRange(height, 0, projectPreviewSelectionLimits.maxRectSize)) return { ok: false, rect: null };
 
   return {
     ok: true,
     rect: {
       coordinateSpace: "iframe-viewport",
-      x: value.x,
-      y: value.y,
-      width: value.width,
-      height: value.height
+      x,
+      y,
+      width,
+      height
     }
   };
 }

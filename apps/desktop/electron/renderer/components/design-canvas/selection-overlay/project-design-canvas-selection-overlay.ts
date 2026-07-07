@@ -1,4 +1,4 @@
-import { projectPreviewSelectionRectToDesignCanvasOverlayProjection, selectProjectDesignCanvasSelectionOverlayState } from "../../../../../../../packages/core/project/design-canvas/selection-overlay/project-design-canvas-selection-overlay";
+import { selectProjectDesignCanvasSelectionOverlayState } from "../../../../../../../packages/core/project/design-canvas/selection-overlay/project-design-canvas-selection-overlay";
 import type { ProjectDesignCanvasSelectionOverlayStatus } from "../../../../../../../packages/core/project/design-canvas/selection-overlay/project-design-canvas-selection-overlay.types";
 import type { ProjectPreviewSelectionState } from "../../../../../../../packages/core/project/preview-selection/project-preview-selection.types";
 import type { ProjectDesignCanvasSelectionOverlayElements } from "./project-design-canvas-selection-overlay.types";
@@ -37,12 +37,11 @@ export function initializeProjectDesignCanvasSelectionOverlay(): void {
     elements.overlay.hidden = false;
     elements.overlay.setAttribute("aria-hidden", "true");
 
-    if (overlayState.status === "matched" && overlayState.rect && overlayState.projection) {
-      const projection = projectPreviewSelectionRectToDesignCanvasOverlayProjection(overlayState.rect);
+    if (overlayState.status === "matched" && overlayState.projection) {
       elements.box.hidden = false;
-      elements.box.style.transform = `translate(${projection.left}px, ${projection.top}px)`;
-      elements.box.style.width = `${projection.width}px`;
-      elements.box.style.height = `${projection.height}px`;
+      elements.box.style.transform = `translate(${overlayState.projection.left}px, ${overlayState.projection.top}px)`;
+      elements.box.style.width = `${overlayState.projection.width}px`;
+      elements.box.style.height = `${overlayState.projection.height}px`;
       elements.message.hidden = true;
       elements.message.textContent = "";
       return;
