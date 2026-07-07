@@ -139,8 +139,8 @@ function initializeWorkspaceResize(): void {
     diagnosticsPinned = isPinned;
     diagnosticsPopover.setAttribute("data-crystal-diagnostics-pinned", String(isPinned));
     diagnosticsPin.setAttribute("aria-pressed", String(isPinned));
-    diagnosticsPin.setAttribute("aria-label", isPinned ? "Unpin diagnostics" : "Pin diagnostics");
-    diagnosticsPin.title = isPinned ? "Unpin diagnostics" : "Pin diagnostics";
+    diagnosticsPin.setAttribute("aria-label", isPinned ? "Unpin Diagnostics" : "Pin Diagnostics");
+    diagnosticsPin.title = isPinned ? "Unpin Diagnostics" : "Pin Diagnostics";
     if (!isPinned) setDiagnosticsPosition(diagnosticsLeft, diagnosticsTop);
   };
 
@@ -326,7 +326,7 @@ function isDiagnosticsResizeKind(kind: CrystalWorkspaceInteractionKind): boolean
 
 function isInteractiveDiagnosticsTarget(target: EventTarget | null): boolean {
   if (!(target instanceof Element)) return false;
-  return Boolean(target.closest("button, input, select, textarea, a, summary, [role='button'], [data-crystal-diagnostics-resizer]"));
+  return Boolean(target.closest("button, input, select, textarea, a, summary, [role='button'], [data-crystal-diagnostics-resizer], .crystal-design-view__debug-list, .crystal-design-view__debug-tree"));
 }
 
 function syncSeparatorValue(separator: HTMLElement, min: number, max: number, value: number): void {
