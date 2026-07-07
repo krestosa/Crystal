@@ -112,8 +112,9 @@ Implemented:
 - minimal read-only Preview Inspector derived from Preview selection, Preview state, and DOM Snapshot state
 - read-only Design Canvas frame around the Preview surface
 - Design Canvas viewport state with pan, wide safe zoom, fit, center, and reset
-- mouse, middle-button, keyboard, and trackpad-aware canvas navigation with normalized wheel deltas
-- Space + drag canvas panning and Ctrl/Cmd + wheel or trackpad canvas zooming while normal wheel and two-finger trackpad scroll remain available to the Preview iframe
+- natural mouse, middle-button, keyboard, trackpad, and pinch-aware canvas navigation with normalized wheel deltas
+- explicit wheel/trackpad/pinch gesture classification for zoom, pan, iframe scroll passthrough, and safe ignore
+- Space + drag canvas panning and Ctrl/Cmd + wheel or Chromium-emulated pinch canvas zooming while normal wheel and two-finger trackpad scroll remain available to the Preview iframe
 - `validate:preview` for non-visual Preview checks
 - `validate:dom-snapshot` for non-visual DOM snapshot checks
 - `validate:preview-selection` for non-visual Preview selection and mapping checks
@@ -162,11 +163,13 @@ Watcher reload is conservative. Preview reload is considered after Project Graph
 
 The Design Canvas wraps only the visual Preview frame. Preview panel controls, target selection, Preview issues, selected-node summary, and Preview Inspector remain outside the transform and are not scaled by pan or zoom.
 
-The current Design Canvas supports Space + drag panning, middle mouse panning where the event reaches the canvas, empty-background drag panning, Ctrl/Cmd + wheel or trackpad zooming, Fit, Center, Reset, visible zoom percentage, a simple desktop page frame, and in-memory viewport state for the current renderer session. Zoom is intentionally broad with explicit safety limits, not mathematically infinite: it supports very large zoom out/in while clamping invalid values, preserving numeric stability, normalizing wheel and trackpad delta modes, and keeping the frame recoverable through pan bounds.
+The current Design Canvas supports Space + drag panning, middle mouse panning where the event reaches the canvas, empty-background drag panning, natural wheel/trackpad panning on the canvas background, Ctrl/Cmd + wheel or trackpad zooming, Fit, Center, Reset, visible zoom percentage, a simple desktop page frame, and in-memory viewport state for the current renderer session. Zoom is intentionally broad with explicit safety limits, not mathematically infinite: it supports very large zoom out/in while clamping invalid values, preserving numeric stability, normalizing wheel and trackpad delta modes, and keeping the frame recoverable through pan bounds.
 
-Normal mouse wheel input and normal trackpad two-finger scroll are left to the Preview iframe so the loaded page can scroll. Ctrl/Cmd + wheel or Chromium's Ctrl-emulated trackpad pinch is reserved for Design Canvas zoom. Space + drag is reserved for Design Canvas pan. Trackpad horizontal, vertical, and diagonal deltas can pan the canvas only when canvas navigation is active, such as Space mode or empty canvas background interaction.
+The canvas does not use scrollbars as its primary navigation model. Its surface hides overflow, contains overscroll, and moves the Preview frame through transform-based pan and zoom. Normal mouse wheel input and normal trackpad two-finger scroll are left to the Preview iframe so the loaded page can scroll. Wheel or trackpad gestures on empty canvas background pan naturally in X/Y and are contained so they do not scroll the surrounding Crystal UI.
 
-The capture layer is external to the user document and has `pointer-events: none` in the normal state. It is enabled only while Space, Ctrl/Cmd, or pan capture is active, then returns to non-blocking mode so the iframe receives normal click, wheel, scroll, and selection interaction again.
+Ctrl/Cmd + wheel or Chromium's Ctrl-emulated trackpad pinch is reserved for Design Canvas zoom. The zoom is focal: it uses the pointer position over the Design Canvas surface to keep the point under the cursor visually stable where possible. Pinch support depends on how Chromium and the operating system emit the gesture, but Crystal consistently treats `wheel` + `ctrlKey` as canvas zoom and prevents that gesture from becoming Crystal UI scroll.
+
+The capture layer is external to the user document and has `pointer-events: none` in the normal state. It is enabled only during explicit canvas navigation states such as Space, Ctrl/Cmd, active pan, or active zoom capture, then returns to non-blocking mode so the iframe receives normal click, wheel, scroll, and selection interaction again.
 
 Fit, Center, and Reset are recovery controls. Fit brings the frame back into the visible work area, Center recenters at the current zoom, and Reset returns to 100% zoom centered.
 
