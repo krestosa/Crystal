@@ -116,11 +116,10 @@
   stroke-width: 1.15;
 }
 
-.crystal-app-shell__diagnostics-button:hover,
-.crystal-app-shell__diagnostics-button:focus-visible {
-  border-color: var(--crystal-color-accent-border);
+.crystal-app-shell__diagnostics-button:hover {
+  border-color: rgba(255, 255, 255, 0.16);
   background: rgba(255, 255, 255, 0.055);
-  color: var(--crystal-color-text);
+  color: rgba(247, 242, 236, 0.86);
 }
 
 .crystal-app-shell__diagnostics-button[aria-expanded="true"] {
@@ -130,6 +129,8 @@
 }
 
 .crystal-app-shell__diagnostics-button:focus-visible {
+  border-color: var(--crystal-color-accent-border);
+  color: var(--crystal-color-text);
   outline: 2px solid var(--crystal-focus-ring);
   outline-offset: 1px;
 }
