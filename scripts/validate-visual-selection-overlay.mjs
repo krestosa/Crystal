@@ -8,117 +8,114 @@ const bundledOverlay = path.join(tempDir, "project-design-canvas-selection-overl
 const bundledValidators = path.join(tempDir, "project-preview-selection-validators.mjs");
 const failures = [];
 
-const packageJsonPath = "package.json";
-const validateLocalPath = "scripts/validate-local.mjs";
-const previewSelectionScriptPath = "apps/desktop/electron/main/preview-selection/project-preview-selection-script.ts";
-const previewSelectionBridgePath = "apps/desktop/electron/renderer/components/project-preview-panel/selection/project-preview-selection-message-bridge.ts";
-const previewSelectionTypesPath = "packages/core/project/preview-selection/project-preview-selection.types.ts";
-const previewSelectionValidatorsPath = "packages/core/project/preview-selection/project-preview-selection-validators.ts";
-const overlayCorePath = "packages/core/project/design-canvas/selection-overlay/project-design-canvas-selection-overlay.ts";
-const overlayCoreTypesPath = "packages/core/project/design-canvas/selection-overlay/project-design-canvas-selection-overlay.types.ts";
-const designCanvasHtmlPath = "apps/desktop/electron/renderer/components/design-canvas/project-design-canvas.html";
-const designCanvasSourcePath = "apps/desktop/electron/renderer/components/design-canvas/project-design-canvas.ts";
-const overlayRendererPath = "apps/desktop/electron/renderer/components/design-canvas/selection-overlay/project-design-canvas-selection-overlay.ts";
-const overlayRendererTypesPath = "apps/desktop/electron/renderer/components/design-canvas/selection-overlay/project-design-canvas-selection-overlay.types.ts";
-const overlayScssPath = "apps/desktop/electron/renderer/components/design-canvas/selection-overlay/project-design-canvas-selection-overlay.scss";
-const designViewSourcePath = "apps/desktop/electron/renderer/views/design/design.ts";
-const mainScssPath = "apps/desktop/electron/renderer/main.scss";
+const paths = {
+  packageJson: "package.json",
+  validateLocal: "scripts/validate-local.mjs",
+  previewSelectionScript: "apps/desktop/electron/main/preview-selection/project-preview-selection-script.ts",
+  previewSelectionBridge: "apps/desktop/electron/renderer/components/project-preview-panel/selection/project-preview-selection-message-bridge.ts",
+  previewSelectionTypes: "packages/core/project/preview-selection/project-preview-selection.types.ts",
+  previewSelectionValidators: "packages/core/project/preview-selection/project-preview-selection-validators.ts",
+  overlayCore: "packages/core/project/design-canvas/selection-overlay/project-design-canvas-selection-overlay.ts",
+  overlayCoreTypes: "packages/core/project/design-canvas/selection-overlay/project-design-canvas-selection-overlay.types.ts",
+  designCanvasHtml: "apps/desktop/electron/renderer/components/design-canvas/project-design-canvas.html",
+  designCanvasSource: "apps/desktop/electron/renderer/components/design-canvas/project-design-canvas.ts",
+  overlayRenderer: "apps/desktop/electron/renderer/components/design-canvas/selection-overlay/project-design-canvas-selection-overlay.ts",
+  overlayRendererTypes: "apps/desktop/electron/renderer/components/design-canvas/selection-overlay/project-design-canvas-selection-overlay.types.ts",
+  overlayScss: "apps/desktop/electron/renderer/components/design-canvas/selection-overlay/project-design-canvas-selection-overlay.scss",
+  designViewSource: "apps/desktop/electron/renderer/views/design/design.ts",
+  mainScss: "apps/desktop/electron/renderer/main.scss",
+  docs: "docs/visual-selection-overlay.md"
+};
 
-const packageJson = await readText(packageJsonPath);
-const validateLocal = await readText(validateLocalPath);
-const previewSelectionScript = await readText(previewSelectionScriptPath);
-const previewSelectionBridge = await readText(previewSelectionBridgePath);
-const previewSelectionTypes = await readText(previewSelectionTypesPath);
-const previewSelectionValidatorsSource = await readText(previewSelectionValidatorsPath);
-const overlayCoreSource = await readText(overlayCorePath);
-const overlayCoreTypes = await readText(overlayCoreTypesPath);
-const designCanvasHtml = await readText(designCanvasHtmlPath);
-const designCanvasSource = await readText(designCanvasSourcePath);
-const overlayRendererSource = await readText(overlayRendererPath);
-const overlayRendererTypes = await readText(overlayRendererTypesPath);
-const overlayScss = await readText(overlayScssPath);
-const designViewSource = await readText(designViewSourcePath);
-const mainScss = await readText(mainScssPath);
-const overlay = await loadBundledModule(overlayCorePath, bundledOverlay);
-const validators = await loadBundledModule(previewSelectionValidatorsPath, bundledValidators);
+const source = Object.fromEntries(await Promise.all(Object.entries(paths).map(async ([key, filePath]) => [key, await readText(filePath)])));
+const overlay = await loadBundledModule(paths.overlayCore, bundledOverlay);
+const validators = await loadBundledModule(paths.previewSelectionValidators, bundledValidators);
 
 try {
-  const packageData = JSON.parse(packageJson);
+  const packageData = JSON.parse(source.packageJson);
   expect(packageData.scripts?.["validate:visual-selection-overlay"] === "node scripts/validate-visual-selection-overlay.mjs", "package.json does not expose validate:visual-selection-overlay.");
-  expect(validateLocal.includes("npm run validate:visual-selection-overlay"), "validate-local does not run validate:visual-selection-overlay.");
+  expect(source.validateLocal.includes("npm run validate:visual-selection-overlay"), "validate-local does not run validate:visual-selection-overlay.");
 
-  expect(designCanvasHtml.includes("data-project-design-canvas-selection-overlay-toggle"), "Design Canvas overlay toggle control is missing.");
-  expect(designCanvasHtml.includes("data-project-design-canvas-selection-overlay"), "Selection overlay root is missing from Design Canvas HTML.");
-  expect(designCanvasHtml.includes("data-project-design-canvas-selection-box"), "Selection overlay box is missing from Design Canvas HTML.");
-  expect(designCanvasHtml.includes("data-project-design-canvas-selection-message"), "Selection overlay defensive message is missing from Design Canvas HTML.");
-  expect(designCanvasHtml.indexOf("data-project-preview-frame") < designCanvasHtml.indexOf("data-project-design-canvas-selection-overlay"), "Selection overlay is not an external sibling after the Preview iframe.");
-  expect(designCanvasHtml.indexOf("data-project-design-canvas-stage") < designCanvasHtml.indexOf("data-project-design-canvas-selection-overlay"), "Selection overlay is not inside the transformed Design Canvas stage.");
-  expect(designCanvasHtml.includes("sandbox=\"allow-scripts allow-forms allow-popups\""), "Preview iframe sandbox changed unexpectedly.");
-  expect(!designCanvasHtml.includes("allow-same-origin"), "Preview iframe sandbox was relaxed with allow-same-origin.");
+  expect(source.designCanvasHtml.includes("data-project-design-canvas-stage"), "Design Canvas transform stage is missing.");
+  expect(source.designCanvasHtml.includes("data-project-design-canvas-selection-overlay-toggle"), "Design Canvas overlay toggle is missing.");
+  expect(source.designCanvasHtml.includes("data-project-design-canvas-selection-overlay"), "Selection overlay root is missing.");
+  expect(source.designCanvasHtml.includes("data-project-design-canvas-selection-box"), "Selection overlay box is missing.");
+  expect(source.designCanvasHtml.includes("data-project-design-canvas-selection-message"), "Selection overlay defensive message is missing.");
+  expect(source.designCanvasHtml.indexOf("data-project-preview-frame") < source.designCanvasHtml.indexOf("data-project-design-canvas-selection-overlay"), "Selection overlay is not external to the iframe.");
+  expect(source.designCanvasHtml.indexOf("data-project-design-canvas-stage") < source.designCanvasHtml.indexOf("data-project-design-canvas-selection-overlay"), "Selection overlay is not inside the transformed Design Canvas stage.");
+  expect(source.designCanvasHtml.includes("sandbox=\"allow-scripts allow-forms allow-popups\""), "Preview iframe sandbox changed unexpectedly.");
+  expect(!source.designCanvasHtml.includes("allow-same-origin"), "Preview iframe sandbox was relaxed with allow-same-origin.");
 
-  expect(overlayScss.includes(".crystal-project-design-canvas .crystal-project-preview-panel__frame-wrap"), "Overlay SCSS does not anchor to the Preview frame wrapper.");
-  expect(overlayScss.includes("position: relative"), "Preview frame wrapper is not positioned for external overlay projection.");
-  expect(overlayScss.includes(".crystal-project-design-canvas__selection-overlay"), "Overlay SCSS root selector is missing.");
-  expect(overlayScss.includes("position: absolute"), "Selection overlay is not absolutely positioned over the Preview frame.");
-  expect(overlayScss.includes("pointer-events: none"), "Selection overlay should not block iframe interaction.");
-  expect(mainScss.includes("./components/design-canvas/selection-overlay/project-design-canvas-selection-overlay"), "main.scss does not include visual selection overlay styles.");
+  expect(source.overlayScss.includes(".crystal-project-design-canvas .crystal-project-preview-panel__frame-wrap"), "Overlay SCSS does not anchor to the Preview frame wrapper.");
+  expect(source.overlayScss.includes("position: relative"), "Preview frame wrapper is not positioned for overlay projection.");
+  expect(source.overlayScss.includes("position: absolute"), "Selection overlay is not absolutely positioned over the Preview frame.");
+  expect(source.overlayScss.includes("pointer-events: none"), "Selection overlay should not block iframe interaction.");
+  expect(!/\.crystal-project-design-canvas__selection-overlay[\s\S]*overflow:\s*(auto|scroll)/.test(source.overlayScss), "Selection overlay introduces scrollbars.");
+  expect(source.mainScss.includes("./components/design-canvas/selection-overlay/project-design-canvas-selection-overlay"), "main.scss does not include overlay styles.");
 
-  expect(designViewSource.includes("initializeProjectDesignCanvasSelectionOverlay"), "Design view does not initialize the visual selection overlay.");
-  expect(overlayRendererSource.includes("onPreviewSelectionStateChanged"), "Overlay renderer is not wired to Preview selection state changes.");
-  expect(overlayRendererSource.includes("getPreviewSelectionState"), "Overlay renderer does not hydrate from current Preview selection state.");
-  expect(overlayRendererSource.includes("selectProjectDesignCanvasSelectionOverlayState"), "Overlay renderer does not use the core overlay selector.");
-  expect(overlayRendererSource.includes("overlayState.status === \"matched\""), "Overlay renderer does not handle matched state explicitly.");
-  expect(overlayRendererSource.includes("overlayState.projection"), "Overlay renderer does not use validated overlay projection data.");
-  expect(overlayRendererSource.includes("renderHiddenOverlay"), "Overlay renderer does not hide when selection is absent or disabled.");
+  expect(source.designViewSource.includes("initializeProjectDesignCanvasSelectionOverlay"), "Design view does not initialize the overlay.");
+  expect(source.overlayRenderer.includes("onPreviewSelectionStateChanged"), "Overlay renderer is not integrated with Preview selection updates.");
+  expect(source.overlayRenderer.includes("getPreviewSelectionState"), "Overlay renderer does not hydrate from current Preview selection state.");
+  expect(source.overlayRenderer.includes("selectProjectDesignCanvasSelectionOverlayState"), "Overlay renderer does not use the core selector.");
+  expect(source.overlayRenderer.includes("overlayState.status === \"matched\""), "Overlay renderer does not handle matched state explicitly.");
+  expect(source.overlayRenderer.includes("overlayState.projection"), "Overlay renderer does not use validated projection data.");
+  expect(source.overlayRenderer.includes("renderHiddenOverlay"), "Overlay renderer does not hide no-selection state.");
 
-  expect(previewSelectionTypes.includes("ProjectPreviewSelectionRect"), "Preview selection rect type is missing.");
-  expect(previewSelectionTypes.includes("iframe-viewport"), "Preview selection rect coordinate space is not documented in the type model.");
-  expect(previewSelectionTypes.includes("selectionRect: ProjectPreviewSelectionRect | null"), "Selected node does not carry nullable validated selectionRect.");
-  expect(previewSelectionValidatorsSource.includes("invalid-selection-rect"), "Preview selection validators do not reject invalid selectionRect payloads.");
-  expect(previewSelectionValidatorsSource.includes("Number.isFinite"), "Preview selection rect validation does not reject NaN or Infinity.");
-  expect(previewSelectionValidatorsSource.includes("maxRectCoordinateAbs"), "Preview selection rect coordinate range limit is missing.");
+  expect(source.previewSelectionTypes.includes("ProjectPreviewSelectionRect"), "Preview selection rect type is missing.");
+  expect(source.previewSelectionTypes.includes("iframe-viewport"), "Preview selection rect coordinate space is missing.");
+  expect(source.previewSelectionTypes.includes("selectionRect: ProjectPreviewSelectionRect | null"), "Selected node does not carry nullable selectionRect.");
+  expect(source.previewSelectionValidators.includes("invalid-selection-rect"), "Validators do not reject invalid selectionRect payloads.");
+  expect(source.previewSelectionValidators.includes("Number.isFinite"), "Rect validation does not reject NaN or Infinity.");
+  expect(source.previewSelectionValidators.includes("maxRectCoordinateAbs"), "Rect coordinate range limit is missing.");
 
-  expect(previewSelectionScript.includes("getBoundingClientRect"), "Injected Preview selection script does not collect a selection rect.");
-  expect(previewSelectionScript.includes("selectionRect: getSelectionRect(element)"), "Injected Preview selection script does not serialize selectionRect.");
-  expect(previewSelectionScript.includes("coordinateSpace: 'iframe-viewport'"), "Injected Preview selection script does not label rect coordinate space.");
-  expect(!previewSelectionScript.includes("element.style"), "Injected Preview selection script mutates element styles.");
-  expect(!previewSelectionScript.includes("outline"), "Injected Preview selection script still paints an internal outline.");
-  expect(!previewSelectionScript.includes("removeProperty"), "Injected Preview selection script still restores internal style properties.");
-  expect(!previewSelectionScript.includes("setAttribute"), "Injected Preview selection script mutates Preview DOM attributes.");
+  expect(source.previewSelectionScript.includes("getBoundingClientRect"), "Injected script does not collect a selection rect.");
+  expect(source.previewSelectionScript.includes("selectionRect: getSelectionRect(element)"), "Injected script does not serialize selectionRect.");
+  expect(source.previewSelectionScript.includes("coordinateSpace: 'iframe-viewport'"), "Injected script does not label rect coordinate space.");
+  expect(!source.previewSelectionScript.includes("element.style"), "Injected script mutates Preview element styles.");
+  expect(!source.previewSelectionScript.includes("outline"), "Injected script still paints an internal outline.");
+  expect(!source.previewSelectionScript.includes("removeProperty"), "Injected script still restores internal style properties.");
+  expect(!source.previewSelectionScript.includes("setAttribute"), "Injected script mutates Preview DOM attributes.");
 
-  expect(overlayCoreTypes.includes("matched") && overlayCoreTypes.includes("missing-snapshot") && overlayCoreTypes.includes("stale") && overlayCoreTypes.includes("ambiguous") && overlayCoreTypes.includes("unavailable"), "Overlay status model does not cover required defensive states.");
-  expect(overlayCoreSource.includes("mappingStatus !== \"matched\""), "Overlay selector does not hide highlights for non-matched mappings.");
-  expect(overlayCoreSource.includes("isProjectPreviewSelectionRectReliable"), "Overlay selector does not require reliable coordinates.");
-  expect(overlayCoreSource.includes("projectPreviewSelectionRectToDesignCanvasOverlayProjection"), "Overlay projection helper is missing.");
+  expect(source.overlayCoreTypes.includes("matched") && source.overlayCoreTypes.includes("missing-snapshot") && source.overlayCoreTypes.includes("stale") && source.overlayCoreTypes.includes("ambiguous") && source.overlayCoreTypes.includes("unavailable"), "Overlay status model does not cover required states.");
+  expect(source.overlayCore.includes("mappingStatus !== \"matched\""), "Overlay selector does not suppress non-matched highlights.");
+  expect(source.overlayCore.includes("isProjectPreviewSelectionRectReliable"), "Overlay selector does not require reliable coordinates.");
+  expect(source.overlayCore.includes("projectPreviewSelectionRectToDesignCanvasOverlayProjection"), "Overlay projection helper is missing.");
+
+  expect(source.docs.includes("read-only"), "Visual selection overlay docs do not document read-only status.");
+  expect(source.docs.includes("external to the Preview iframe"), "Visual selection overlay docs do not document external iframe overlay.");
+  expect(source.docs.includes("does not read `iframe.contentDocument`"), "Visual selection overlay docs do not document live iframe DOM boundary.");
+  expect(source.docs.includes("mappingStatus` is `matched`"), "Visual selection overlay docs do not document matched-only highlight trust.");
 
   const runtimeSource = [
-    designCanvasHtml,
-    designCanvasSource,
-    overlayRendererSource,
-    overlayRendererTypes,
-    overlayScss,
-    overlayCoreSource,
-    overlayCoreTypes,
-    previewSelectionScript,
-    previewSelectionBridge,
-    previewSelectionTypes,
-    previewSelectionValidatorsSource
+    source.designCanvasHtml,
+    source.designCanvasSource,
+    source.overlayRenderer,
+    source.overlayRendererTypes,
+    source.overlayScss,
+    source.overlayCore,
+    source.overlayCoreTypes,
+    source.previewSelectionScript,
+    source.previewSelectionBridge,
+    source.previewSelectionTypes,
+    source.previewSelectionValidators
   ].join("\n");
 
-  expect(!runtimeSource.includes("iframe.contentDocument"), "Visual selection overlay accesses iframe.contentDocument.");
-  expect(!runtimeSource.includes("iframe.contentWindow.document"), "Visual selection overlay accesses iframe.contentWindow.document.");
-  expect(!runtimeSource.includes(".contentDocument"), "Visual selection overlay accesses a contentDocument.");
-  expect(!runtimeSource.includes(".contentWindow.document"), "Visual selection overlay accesses a contentWindow document.");
-  expect(!runtimeSource.includes("allow-same-origin"), "Visual selection overlay relaxed iframe sandbox.");
-  expect(!runtimeSource.includes("getComputedStyle"), "Visual selection overlay introduced computed style inspection.");
-  expect(!/<canvas\b/i.test(runtimeSource), "Visual selection overlay introduced a canvas element.");
-  expect(!runtimeSource.includes("getContext("), "Visual selection overlay introduced canvas context usage.");
-  expect(!runtimeSource.includes("navigator.gpu"), "Visual selection overlay introduced WebGPU access.");
-  expect(!runtimeSource.includes("GPUCanvasContext"), "Visual selection overlay introduced GPUCanvasContext usage.");
-  expect(!runtimeSource.includes("requestAdapter"), "Visual selection overlay introduced WebGPU adapter requests.");
-  expect(!runtimeSource.includes("insertAdjacentHTML"), "Visual selection overlay introduced HTML insertion.");
-  expect(!runtimeSource.includes("execCommand"), "Visual selection overlay introduced document editing commands.");
-  expect(!/\b(React|Vue|Angular|Tailwind|Bootstrap|Playwright|Cypress|Spectron)\b/.test(runtimeSource), "Visual selection overlay introduced a prohibited framework or UI automation dependency.");
+  expect(!runtimeSource.includes("iframe.contentDocument"), "Overlay accesses iframe.contentDocument.");
+  expect(!runtimeSource.includes("iframe.contentWindow.document"), "Overlay accesses iframe.contentWindow.document.");
+  expect(!runtimeSource.includes(".contentDocument"), "Overlay accesses a contentDocument.");
+  expect(!runtimeSource.includes(".contentWindow.document"), "Overlay accesses a contentWindow document.");
+  expect(!runtimeSource.includes("allow-same-origin"), "Overlay relaxed iframe sandbox.");
+  expect(!runtimeSource.includes("getComputedStyle"), "Overlay introduced computed style inspection.");
+  expect(!/<canvas\b/i.test(runtimeSource), "Overlay introduced a canvas element.");
+  expect(!runtimeSource.includes("getContext("), "Overlay introduced canvas context usage.");
+  expect(!runtimeSource.includes("navigator.gpu"), "Overlay introduced WebGPU access.");
+  expect(!runtimeSource.includes("GPUCanvasContext"), "Overlay introduced GPUCanvasContext usage.");
+  expect(!runtimeSource.includes("requestAdapter"), "Overlay introduced WebGPU adapter requests.");
+  expect(!runtimeSource.includes("insertAdjacentHTML"), "Overlay introduced HTML insertion.");
+  expect(!runtimeSource.includes("execCommand"), "Overlay introduced document editing commands.");
+  expect(!runtimeSource.includes("frame.querySelector") && !runtimeSource.includes("iframe.querySelector"), "Overlay queries inside the Preview iframe.");
+  expect(!/\b(React|Vue|Angular|Tailwind|Bootstrap|Playwright|Cypress|Spectron)\b/.test(runtimeSource), "Overlay introduced a prohibited framework or UI automation dependency.");
+  expect(!runtimeSource.toLowerCase().includes("local" + "flow"), "Overlay introduced a prohibited previous-project reference.");
 
   const validSelectedNode = validators.validateProjectPreviewSelectedNodePayload(createSelectedNodePayload({ selectionRect: { coordinateSpace: "iframe-viewport", x: 12, y: -4, width: 120, height: 48 } }));
   expect(validSelectedNode.ok && validSelectedNode.selectedNode?.selectionRect?.x === 12, "Valid finite selectionRect payload was rejected or not preserved.");
@@ -193,7 +190,7 @@ function createSelectedNodePayload(overrides = {}) {
 }
 
 function createPreviewSelectionState(mappingStatus, overrides = {}) {
-  const selectedNode = overrides.selectedNode === null ? null : createSelectedNodePayload({ selectionRect: { coordinateSpace: "iframe-viewport", x: 0, y: 0, width: 10, height: 10 }, ...(overrides.selectedNode ?? {}) });
+  const selectedNode = overrides.selectedNode === null ? null : createSelectedNodePayload({ selectionRect: overrides.selectionRect ?? { coordinateSpace: "iframe-viewport", x: 0, y: 0, width: 10, height: 10 }, ...(overrides.selectedNode ?? {}) });
   return {
     enabled: true,
     mode: selectedNode ? "selected" : "idle",
@@ -204,9 +201,7 @@ function createPreviewSelectionState(mappingStatus, overrides = {}) {
     mappedSnapshotPath: mappingStatus === "matched" ? "0/0" : null,
     mappingReason: mappingStatus === "matched" ? "path and tag match" : mappingStatus,
     mappingCheckedAt: 1000,
-    snapshotGeneratedAt: 900,
-    ...overrides,
-    selectedNode
+    snapshotGeneratedAt: 900
   };
 }
 
