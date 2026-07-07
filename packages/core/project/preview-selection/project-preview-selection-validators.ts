@@ -1,4 +1,4 @@
-import type { ProjectPreviewSelectedNode, ProjectPreviewSelectedNodeAttribute, ProjectPreviewSelectedNodeValidationResult, ProjectPreviewSelectionIssue, ProjectPreviewSelectionIssueCode } from "./project-preview-selection.types";
+import type { ProjectPreviewSelectedNode, ProjectPreviewSelectedNodeAttribute, ProjectPreviewSelectedNodeValidationResult, ProjectPreviewSelectionIssue, ProjectPreviewSelectionIssueCode, ProjectPreviewSelectionRect } from "./project-preview-selection.types";
 
 export const projectPreviewSelectionLimits = {
   maxSnapshotPathLength: 512,
@@ -9,8 +9,15 @@ export const projectPreviewSelectionLimits = {
   maxAttributeNameLength: 40,
   maxAttributeValueLength: 120,
   maxTextPreviewLength: 160,
-  maxSelectorPreviewLength: 180
+  maxSelectorPreviewLength: 180,
+  maxRectCoordinateAbs: 1000000,
+  maxRectSize: 1000000
 } as const;
+
+interface ProjectPreviewSelectionRectValidationResult {
+  readonly ok: boolean;
+  readonly rect: ProjectPreviewSelectionRect | null;
+}
 
 export function validateProjectPreviewSelectedNodePayload(payload: unknown): ProjectPreviewSelectedNodeValidationResult {
   if (!isRecord(payload)) return invalid("invalid-selected-node-payload", "Selected node payload must be an object.");
@@ -33,6 +40,9 @@ export function validateProjectPreviewSelectedNodePayload(payload: unknown): Pro
   if (typeof payload.textPreview !== "string") return invalid("invalid-text-preview", "Selected node textPreview is invalid.");
   if (typeof payload.selectorPreview !== "string") return invalid("invalid-selector-preview", "Selected node selectorPreview is invalid.");
 
+  const selectionRect = validateSelectionRectPayload(payload.selectionRect);
+  if (!selectionRect.ok) return invalid("invalid-selection-rect", "Selected node selectionRect is invalid.");
+
   return {
     ok: true,
     selectedNode: {
@@ -42,9 +52,32 @@ export function validateProjectPreviewSelectedNodePayload(payload: unknown): Pro
       depth: payload.depth,
       attributesPreview,
       textPreview: sanitizeString(payload.textPreview, projectPreviewSelectionLimits.maxTextPreviewLength),
-      selectorPreview: sanitizeString(payload.selectorPreview, projectPreviewSelectionLimits.maxSelectorPreviewLength)
+      selectorPreview: sanitizeString(payload.selectorPreview, projectPreviewSelectionLimits.maxSelectorPreviewLength),
+      selectionRect: selectionRect.rect
     },
     issue: null
+  };
+}
+
+function validateSelectionRectPayload(value: unknown): ProjectPreviewSelectionRectValidationResult {
+  if (value === undefined || value === null) return { ok: true, rect: null };
+  if (!isRecord(value)) return { ok: false, rect: null };
+  if (value.coordinateSpace !== "iframe-viewport") return { ok: false, rect: null };
+
+  if (!isFiniteNumberInRange(value.x, -projectPreviewSelectionLimits.maxRectCoordinateAbs, projectPreviewSelectionLimits.maxRectCoordinateAbs)) return { ok: false, rect: null };
+  if (!isFiniteNumberInRange(value.y, -projectPreviewSelectionLimits.maxRectCoordinateAbs, projectPreviewSelectionLimits.maxRectCoordinateAbs)) return { ok: false, rect: null };
+  if (!isFiniteNumberInRange(value.width, 0, projectPreviewSelectionLimits.maxRectSize)) return { ok: false, rect: null };
+  if (!isFiniteNumberInRange(value.height, 0, projectPreviewSelectionLimits.maxRectSize)) return { ok: false, rect: null };
+
+  return {
+    ok: true,
+    rect: {
+      coordinateSpace: "iframe-viewport",
+      x: value.x,
+      y: value.y,
+      width: value.width,
+      height: value.height
+    }
   };
 }
 
@@ -77,6 +110,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function isSafeInteger(value: unknown, max: number): value is number {
   return typeof value === "number" && Number.isInteger(value) && value >= 0 && value <= max;
+}
+
+function isFiniteNumberInRange(value: unknown, min: number, max: number): value is number {
+  return typeof value === "number" && Number.isFinite(value) && value >= min && value <= max;
 }
 
 function isValidSnapshotPath(value: string): boolean {
