@@ -52,13 +52,19 @@ expect(source.designHtml.includes("data-crystal-diagnostics-popover"), "Design v
 expect(source.designHtml.includes("data-crystal-diagnostics-close"), "Design view does not expose the floating diagnostics close action.");
 expect(source.designHtml.includes("data-crystal-diagnostics-pin"), "Design view does not expose the diagnostics pin action.");
 expect(source.designHtml.includes("data-crystal-diagnostics-drag-handle"), "Design view does not expose a diagnostics drag handle.");
-expect(source.designHtml.includes("data-crystal-diagnostics-resize-corner"), "Design view does not expose the diagnostics resize corner.");
+expect(source.designHtml.includes("data-crystal-diagnostics-resize-top-left"), "Diagnostics are missing the top-left resize handle.");
+expect(source.designHtml.includes("data-crystal-diagnostics-resize-top-right"), "Diagnostics are missing the top-right resize handle.");
+expect(source.designHtml.includes("data-crystal-diagnostics-resize-bottom-left"), "Diagnostics are missing the bottom-left resize handle.");
+expect(source.designHtml.includes("data-crystal-diagnostics-resize-bottom-right"), "Diagnostics are missing the bottom-right resize handle.");
+expect(!source.designHtml.includes("data-crystal-diagnostics-resize-corner"), "Diagnostics still expose the old single resize corner hook.");
 expect(!source.designHtml.includes("crystal-design-view__bottom-diagnostics"), "Diagnostics still render as a fixed bottom layout row.");
 expect(!source.designHtml.includes("data-crystal-bottom-diagnostics-resizer"), "Diagnostics still use the old fixed bottom resize handle.");
 expect(source.designScss.includes("grid-template-columns: minmax(0, 1fr) var(--crystal-right-sidebar-width, 284px)"), "Canvas is not the dominant central column with a resizable right sidebar.");
 expect(source.designScss.includes("grid-template-rows: minmax(0, 1fr)"), "Workspace should not reserve a fixed diagnostics row.");
 expect(source.designScss.includes(".crystal-design-view__diagnostics-popover"), "Floating diagnostics panel is not styled.");
 expect(source.designScss.includes("data-crystal-diagnostics-pinned"), "Floating diagnostics panel does not expose pinned/unpinned styling.");
+expect(source.designScss.includes(".crystal-design-view__diagnostics-resize-handle"), "Diagnostics resize handles are not styled.");
+expect(!source.designScss.includes(".crystal-design-view__diagnostics-resize-handle::after"), "Diagnostics resize handles should not draw an explicit marker.");
 expect(source.designScss.includes("repeat(auto-fit, minmax(240px, 1fr))"), "Diagnostics grid is not responsive to panel width.");
 expect(source.designScss.includes("overflow-wrap: anywhere"), "Diagnostics metadata does not wrap long technical text.");
 expect(source.designScss.includes(".crystal-design-view__diagnostics-popover[hidden]"), "Closed diagnostics panel may still intercept clicks.");
@@ -68,12 +74,16 @@ expect(source.designTs.includes("data-crystal-diagnostics-toggle"), "Floating di
 expect(source.designTs.includes("data-crystal-diagnostics-close"), "Floating diagnostics close action is not wired.");
 expect(source.designTs.includes("data-crystal-diagnostics-pin"), "Floating diagnostics pin action is not wired.");
 expect(source.designTs.includes("data-crystal-diagnostics-drag-handle"), "Floating diagnostics drag handle is not wired.");
-expect(source.designTs.includes("data-crystal-diagnostics-resize-corner"), "Floating diagnostics resize corner is not wired.");
+expect(source.designTs.includes("data-crystal-diagnostics-resize-top-left"), "Top-left diagnostics resize is not wired.");
+expect(source.designTs.includes("data-crystal-diagnostics-resize-top-right"), "Top-right diagnostics resize is not wired.");
+expect(source.designTs.includes("data-crystal-diagnostics-resize-bottom-left"), "Bottom-left diagnostics resize is not wired.");
+expect(source.designTs.includes("data-crystal-diagnostics-resize-bottom-right"), "Bottom-right diagnostics resize is not wired.");
 expect(source.designTs.includes("diagnosticsPinned"), "Floating diagnostics does not track pinned runtime state.");
 expect(source.designTs.includes("diagnosticsLeft") && source.designTs.includes("diagnosticsTop"), "Floating diagnostics does not track runtime position.");
 expect(source.designTs.includes("diagnosticsWidth") && source.designTs.includes("diagnosticsHeight"), "Floating diagnostics does not track runtime size.");
-expect(source.designTs.includes("diagnostics-drag") && source.designTs.includes("diagnostics-resize"), "Floating diagnostics does not implement drag and resize sessions.");
+expect(source.designTs.includes("diagnostics-drag") && source.designTs.includes("diagnostics-resize-top-left") && source.designTs.includes("diagnostics-resize-bottom-right"), "Floating diagnostics does not implement drag and corner resize sessions.");
 expect(source.designTs.includes("setPointerCapture"), "Design resize/drag handles do not capture pointer drags.");
+expect(source.designTs.includes("workspace.getBoundingClientRect()"), "Diagnostics bounds are not clamped to the workspace.");
 expect(!source.appShellTs.includes("localStorage") && !source.designTs.includes("localStorage"), "Resizable shell panels introduced persistence without a preferences contract.");
 
 expect(source.designCanvasHtml.includes("data-crystal-start-screen"), "Canvas start block is missing.");
@@ -82,7 +92,7 @@ expect(source.designCanvasHtml.includes("Choose a folder or an HTML file to star
 expect(source.designCanvasHtml.includes("data-project-open-folder"), "Canvas start block does not expose Open Folder action.");
 expect(source.designCanvasHtml.includes("data-project-open-html"), "Canvas start block does not expose Open HTML action.");
 expect(source.designCanvasScss.includes(".crystal-project-design-canvas__start-action"), "Start actions are not styled as broad click targets.");
-expect(source.designCanvasScss.includes("min-height: 52px"), "Start actions are not large enough for clear clicking.");
+expect(source.designCanvasScss.includes("min-height: 46px"), "Start actions are not compact but still clear click targets.");
 expect(source.designCanvasScss.includes("[data-crystal-workspace][data-crystal-project-open=\"true\"] .crystal-project-design-canvas__start"), "Start block is not hidden after a project is open.");
 
 expect(!source.designHtml.includes("Phase 2"), "Design view still exposes phase copy in the workspace.");
@@ -134,7 +144,7 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log("UI flow validation passed: no internal top bar, full-height workspace, central canvas, clean sidebars, resizable shell panels, draggable and resizable floating diagnostics, styled UI scrollbars, dependency guard, and iframe safety boundaries.");
+console.log("UI flow validation passed: no internal top bar, full-height workspace, central canvas, clean sidebars, resizable shell panels, bounded corner-resizable diagnostics, compact micro UI density, styled UI scrollbars, dependency guard, and iframe safety boundaries.");
 
 async function readText(filePath) {
   return readFile(path.resolve(filePath), "utf8");
