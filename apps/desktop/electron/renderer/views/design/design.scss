@@ -80,8 +80,8 @@
   bottom: 12px;
   min-height: 30px;
   padding: 6px 10px;
-  border: 1px solid var(--crystal-color-accent-border);
-  background: var(--crystal-color-accent-soft);
+  border: 1px solid var(--crystal-color-border-soft);
+  background: rgba(255, 255, 255, 0.05);
   color: var(--crystal-color-text);
   font: inherit;
   font-size: 11px;
@@ -92,10 +92,14 @@
 }
 
 .crystal-design-view__diagnostics-toggle:hover,
-.crystal-design-view__diagnostics-toggle:focus-visible,
+.crystal-design-view__diagnostics-toggle:focus-visible {
+  border-color: var(--crystal-color-accent-border);
+  background: rgba(255, 255, 255, 0.07);
+}
+
 .crystal-design-view__diagnostics-toggle[aria-expanded="true"] {
-  border-color: var(--crystal-color-accent);
-  background: rgba(249, 115, 22, 0.22);
+  border-color: var(--crystal-color-accent-border);
+  background: var(--crystal-color-accent-soft);
 }
 
 .crystal-design-view__diagnostics-toggle:focus-visible {
@@ -131,39 +135,43 @@
   left: var(--crystal-diagnostics-panel-left, 12px);
 }
 
-.crystal-design-view__diagnostics-resize-corner {
+.crystal-design-view__diagnostics-resize-handle {
   position: absolute;
   z-index: 3;
-  right: 0;
-  bottom: 0;
   width: 18px;
   height: 18px;
   border: 0;
   background: transparent;
-  cursor: nwse-resize;
   outline: none;
   touch-action: none;
 }
 
-.crystal-design-view__diagnostics-resize-corner::after {
-  position: absolute;
-  right: 4px;
-  bottom: 4px;
-  width: 9px;
-  height: 9px;
-  border-right: 1px solid rgba(249, 115, 22, 0.7);
-  border-bottom: 1px solid rgba(249, 115, 22, 0.7);
-  content: "";
-}
-
-.crystal-design-view__diagnostics-resize-corner:hover::after,
-.crystal-design-view__diagnostics-resize-corner:focus-visible::after,
-.crystal-design-view__workspace--resizing-diagnostics .crystal-design-view__diagnostics-resize-corner::after {
-  border-color: var(--crystal-color-accent);
-}
-
-.crystal-design-view__diagnostics-resize-corner:focus-visible {
+.crystal-design-view__diagnostics-resize-handle:focus-visible {
   box-shadow: 0 0 0 2px var(--crystal-focus-ring);
+}
+
+.crystal-design-view__diagnostics-resize-handle--top-left {
+  top: 0;
+  left: 0;
+  cursor: nwse-resize;
+}
+
+.crystal-design-view__diagnostics-resize-handle--top-right {
+  top: 0;
+  right: 0;
+  cursor: nesw-resize;
+}
+
+.crystal-design-view__diagnostics-resize-handle--bottom-left {
+  bottom: 0;
+  left: 0;
+  cursor: nesw-resize;
+}
+
+.crystal-design-view__diagnostics-resize-handle--bottom-right {
+  right: 0;
+  bottom: 0;
+  cursor: nwse-resize;
 }
 
 .crystal-design-view__diagnostics-header {
@@ -234,7 +242,7 @@
 .crystal-design-view__diagnostics-close:hover,
 .crystal-design-view__diagnostics-close:focus-visible {
   border-color: var(--crystal-color-accent-border);
-  background: rgba(249, 115, 22, 0.1);
+  background: rgba(255, 255, 255, 0.06);
   color: var(--crystal-color-text);
 }
 
@@ -290,11 +298,10 @@
 
 .crystal-design-view__workspace[data-crystal-project-open="false"] .crystal-project-design-canvas__surface {
   background:
-    radial-gradient(circle at 18% 18%, rgba(249, 115, 22, 0.1), transparent 22%),
     linear-gradient(rgba(255, 255, 255, 0.038) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255, 255, 255, 0.038) 1px, transparent 1px),
     #0a0806;
-  background-size: auto, 28px 28px, 28px 28px, auto;
+  background-size: 28px 28px, 28px 28px, auto;
 }
 
 .crystal-design-view__workspace[data-crystal-project-open="false"] .crystal-project-design-canvas__start {
@@ -329,10 +336,9 @@
   bottom: 4px;
   width: 23px;
   height: 15px;
-  border: 1px solid rgba(249, 115, 22, 0.42);
-  background:
-    linear-gradient(rgba(249, 115, 22, 0.2), rgba(249, 115, 22, 0.08));
-  box-shadow: 5px -6px 0 -4px rgba(249, 115, 22, 0.42);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.055);
+  box-shadow: 5px -6px 0 -4px rgba(255, 255, 255, 0.16);
 }
 
 .crystal-design-view__workspace[data-crystal-project-open="false"] .crystal-project-design-canvas__start-icon::after {
@@ -411,7 +417,7 @@
 .crystal-design-view__debug-button:hover,
 .crystal-design-view__debug-button:focus-visible {
   border-color: var(--crystal-color-accent-border);
-  background: rgba(249, 115, 22, 0.1);
+  background: rgba(255, 255, 255, 0.06);
   color: var(--crystal-color-text);
 }
 
