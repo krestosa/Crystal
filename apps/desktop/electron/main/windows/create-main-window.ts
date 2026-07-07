@@ -22,7 +22,7 @@ export async function createMainWindow(): Promise<BrowserWindow> {
     titleBarOverlay: {
       color: "#050403",
       symbolColor: "#f7f2ec",
-      height: 24
+      height: 28
     },
     webPreferences: getSecureWebPreferences()
   });

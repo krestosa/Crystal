@@ -1,6 +1,8 @@
 .crystal-app-shell {
+  --crystal-window-controls-width: 152px;
+
   display: grid;
-  grid-template-rows: 24px minmax(0, 1fr) 20px;
+  grid-template-rows: 28px minmax(0, 1fr) 20px;
   width: 100vw;
   height: 100vh;
   overflow: hidden;
@@ -9,15 +11,34 @@
 }
 
 .crystal-app-shell__chrome {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 0 var(--crystal-window-controls-width) 0 8px;
+  background: var(--crystal-color-surface-strong);
+  -webkit-app-region: drag;
+  user-select: none;
+}
+
+.crystal-app-shell__chrome::after {
+  position: absolute;
+  right: var(--crystal-window-controls-width);
+  bottom: 0;
+  left: 0;
+  height: 1px;
+  background: var(--crystal-color-border-soft);
+  content: "";
+  pointer-events: none;
+}
+
+.crystal-app-shell__chrome-identity {
   display: flex;
   align-items: center;
   gap: 8px;
   min-width: 0;
-  padding: 0 140px 0 8px;
-  border-bottom: 1px solid var(--crystal-color-border-soft);
-  background: var(--crystal-color-surface-strong);
-  -webkit-app-region: drag;
-  user-select: none;
 }
 
 .crystal-app-shell__chrome-title {
@@ -37,6 +58,55 @@
   line-height: 1;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.crystal-app-shell__chrome-actions {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  -webkit-app-region: no-drag;
+}
+
+.crystal-app-shell__diagnostics-button {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--crystal-color-border-soft);
+  background: rgba(255, 255, 255, 0.035);
+  color: rgba(247, 242, 236, 0.68);
+  cursor: pointer;
+}
+
+.crystal-app-shell__diagnostics-button svg {
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+  stroke-width: 1.15;
+}
+
+.crystal-app-shell__diagnostics-button:hover,
+.crystal-app-shell__diagnostics-button:focus-visible {
+  border-color: var(--crystal-color-accent-border);
+  background: rgba(255, 255, 255, 0.055);
+  color: var(--crystal-color-text);
+}
+
+.crystal-app-shell__diagnostics-button[aria-expanded="true"] {
+  border-color: var(--crystal-color-accent-border);
+  background: var(--crystal-color-accent-soft);
+  color: var(--crystal-color-text);
+}
+
+.crystal-app-shell__diagnostics-button:focus-visible {
+  outline: 2px solid var(--crystal-focus-ring);
+  outline-offset: 1px;
 }
 
 .crystal-app-shell__body {
