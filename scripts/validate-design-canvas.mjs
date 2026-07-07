@@ -71,7 +71,7 @@ try {
   expect(designCanvasSource.includes("gesture.kind === \"zoom-canvas\""), "Zoom gesture branch is missing.");
   expect(designCanvasSource.includes("gesture.kind === \"ignore\""), "Invalid or empty deltas are not ignored safely.");
   expect(designCanvasSource.indexOf("gesture.kind === \"pass-through-iframe-scroll\"") < designCanvasSource.indexOf("gesture.kind === \"zoom-canvas\""), "Iframe pass-through classification is not isolated from default pan handling.");
-  expect(designCanvasSource.includes("event.preventDefault();\n      event.stopPropagation();\n      activateZoomCapture();"), "Zoom gesture does not prevent default, contain propagation, and activate capture.");
+  expect(/gesture\.kind === "zoom-canvas"[\s\S]*event\.preventDefault\(\);[\s\S]*event\.stopPropagation\(\);[\s\S]*activateZoomCapture\(\);/.test(designCanvasSource), "Zoom gesture does not prevent default, contain propagation, and activate capture.");
   expect(designCanvasSource.includes("calculateProjectDesignCanvasZoomAtPoint(viewportState, bounds, gesture.focusPoint"), "Zoom does not use pointer-focused coordinates.");
   expect(designCanvasSource.includes("panCanvasBy(-gesture.delta.x, -gesture.delta.y"), "Wheel/trackpad pan does not use normalized X/Y deltas naturally.");
   expect(designCanvasSource.includes("event.button === 1"), "Middle mouse pan support is missing.");
