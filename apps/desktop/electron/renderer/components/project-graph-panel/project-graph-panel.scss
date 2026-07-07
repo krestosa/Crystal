@@ -34,7 +34,7 @@
 .crystal-project-graph-panel__button:hover,
 .crystal-project-graph-panel__button:focus-visible {
   border-color: var(--crystal-color-accent-border);
-  background: rgba(249, 115, 22, 0.1);
+  background: rgba(255, 255, 255, 0.06);
   color: var(--crystal-color-text);
 }
 
@@ -45,7 +45,7 @@
 
 .crystal-project-graph-panel__button--primary {
   border-color: var(--crystal-color-accent-border);
-  background: var(--crystal-color-accent-soft);
+  background: rgba(255, 255, 255, 0.05);
   color: var(--crystal-color-text);
 }
 

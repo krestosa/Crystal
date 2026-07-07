@@ -64,7 +64,7 @@
 .crystal-project-design-canvas__button:hover,
 .crystal-project-design-canvas__button:focus-visible {
   border-color: var(--crystal-color-accent-border);
-  background: rgba(249, 115, 22, 0.1);
+  background: rgba(255, 255, 255, 0.06);
   color: var(--crystal-color-text);
 }
 
@@ -92,11 +92,10 @@
   overscroll-behavior-y: contain;
   border: 1px solid var(--crystal-color-border-soft);
   background:
-    radial-gradient(circle at 50% 34%, rgba(249, 115, 22, 0.1), transparent 24%),
     linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
     #0a0806;
-  background-size: auto, 28px 28px, 28px 28px, auto;
+  background-size: 28px 28px, 28px 28px, auto;
   contain: paint;
   outline: none;
   touch-action: auto;
@@ -178,7 +177,7 @@
 .crystal-project-design-canvas__start-action:hover,
 .crystal-project-design-canvas__start-action:focus-visible {
   border-color: var(--crystal-color-accent-border);
-  background: rgba(249, 115, 22, 0.12);
+  background: rgba(255, 255, 255, 0.07);
 }
 
 .crystal-project-design-canvas__start-action:focus-visible {
