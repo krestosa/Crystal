@@ -16,7 +16,14 @@ export async function createMainWindow(): Promise<BrowserWindow> {
     minWidth: 960,
     minHeight: 640,
     title: "Crystal",
-    backgroundColor: "#0d1017",
+    backgroundColor: "#050403",
+    autoHideMenuBar: true,
+    titleBarStyle: "hidden",
+    titleBarOverlay: {
+      color: "#050403",
+      symbolColor: "#f7f2ec",
+      height: 24
+    },
     webPreferences: getSecureWebPreferences()
   });
 

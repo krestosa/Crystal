@@ -1,11 +1,42 @@
 .crystal-app-shell {
   display: grid;
-  grid-template-rows: minmax(0, 1fr) 20px;
+  grid-template-rows: 24px minmax(0, 1fr) 20px;
   width: 100vw;
   height: 100vh;
   overflow: hidden;
   color: var(--crystal-color-text);
   background: var(--crystal-color-bg);
+}
+
+.crystal-app-shell__chrome {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 0 140px 0 8px;
+  border-bottom: 1px solid var(--crystal-color-border-soft);
+  background: var(--crystal-color-surface-strong);
+  -webkit-app-region: drag;
+  user-select: none;
+}
+
+.crystal-app-shell__chrome-title {
+  color: rgba(247, 242, 236, 0.82);
+  font-size: 9px;
+  font-weight: 650;
+  letter-spacing: 0.14em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.crystal-app-shell__chrome-meta {
+  overflow: hidden;
+  color: rgba(247, 242, 236, 0.34);
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .crystal-app-shell__body {
