@@ -14,25 +14,32 @@
   min-width: 0;
   min-height: 0;
   overflow: hidden;
+  overscroll-behavior: none;
+}
+
+.crystal-design-view__workspace[data-crystal-project-open="false"] {
+  grid-template-rows: minmax(0, 1fr) 0;
 }
 
 .crystal-design-view__canvas {
   min-width: 0;
   min-height: 0;
-  padding: 8px;
+  padding: 6px;
   overflow: hidden;
+  overscroll-behavior: contain;
 }
 
 .crystal-design-view__right-sidebar {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 7px;
   min-width: 0;
   min-height: 0;
-  padding: 8px;
+  padding: 6px;
   border-left: 1px solid rgba(255, 255, 255, 0.08);
   background: #080b11;
   overflow: auto;
+  overscroll-behavior: contain;
 }
 
 .crystal-design-view__bottom-diagnostics {
@@ -40,10 +47,108 @@
   min-width: 0;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   background: #05070b;
+  overflow: hidden;
+}
+
+.crystal-design-view__workspace[data-crystal-project-open="false"] .crystal-design-view__bottom-diagnostics {
+  display: none;
+}
+
+.crystal-design-view__workspace[data-crystal-project-open="false"] .crystal-project-design-canvas__stage,
+.crystal-design-view__workspace[data-crystal-project-open="false"] .crystal-project-design-canvas__controls,
+.crystal-design-view__workspace[data-crystal-project-open="false"] .crystal-project-preview-panel__target-label,
+.crystal-design-view__workspace[data-crystal-project-open="false"] .crystal-project-preview-panel__actions,
+.crystal-design-view__workspace[data-crystal-project-open="false"] .crystal-project-preview-panel__selection,
+.crystal-design-view__workspace[data-crystal-project-open="false"] .crystal-project-preview-panel__inspector,
+.crystal-design-view__workspace[data-crystal-project-open="false"] .crystal-project-dom-tree-panel {
+  display: none;
+}
+
+.crystal-design-view__workspace[data-crystal-project-open="false"] .crystal-project-design-canvas__toolbar {
+  justify-content: flex-start;
+}
+
+.crystal-design-view__workspace[data-crystal-project-open="false"] .crystal-project-design-canvas__hint {
+  display: none;
+}
+
+.crystal-design-view__workspace[data-crystal-project-open="false"] .crystal-project-design-canvas__surface {
+  background:
+    radial-gradient(circle at 18% 18%, rgba(147, 197, 253, 0.1), transparent 22%),
+    linear-gradient(rgba(255, 255, 255, 0.042) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.042) 1px, transparent 1px),
+    #080d14;
+  background-size: auto, 28px 28px, 28px 28px, auto;
+}
+
+.crystal-design-view__workspace[data-crystal-project-open="false"] .crystal-project-design-canvas__start {
+  top: 18px;
+  left: 18px;
+  width: min(410px, calc(100% - 36px));
+  padding: 12px;
+  border-color: rgba(255, 255, 255, 0.085);
+  background: rgba(8, 12, 19, 0.68);
+  box-shadow: none;
+  transform: none;
+  backdrop-filter: none;
+}
+
+.crystal-design-view__workspace[data-crystal-project-open="false"] .crystal-project-design-canvas__start-icon {
+  position: relative;
+  width: 34px;
+  height: 30px;
+  border: 0;
+  background: transparent;
+  font-size: 0;
+}
+
+.crystal-design-view__workspace[data-crystal-project-open="false"] .crystal-project-design-canvas__start-icon::before,
+.crystal-design-view__workspace[data-crystal-project-open="false"] .crystal-project-design-canvas__start-icon::after {
+  position: absolute;
+  content: "";
+}
+
+.crystal-design-view__workspace[data-crystal-project-open="false"] .crystal-project-design-canvas__start-icon::before {
+  left: 1px;
+  bottom: 4px;
+  width: 23px;
+  height: 15px;
+  border: 1px solid rgba(147, 197, 253, 0.42);
+  background:
+    linear-gradient(rgba(147, 197, 253, 0.2), rgba(147, 197, 253, 0.08));
+  box-shadow: 5px -6px 0 -4px rgba(147, 197, 253, 0.42);
+}
+
+.crystal-design-view__workspace[data-crystal-project-open="false"] .crystal-project-design-canvas__start-icon::after {
+  top: 2px;
+  right: 1px;
+  width: 13px;
+  height: 19px;
+  border: 1px solid rgba(255, 255, 255, 0.38);
+  background: rgba(255, 255, 255, 0.055);
+}
+
+.crystal-design-view__workspace[data-crystal-project-open="false"] .crystal-project-design-canvas__start-action {
+  min-height: 52px;
+}
+
+.crystal-side-bar {
+  padding: 6px;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.crystal-side-bar__section {
+  gap: 7px;
+}
+
+.crystal-side-bar__header {
+  gap: 2px;
+  padding-bottom: 6px;
 }
 
 .crystal-design-view__debug-dock {
-  min-height: 26px;
+  min-height: 24px;
   color: rgba(255, 255, 255, 0.68);
 }
 
@@ -51,11 +156,11 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 26px;
-  padding: 0 10px;
+  min-height: 24px;
+  padding: 0 8px;
   cursor: pointer;
   list-style: none;
-  color: rgba(255, 255, 255, 0.56);
+  color: rgba(255, 255, 255, 0.48);
   font-size: 10px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -66,24 +171,25 @@
 }
 
 .crystal-design-view__debug-dock[open] {
-  max-height: 220px;
+  max-height: 184px;
 }
 
 .crystal-design-view__debug-grid {
   display: grid;
   grid-template-columns: 0.9fr 1.2fr 1fr;
-  gap: 8px;
-  max-height: 192px;
-  padding: 0 8px 8px;
+  gap: 6px;
+  max-height: 158px;
+  padding: 0 6px 6px;
   overflow: auto;
+  overscroll-behavior: contain;
 }
 
 .crystal-design-view__debug-panel {
   display: grid;
   align-content: start;
-  gap: 6px;
+  gap: 5px;
   min-width: 0;
-  padding: 8px;
+  padding: 6px;
   border: 1px solid rgba(255, 255, 255, 0.075);
   background: #090c13;
 }
@@ -103,8 +209,8 @@
 }
 
 .crystal-design-view__debug-button {
-  min-height: 24px;
-  padding: 3px 5px;
+  min-height: 22px;
+  padding: 2px 5px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(255, 255, 255, 0.045);
   color: rgba(255, 255, 255, 0.72);
@@ -115,11 +221,11 @@
 
 .crystal-design-view__debug-meta {
   display: grid;
-  gap: 3px;
+  gap: 2px;
   margin: 0;
   color: rgba(255, 255, 255, 0.5);
   font-size: 10px;
-  line-height: 1.3;
+  line-height: 1.25;
 }
 
 .crystal-design-view__debug-meta p {
@@ -152,13 +258,14 @@
 .crystal-design-view__debug-list {
   display: grid;
   gap: 2px;
-  max-height: 48px;
+  max-height: 40px;
   margin: 0;
   padding-left: 14px;
   overflow: auto;
+  overscroll-behavior: contain;
   color: rgba(255, 255, 255, 0.52);
   font-size: 10px;
-  line-height: 1.3;
+  line-height: 1.25;
 }
 
 .crystal-design-view__debug-empty,
@@ -166,7 +273,7 @@
   margin: 0;
   color: rgba(255, 255, 255, 0.42);
   font-size: 10px;
-  line-height: 1.3;
+  line-height: 1.25;
 }
 
 .crystal-design-view__debug-warning {
@@ -174,15 +281,16 @@
 }
 
 .crystal-design-view__debug-tree {
-  max-height: 68px;
+  max-height: 56px;
   margin: 0;
-  padding: 6px;
+  padding: 5px;
   overflow: auto;
+  overscroll-behavior: contain;
   border: 1px solid rgba(255, 255, 255, 0.06);
   background: rgba(0, 0, 0, 0.24);
   color: rgba(255, 255, 255, 0.58);
   font-family: monospace;
   font-size: 10px;
-  line-height: 1.35;
+  line-height: 1.3;
   white-space: pre;
 }
