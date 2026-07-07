@@ -12,14 +12,17 @@
 
     <button class="crystal-design-view__diagnostics-toggle" type="button" aria-controls="crystal-design-diagnostics-popover" aria-expanded="false" data-crystal-diagnostics-toggle>Diagnostics</button>
 
-    <aside class="crystal-design-view__diagnostics-popover" id="crystal-design-diagnostics-popover" aria-label="Workspace diagnostics" tabindex="-1" data-crystal-diagnostics-popover hidden>
-      <div class="crystal-design-view__diagnostics-resizer" role="separator" aria-label="Resize diagnostics panel" aria-orientation="horizontal" tabindex="0" data-crystal-diagnostics-resizer></div>
-      <header class="crystal-design-view__diagnostics-header">
+    <aside class="crystal-design-view__diagnostics-popover" id="crystal-design-diagnostics-popover" aria-label="Workspace diagnostics" tabindex="-1" data-crystal-diagnostics-popover data-crystal-diagnostics-pinned="true" hidden>
+      <div class="crystal-design-view__diagnostics-resize-corner" role="separator" aria-label="Resize diagnostics panel" aria-orientation="horizontal" tabindex="0" data-crystal-diagnostics-resizer data-crystal-diagnostics-resize-corner></div>
+      <header class="crystal-design-view__diagnostics-header" data-crystal-diagnostics-drag-handle>
         <div>
           <h2>Diagnostics</h2>
           <p>Graph · Preview · DOM · Events</p>
         </div>
-        <button class="crystal-design-view__diagnostics-close" type="button" aria-label="Close diagnostics" data-crystal-diagnostics-close>Close</button>
+        <div class="crystal-design-view__diagnostics-actions">
+          <button class="crystal-design-view__diagnostics-pin" type="button" aria-pressed="true" data-crystal-diagnostics-pin>Pinned</button>
+          <button class="crystal-design-view__diagnostics-close" type="button" aria-label="Close diagnostics" data-crystal-diagnostics-close>Close</button>
+        </div>
       </header>
       <div class="crystal-design-view__diagnostics-body">
         <div class="crystal-design-view__debug-grid">

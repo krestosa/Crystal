@@ -110,9 +110,10 @@
   bottom: 48px;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
-  width: min(920px, calc(100% - 24px));
+  width: min(var(--crystal-diagnostics-panel-width, 760px), calc(100% - 24px));
   height: min(var(--crystal-diagnostics-panel-height, 360px), calc(100% - 64px));
-  min-height: 180px;
+  min-width: min(360px, calc(100% - 24px));
+  min-height: min(220px, calc(100% - 64px));
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: rgba(8, 6, 4, 0.96);
@@ -123,37 +124,45 @@
   display: none;
 }
 
-.crystal-design-view__diagnostics-resizer {
+.crystal-design-view__diagnostics-popover[data-crystal-diagnostics-pinned="false"] {
+  top: var(--crystal-diagnostics-panel-top, 12px);
+  right: auto;
+  bottom: auto;
+  left: var(--crystal-diagnostics-panel-left, 12px);
+}
+
+.crystal-design-view__diagnostics-resize-corner {
   position: absolute;
-  z-index: 2;
-  top: -3px;
+  z-index: 3;
   right: 0;
-  left: 0;
-  height: 6px;
+  bottom: 0;
+  width: 18px;
+  height: 18px;
   border: 0;
   background: transparent;
-  cursor: row-resize;
+  cursor: nwse-resize;
   outline: none;
   touch-action: none;
 }
 
-.crystal-design-view__diagnostics-resizer::after {
+.crystal-design-view__diagnostics-resize-corner::after {
   position: absolute;
-  top: 3px;
-  right: 0;
-  left: 0;
-  height: 1px;
-  background: transparent;
+  right: 4px;
+  bottom: 4px;
+  width: 9px;
+  height: 9px;
+  border-right: 1px solid rgba(249, 115, 22, 0.7);
+  border-bottom: 1px solid rgba(249, 115, 22, 0.7);
   content: "";
 }
 
-.crystal-design-view__diagnostics-resizer:hover::after,
-.crystal-design-view__diagnostics-resizer:focus-visible::after,
-.crystal-design-view__workspace--resizing-diagnostics .crystal-design-view__diagnostics-resizer::after {
-  background: var(--crystal-color-accent);
+.crystal-design-view__diagnostics-resize-corner:hover::after,
+.crystal-design-view__diagnostics-resize-corner:focus-visible::after,
+.crystal-design-view__workspace--resizing-diagnostics .crystal-design-view__diagnostics-resize-corner::after {
+  border-color: var(--crystal-color-accent);
 }
 
-.crystal-design-view__diagnostics-resizer:focus-visible {
+.crystal-design-view__diagnostics-resize-corner:focus-visible {
   box-shadow: 0 0 0 2px var(--crystal-focus-ring);
 }
 
@@ -166,6 +175,14 @@
   padding: 9px 10px;
   border-bottom: 1px solid var(--crystal-color-border-soft);
   background: var(--crystal-color-surface-strong);
+}
+
+.crystal-design-view__diagnostics-popover[data-crystal-diagnostics-pinned="false"] .crystal-design-view__diagnostics-header {
+  cursor: grab;
+}
+
+.crystal-design-view__workspace--dragging-diagnostics .crystal-design-view__diagnostics-header {
+  cursor: grabbing;
 }
 
 .crystal-design-view__diagnostics-header h2,
@@ -188,6 +205,13 @@
   line-height: 1.2;
 }
 
+.crystal-design-view__diagnostics-actions {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.crystal-design-view__diagnostics-pin,
 .crystal-design-view__diagnostics-close {
   min-height: 24px;
   padding: 4px 7px;
@@ -199,6 +223,14 @@
   cursor: pointer;
 }
 
+.crystal-design-view__diagnostics-pin[aria-pressed="true"] {
+  border-color: var(--crystal-color-accent-border);
+  background: var(--crystal-color-accent-soft);
+  color: var(--crystal-color-text);
+}
+
+.crystal-design-view__diagnostics-pin:hover,
+.crystal-design-view__diagnostics-pin:focus-visible,
 .crystal-design-view__diagnostics-close:hover,
 .crystal-design-view__diagnostics-close:focus-visible {
   border-color: var(--crystal-color-accent-border);
@@ -206,6 +238,7 @@
   color: var(--crystal-color-text);
 }
 
+.crystal-design-view__diagnostics-pin:focus-visible,
 .crystal-design-view__diagnostics-close:focus-visible {
   outline: 2px solid var(--crystal-focus-ring);
   outline-offset: 1px;
@@ -220,7 +253,8 @@
 }
 
 .crystal-design-view__workspace--resizing-right,
-.crystal-design-view__workspace--resizing-diagnostics {
+.crystal-design-view__workspace--resizing-diagnostics,
+.crystal-design-view__workspace--dragging-diagnostics {
   user-select: none;
 }
 
@@ -229,7 +263,11 @@
 }
 
 .crystal-design-view__workspace--resizing-diagnostics {
-  cursor: row-resize;
+  cursor: nwse-resize;
+}
+
+.crystal-design-view__workspace--dragging-diagnostics {
+  cursor: grabbing;
 }
 
 .crystal-design-view__workspace[data-crystal-project-open="false"] .crystal-project-design-canvas__stage,
@@ -327,7 +365,7 @@
 
 .crystal-design-view__debug-grid {
   display: grid;
-  grid-template-columns: 0.9fr 1.2fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 6px;
 }
 
@@ -392,10 +430,7 @@
 }
 
 .crystal-design-view__debug-meta p {
-  overflow: hidden;
   margin: 0;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .crystal-design-view__debug-meta--dl {
@@ -408,14 +443,22 @@
 
 .crystal-design-view__debug-meta dt,
 .crystal-design-view__debug-meta dd {
-  overflow: hidden;
   margin: 0;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .crystal-design-view__debug-meta dt {
   color: rgba(247, 242, 236, 0.36);
+}
+
+.crystal-design-view__diagnostics-popover .crystal-design-view__debug-meta p,
+.crystal-design-view__diagnostics-popover .crystal-design-view__debug-meta dt,
+.crystal-design-view__diagnostics-popover .crystal-design-view__debug-meta dd,
+.crystal-design-view__diagnostics-popover .crystal-design-view__debug-list,
+.crystal-design-view__diagnostics-popover .crystal-design-view__debug-empty,
+.crystal-design-view__diagnostics-popover .crystal-design-view__debug-warning {
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+  white-space: normal;
 }
 
 .crystal-design-view__debug-list {
@@ -442,9 +485,10 @@
 }
 
 .crystal-design-view__debug-tree {
+  max-width: 100%;
   margin: 0;
   padding: 5px;
-  overflow: visible;
+  overflow: auto;
   border: 1px solid rgba(255, 255, 255, 0.06);
   background: rgba(0, 0, 0, 0.28);
   color: rgba(247, 242, 236, 0.6);
@@ -452,10 +496,4 @@
   font-size: 10px;
   line-height: 1.3;
   white-space: pre;
-}
-
-@media (max-width: 980px) {
-  .crystal-design-view__debug-grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
 }
