@@ -18,7 +18,7 @@ export function initializeProjectDesignCanvasSelectionOverlay(): void {
   let overlayEnabled = sessionSelectionOverlayEnabled;
 
   const render = (): void => {
-    elements.toggleButton.textContent = overlayEnabled ? "Overlay On" : "Overlay Off";
+    elements.toggleButton.textContent = overlayEnabled ? "Visual Overlay On" : "Visual Overlay Off";
     elements.toggleButton.setAttribute("aria-pressed", String(overlayEnabled));
 
     if (!latestPreviewSelectionState) {

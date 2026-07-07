@@ -1,46 +1,35 @@
 <section class="crystal-project-preview-panel" data-project-preview-panel>
   <div class="crystal-project-preview-panel__header">
     <div>
-      <h2 class="crystal-project-preview-panel__title">Preview</h2>
-      <p class="crystal-project-preview-panel__status" data-project-preview-status>idle</p>
-    </div>
-    <div class="crystal-project-preview-panel__actions">
-      <button class="crystal-project-preview-panel__button" type="button" data-project-preview-load>Load Preview</button>
-      <button class="crystal-project-preview-panel__button" type="button" data-project-preview-reload>Reload Preview</button>
-      <button class="crystal-project-preview-panel__button" type="button" data-project-preview-select-mode>Select Mode</button>
-      <button class="crystal-project-preview-panel__button" type="button" data-project-preview-clear-selection>Clear Selection</button>
+      <h2 class="crystal-project-preview-panel__title">Inspector</h2>
+      <p class="crystal-project-preview-panel__status" data-project-preview-status>No Preview loaded.</p>
     </div>
   </div>
+
   <label class="crystal-project-preview-panel__target-label">
     Page
     <select class="crystal-project-preview-panel__target" data-project-preview-target></select>
   </label>
-  <dl class="crystal-project-preview-panel__meta">
-    <div><dt>Current page</dt><dd data-project-preview-page>None</dd></div>
-    <div><dt>Last load</dt><dd data-project-preview-last-load>none</dd></div>
-    <div><dt>Last reload</dt><dd data-project-preview-last-reload>none</dd></div>
-    <div><dt>Reason</dt><dd data-project-preview-reason>none</dd></div>
-    <div><dt>Issues</dt><dd data-project-preview-issue-count>0</dd></div>
-    <div><dt>Last issue</dt><dd data-project-preview-last-issue>none</dd></div>
-  </dl>
+
+  <div class="crystal-project-preview-panel__actions" aria-label="Preview actions">
+    <button class="crystal-project-preview-panel__button crystal-project-preview-panel__button--primary" type="button" data-project-preview-load>Load</button>
+    <button class="crystal-project-preview-panel__button" type="button" data-project-preview-reload>Reload</button>
+  </div>
+
+  <div class="crystal-project-preview-panel__actions" aria-label="Selection actions">
+    <button class="crystal-project-preview-panel__button" type="button" data-project-preview-select-mode>Select</button>
+    <button class="crystal-project-preview-panel__button" type="button" data-project-preview-clear-selection>Clear</button>
+  </div>
+
   <p class="crystal-project-preview-panel__error" data-project-preview-error hidden></p>
+
   <section class="crystal-project-preview-panel__selection" aria-label="Preview selection">
     <div class="crystal-project-preview-panel__selection-header">
-      <h3 class="crystal-project-preview-panel__selection-title">Selected node</h3>
-      <p class="crystal-project-preview-panel__selection-mode" data-project-preview-selection-mode>idle</p>
+      <h3 class="crystal-project-preview-panel__selection-title">Selection</h3>
+      <p class="crystal-project-preview-panel__selection-mode" data-project-preview-selection-mode>No selection.</p>
     </div>
-    <dl class="crystal-project-preview-panel__selection-summary">
-      <div><dt>Tag</dt><dd data-project-preview-selected-tag>none</dd></div>
-      <div><dt>snapshotPath</dt><dd data-project-preview-selected-path>none</dd></div>
-      <div><dt>Mapping status</dt><dd data-project-preview-selection-mapping-status>unknown</dd></div>
-      <div><dt>Mapped snapshotPath</dt><dd data-project-preview-mapped-snapshot-path>none</dd></div>
-      <div><dt>Mapping reason</dt><dd data-project-preview-selection-mapping-reason>none</dd></div>
-      <div><dt>Selector</dt><dd data-project-preview-selected-selector>none</dd></div>
-      <div><dt>Attributes</dt><dd data-project-preview-selected-attributes>none</dd></div>
-      <div><dt>Text</dt><dd data-project-preview-selected-text>none</dd></div>
-    </dl>
-    <p class="crystal-project-preview-panel__selection-issue" data-project-preview-selection-issue hidden></p>
   </section>
+
   <section class="crystal-project-preview-panel__inspector" aria-label="Preview Inspector" data-project-preview-inspector>
     <div class="crystal-project-preview-panel__inspector-header">
       <h3 class="crystal-project-preview-panel__inspector-title">Preview Inspector</h3>
@@ -61,10 +50,4 @@
       </div>
     </div>
   </section>
-  <section class="crystal-project-preview-panel__issues" aria-label="Preview issues">
-    <h3 class="crystal-project-preview-panel__issues-title">Preview issues</h3>
-    <p class="crystal-project-preview-panel__issues-empty" data-project-preview-issues-empty>No preview issues.</p>
-    <ul class="crystal-project-preview-panel__issues-list" data-project-preview-issues-list></ul>
-  </section>
-  <crystal-include src="../design-canvas/project-design-canvas.html"></crystal-include>
 </section>

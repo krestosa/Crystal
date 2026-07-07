@@ -21,11 +21,7 @@ export function initializeProjectPreviewPanel(): void {
   let latestPreviewSelectionState: ProjectPreviewSelectionState | null = null;
   const renderInspectorFromLatestState = () => {
     if (!latestPreviewState || !latestDomSnapshotState || !latestPreviewSelectionState) return;
-    renderProjectPreviewInspector(elements, {
-      preview: latestPreviewState,
-      domSnapshot: latestDomSnapshotState,
-      previewSelection: latestPreviewSelectionState
-    });
+    renderProjectPreviewInspector(elements, { preview: latestPreviewState, domSnapshot: latestDomSnapshotState, previewSelection: latestPreviewSelectionState });
   };
   const renderPreviewAndInspector = (state: ProjectPreviewState) => {
     latestPreviewState = state;
@@ -106,11 +102,8 @@ async function runPreviewAction(elements: ProjectPreviewPanelElements, renderPre
 }
 
 async function refreshPreviewTargets(elements: ProjectPreviewPanelElements): Promise<void> {
-  try {
-    renderTargetOptions(elements, await window.crystal.project.getGraph());
-  } catch {
-    renderTargetOptions(elements, null);
-  }
+  try { renderTargetOptions(elements, await window.crystal.project.getGraph()); }
+  catch { renderTargetOptions(elements, null); }
 }
 
 async function togglePreviewSelectionMode(elements: ProjectPreviewPanelElements, selectionBridge: ProjectPreviewSelectionMessageBridge, renderSelectionAndInspector: (state: ProjectPreviewSelectionState) => void): Promise<void> {
@@ -121,7 +114,6 @@ async function togglePreviewSelectionMode(elements: ProjectPreviewPanelElements,
       renderSelectionAndInspector(await window.crystal.project.disablePreviewSelection());
       return;
     }
-
     renderSelectionAndInspector(await window.crystal.project.enablePreviewSelection());
     selectionBridge.enable();
   } catch (error) {
@@ -150,19 +142,13 @@ async function syncPreviewSelectionAfterFrameLoad(elements: ProjectPreviewPanelE
 }
 
 async function setSelectedNodeFromPreview(elements: ProjectPreviewPanelElements, selectedNode: ProjectPreviewSelectedNode, renderSelectionAndInspector: (state: ProjectPreviewSelectionState) => void): Promise<void> {
-  try {
-    renderSelectionAndInspector(await window.crystal.project.setPreviewSelectedNode(selectedNode));
-  } catch (error) {
-    renderPreviewError(elements, error);
-  }
+  try { renderSelectionAndInspector(await window.crystal.project.setPreviewSelectedNode(selectedNode)); }
+  catch (error) { renderPreviewError(elements, error); }
 }
 
 async function reportInvalidSelectedNodePayload(elements: ProjectPreviewPanelElements, renderSelectionAndInspector: (state: ProjectPreviewSelectionState) => void): Promise<void> {
-  try {
-    renderSelectionAndInspector(await window.crystal.project.setPreviewSelectedNode({}));
-  } catch (error) {
-    renderPreviewError(elements, error);
-  }
+  try { renderSelectionAndInspector(await window.crystal.project.setPreviewSelectedNode({})); }
+  catch (error) { renderPreviewError(elements, error); }
 }
 
 function renderPreviewState(elements: ProjectPreviewPanelElements, state: ProjectPreviewState): void {
@@ -177,28 +163,49 @@ function renderPreviewState(elements: ProjectPreviewPanelElements, state: Projec
   elements.error.textContent = state.lastError ?? "";
   elements.reloadButton.disabled = !state.target;
   renderPreviewIssues(elements, state.issues);
-
   if (state.target && elements.target.value !== state.target.relativePath) elements.target.value = state.target.relativePath;
   if (state.previewUrl && state.status === "ready") elements.frame.src = state.previewUrl;
 }
 
 function renderPreviewSelectionState(elements: ProjectPreviewPanelElements, state: ProjectPreviewSelectionState): void {
-  elements.selectionMode.textContent = state.mode;
-  elements.selectModeButton.textContent = state.enabled ? "Disable Selection" : "Select Mode";
+  elements.selectionMode.textContent = renderSelectionMode(state);
+  elements.selectModeButton.textContent = state.enabled ? "Disable" : "Select";
   elements.selectModeButton.setAttribute("aria-pressed", String(state.enabled));
   elements.clearSelectionButton.disabled = !state.enabled && !state.selectedNode;
-
   elements.selectedTag.textContent = state.selectedNode?.tagName ?? "none";
   elements.selectedPath.textContent = state.selectedNode?.snapshotPath ?? "none";
-  elements.selectionMappingStatus.textContent = state.mappingStatus;
+  elements.selectionMappingStatus.textContent = renderMappingStatus(state.mappingStatus);
   elements.mappedSnapshotPath.textContent = state.mappedSnapshotPath ?? "none";
-  elements.selectionMappingReason.textContent = state.mappingReason ?? "none";
+  elements.selectionMappingReason.textContent = renderMappingReason(state.mappingReason);
   elements.selectedSelector.textContent = state.selectedNode?.selectorPreview || "none";
   elements.selectedAttributes.textContent = state.selectedNode ? renderAttributesPreview(state.selectedNode) : "none";
   elements.selectedText.textContent = state.selectedNode?.textPreview || "none";
-
   elements.selectionIssue.hidden = !state.lastIssue;
   elements.selectionIssue.textContent = state.lastIssue ? `${state.lastIssue.code}: ${state.lastIssue.message}` : "";
+}
+
+function renderSelectionMode(state: ProjectPreviewSelectionState): string {
+  if (state.selectedNode) return state.enabled ? "selecting · node" : "node selected";
+  if (state.enabled) return "selecting";
+  return "No selection.";
+}
+
+function renderMappingStatus(status: ProjectPreviewSelectionState["mappingStatus"]): string {
+  if (status === "missing-snapshot") return "missing snapshot";
+  if (status === "stale") return "stale snapshot";
+  if (status === "ambiguous") return "ambiguous";
+  if (status === "mismatched") return "mismatch";
+  return status;
+}
+
+function renderMappingReason(reason: string | null): string {
+  if (!reason) return "none";
+  if (reason === "missing snapshot") return "Build DOM Snapshot first.";
+  if (reason === "snapshot stale") return "Rebuild DOM Snapshot.";
+  if (reason === "ambiguous fallback") return "Multiple DOM Snapshot candidates.";
+  if (reason === "path not found") return "Selected path not found.";
+  if (reason === "tag mismatch") return "Tag mismatch.";
+  return reason;
 }
 
 function renderAttributesPreview(selectedNode: ProjectPreviewSelectedNode): string {
@@ -213,17 +220,16 @@ function renderTargetOptions(elements: ProjectPreviewPanelElements, graph: Proje
   if (pages.length === 0) {
     const option = document.createElement("option");
     option.value = "";
-    option.textContent = "No HTML pages detected";
+    option.textContent = "No HTML pages";
     elements.target.append(option);
     elements.target.disabled = true;
     return;
   }
-
   elements.target.disabled = false;
   for (const page of pages) {
     const option = document.createElement("option");
     option.value = page.relativePath;
-    option.textContent = `${page.displayName}${page.isEntrypoint ? " - entry" : ""}`;
+    option.textContent = `${page.displayName}${page.isEntrypoint ? " · entry" : ""}`;
     elements.target.append(option);
   }
   if (selected && pages.some((page) => page.relativePath === selected)) elements.target.value = selected;
@@ -231,7 +237,7 @@ function renderTargetOptions(elements: ProjectPreviewPanelElements, graph: Proje
 
 function renderPreviewIssues(elements: ProjectPreviewPanelElements, issues: readonly ProjectPreviewIssue[]): void {
   elements.issuesEmpty.hidden = issues.length > 0;
-  elements.issuesList.replaceChildren(...issues.slice(0, 10).map(createPreviewIssueItem));
+  elements.issuesList.replaceChildren(...issues.slice(0, 8).map(createPreviewIssueItem));
 }
 
 function createPreviewIssueItem(issue: ProjectPreviewIssue): HTMLLIElement {
@@ -273,51 +279,55 @@ function setPreviewBusy(elements: ProjectPreviewPanelElements, busy: boolean): v
 }
 
 function getProjectPreviewPanelElements(panel: HTMLElement): ProjectPreviewPanelElements {
+  const query = <TElement extends HTMLElement>(selector: string, elementType: new () => TElement) => queryProjectPreviewElement(panel, selector, elementType);
   return {
-    status: queryPanelElement(panel, "[data-project-preview-status]", HTMLElement),
-    target: queryPanelElement(panel, "[data-project-preview-target]", HTMLSelectElement),
-    page: queryPanelElement(panel, "[data-project-preview-page]", HTMLElement),
-    lastLoad: queryPanelElement(panel, "[data-project-preview-last-load]", HTMLElement),
-    lastReload: queryPanelElement(panel, "[data-project-preview-last-reload]", HTMLElement),
-    reason: queryPanelElement(panel, "[data-project-preview-reason]", HTMLElement),
-    issueCount: queryPanelElement(panel, "[data-project-preview-issue-count]", HTMLElement),
-    lastIssue: queryPanelElement(panel, "[data-project-preview-last-issue]", HTMLElement),
-    error: queryPanelElement(panel, "[data-project-preview-error]", HTMLElement),
-    selectionMode: queryPanelElement(panel, "[data-project-preview-selection-mode]", HTMLElement),
-    selectedTag: queryPanelElement(panel, "[data-project-preview-selected-tag]", HTMLElement),
-    selectedPath: queryPanelElement(panel, "[data-project-preview-selected-path]", HTMLElement),
-    selectionMappingStatus: queryPanelElement(panel, "[data-project-preview-selection-mapping-status]", HTMLElement),
-    mappedSnapshotPath: queryPanelElement(panel, "[data-project-preview-mapped-snapshot-path]", HTMLElement),
-    selectionMappingReason: queryPanelElement(panel, "[data-project-preview-selection-mapping-reason]", HTMLElement),
-    selectedSelector: queryPanelElement(panel, "[data-project-preview-selected-selector]", HTMLElement),
-    selectedAttributes: queryPanelElement(panel, "[data-project-preview-selected-attributes]", HTMLElement),
-    selectedText: queryPanelElement(panel, "[data-project-preview-selected-text]", HTMLElement),
-    selectionIssue: queryPanelElement(panel, "[data-project-preview-selection-issue]", HTMLElement),
-    inspectorStatus: queryPanelElement(panel, "[data-project-preview-inspector-status]", HTMLElement),
-    inspectorMessage: queryPanelElement(panel, "[data-project-preview-inspector-message]", HTMLElement),
-    inspectorSelectedDetails: queryPanelElement(panel, "[data-project-preview-inspector-selected-details]", HTMLDListElement),
-    inspectorSnapshotDetails: queryPanelElement(panel, "[data-project-preview-inspector-snapshot-details]", HTMLDListElement),
-    inspectorSnapshotEmpty: queryPanelElement(panel, "[data-project-preview-inspector-snapshot-empty]", HTMLElement),
-    issuesEmpty: queryPanelElement(panel, "[data-project-preview-issues-empty]", HTMLElement),
-    issuesList: queryPanelElement(panel, "[data-project-preview-issues-list]", HTMLUListElement),
-    frame: queryPanelElement(panel, "[data-project-preview-frame]", HTMLIFrameElement),
-    loadButton: queryPanelElement(panel, "[data-project-preview-load]", HTMLButtonElement),
-    reloadButton: queryPanelElement(panel, "[data-project-preview-reload]", HTMLButtonElement),
-    selectModeButton: queryPanelElement(panel, "[data-project-preview-select-mode]", HTMLButtonElement),
-    clearSelectionButton: queryPanelElement(panel, "[data-project-preview-clear-selection]", HTMLButtonElement)
+    status: query("[data-project-preview-status]", HTMLElement),
+    target: query("[data-project-preview-target]", HTMLSelectElement),
+    page: query("[data-project-preview-page]", HTMLElement),
+    lastLoad: query("[data-project-preview-last-load]", HTMLElement),
+    lastReload: query("[data-project-preview-last-reload]", HTMLElement),
+    reason: query("[data-project-preview-reason]", HTMLElement),
+    issueCount: query("[data-project-preview-issue-count]", HTMLElement),
+    lastIssue: query("[data-project-preview-last-issue]", HTMLElement),
+    error: query("[data-project-preview-error]", HTMLElement),
+    selectionMode: query("[data-project-preview-selection-mode]", HTMLElement),
+    selectedTag: query("[data-project-preview-selected-tag]", HTMLElement),
+    selectedPath: query("[data-project-preview-selected-path]", HTMLElement),
+    selectionMappingStatus: query("[data-project-preview-selection-mapping-status]", HTMLElement),
+    mappedSnapshotPath: query("[data-project-preview-mapped-snapshot-path]", HTMLElement),
+    selectionMappingReason: query("[data-project-preview-selection-mapping-reason]", HTMLElement),
+    selectedSelector: query("[data-project-preview-selected-selector]", HTMLElement),
+    selectedAttributes: query("[data-project-preview-selected-attributes]", HTMLElement),
+    selectedText: query("[data-project-preview-selected-text]", HTMLElement),
+    selectionIssue: query("[data-project-preview-selection-issue]", HTMLElement),
+    inspectorStatus: query("[data-project-preview-inspector-status]", HTMLElement),
+    inspectorMessage: query("[data-project-preview-inspector-message]", HTMLElement),
+    inspectorSelectedDetails: query("[data-project-preview-inspector-selected-details]", HTMLDListElement),
+    inspectorSnapshotDetails: query("[data-project-preview-inspector-snapshot-details]", HTMLDListElement),
+    inspectorSnapshotEmpty: query("[data-project-preview-inspector-snapshot-empty]", HTMLElement),
+    issuesEmpty: query("[data-project-preview-issues-empty]", HTMLElement),
+    issuesList: query("[data-project-preview-issues-list]", HTMLUListElement),
+    frame: query("[data-project-preview-frame]", HTMLIFrameElement),
+    loadButton: query("[data-project-preview-load]", HTMLButtonElement),
+    reloadButton: query("[data-project-preview-reload]", HTMLButtonElement),
+    selectModeButton: query("[data-project-preview-select-mode]", HTMLButtonElement),
+    clearSelectionButton: query("[data-project-preview-clear-selection]", HTMLButtonElement)
   };
 }
 
-function queryPanelElement<TElement extends HTMLElement>(panel: HTMLElement, selector: string, elementType: new () => TElement): TElement {
-  const element = panel.querySelector(selector);
-  if (!(element instanceof elementType)) throw new Error(`Missing Project Preview panel element: ${selector}`);
+function queryProjectPreviewElement<TElement extends HTMLElement>(panel: HTMLElement, selector: string, elementType: new () => TElement): TElement {
+  const element = panel.querySelector(selector) ?? document.querySelector(selector);
+  if (!(element instanceof elementType)) throw new Error(`Missing Project Preview element: ${selector}`);
   return element;
 }
 
 function renderPreviewStatus(state: ProjectPreviewState): string {
-  if (state.status === "ready" && state.issueCount > 0) return "ready with issues";
+  if (state.status === "ready" && state.issueCount > 0) return "ready · issues";
   if (state.status === "ready" && state.isSyncedWithProjectGraph) return "ready";
-  if (state.status === "ready") return "ready, graph pending";
+  if (state.status === "ready") return "ready · graph pending";
+  if (state.status === "idle") return "idle";
+  if (state.status === "loading") return "loading";
+  if (state.status === "failed") return "failed";
   return state.status;
 }
 
