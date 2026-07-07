@@ -56,22 +56,31 @@ try {
   expect(previewPanelHtml.includes("../design-canvas/project-design-canvas.html"), "Preview panel does not include the Design Canvas frame partial.");
   expect(!previewPanelHtml.includes("data-project-design-canvas-stage"), "Preview panel owns the transform stage instead of delegating to Design Canvas.");
 
-  expect(designCanvasSource.includes("if (event.ctrlKey || event.metaKey)"), "Ctrl/Cmd + wheel zoom handling is missing.");
+  expect(designCanvasSource.includes("classifyCanvasWheelGesture"), "Explicit wheel/trackpad/pinch gesture classifier is missing.");
+  expect(designCanvasSource.includes('"zoom-canvas"'), "Gesture classifier does not expose zoom-canvas.");
+  expect(designCanvasSource.includes('"pan-canvas"'), "Gesture classifier does not expose pan-canvas.");
+  expect(designCanvasSource.includes('"pass-through-iframe-scroll"'), "Gesture classifier does not expose pass-through iframe scroll.");
+  expect(designCanvasSource.includes('"ignore"'), "Gesture classifier does not expose ignore.");
+  expect(designCanvasSource.includes("isCanvasZoomGesture"), "Canvas zoom gesture helper is missing.");
+  expect(designCanvasSource.includes("event.ctrlKey || event.metaKey || modifierPressed"), "Ctrl/Cmd/pinch wheel gesture is not consistently classified as zoom.");
   expect(designCanvasSource.includes("normalizeProjectDesignCanvasWheelDelta"), "Renderer does not normalize wheel/trackpad delta.");
   expect(designCanvasSource.includes("deltaX: event.deltaX"), "Renderer does not pass trackpad horizontal delta.");
   expect(designCanvasSource.includes("deltaY: event.deltaY"), "Renderer does not pass trackpad vertical delta.");
   expect(designCanvasSource.includes("deltaMode: event.deltaMode"), "Renderer does not pass wheel deltaMode.");
-  expect(designCanvasSource.includes("shouldPanCanvasFromWheel"), "Renderer does not support wheel/trackpad pan in canvas navigation mode.");
-  expect(designCanvasSource.indexOf("if (event.ctrlKey || event.metaKey)") < designCanvasSource.indexOf("if (!shouldPanCanvasFromWheel"), "Wheel zoom guard does not run before pan passthrough logic.");
-  expect(designCanvasSource.includes("if (!shouldPanCanvasFromWheel(event, elements, spacePressed)) return;"), "Wheel without Ctrl is not explicitly allowed to pass through when canvas pan is inactive.");
+  expect(designCanvasSource.includes("gesture.kind === \"pass-through-iframe-scroll\""), "Wheel over iframe is not explicitly passed through.");
+  expect(designCanvasSource.includes("gesture.kind === \"zoom-canvas\""), "Zoom gesture branch is missing.");
+  expect(designCanvasSource.includes("gesture.kind === \"ignore\""), "Invalid or empty deltas are not ignored safely.");
+  expect(designCanvasSource.indexOf("gesture.kind === \"pass-through-iframe-scroll\"") < designCanvasSource.indexOf("gesture.kind === \"zoom-canvas\""), "Iframe pass-through classification is not isolated from default pan handling.");
+  expect(designCanvasSource.includes("event.preventDefault();\n      event.stopPropagation();\n      activateZoomCapture();"), "Zoom gesture does not prevent default, contain propagation, and activate capture.");
+  expect(designCanvasSource.includes("calculateProjectDesignCanvasZoomAtPoint(viewportState, bounds, gesture.focusPoint"), "Zoom does not use pointer-focused coordinates.");
+  expect(designCanvasSource.includes("panCanvasBy(-gesture.delta.x, -gesture.delta.y"), "Wheel/trackpad pan does not use normalized X/Y deltas naturally.");
   expect(designCanvasSource.includes("event.button === 1"), "Middle mouse pan support is missing.");
-  expect(designCanvasSource.includes("source: \"middle\"" ) || designCanvasSource.includes("return \"middle\""), "Middle mouse pan source is missing.");
   expect(designCanvasSource.includes("event.code !== \"Space\""), "Space + drag pan reservation is missing.");
   expect(designCanvasSource.includes("setPointerCapture"), "Design Canvas pan pointer capture is missing.");
   expect(designCanvasSource.includes("releasePointerCapture"), "Design Canvas pan pointer capture release is missing.");
-  expect(designCanvasSource.includes("modifierPressed"), "Design Canvas does not track Ctrl/Cmd capture state.");
+  expect(designCanvasSource.includes("zoomGestureActive"), "Transient zoom capture state is missing.");
+  expect(designCanvasSource.includes("PROJECT_DESIGN_CANVAS_ZOOM_CAPTURE_RELEASE_DELAY"), "Zoom capture release delay is missing.");
   expect(designCanvasSource.includes("crystal-project-design-canvas--capture-active"), "Design Canvas does not expose a capture-active state.");
-  expect(designCanvasSource.includes("handleAuxClick"), "Design Canvas does not suppress middle-click aux behavior where it handles middle pan.");
   expect(designCanvasSource.includes("window.addEventListener(\"blur\""), "Design Canvas does not release transient capture state on blur.");
   expect(designCanvasSource.includes("clampProjectDesignCanvasPan"), "Design Canvas renderer does not clamp pan after viewport changes.");
   expect(designCanvasSource.includes("PROJECT_DESIGN_CANVAS_KEYBOARD_ZOOM_STEP"), "Keyboard zoom shortcut support is missing.");
@@ -81,6 +90,12 @@ try {
   expect(designViewSource.includes("initializeProjectDesignCanvas"), "Design view does not initialize Design Canvas.");
   expect(mainScss.includes("./components/design-canvas/project-design-canvas"), "main.scss does not include Design Canvas styles.");
 
+  expect(designCanvasScss.includes(".crystal-project-design-canvas__surface"), "Design Canvas surface styles are missing.");
+  expect(designCanvasScss.includes("overflow: hidden"), "Design Canvas surface does not hide overflow to avoid scrollbar navigation.");
+  expect(designCanvasScss.includes("overscroll-behavior: contain"), "Design Canvas does not contain scroll chaining.");
+  expect(designCanvasScss.includes(".crystal-project-design-canvas__stage"), "Design Canvas stage styles are missing.");
+  expect(!/\.crystal-project-design-canvas__surface[\s\S]*overflow:\s*(auto|scroll)/.test(designCanvasScss), "Design Canvas surface uses scrollbars as navigation.");
+  expect(!/\.crystal-project-design-canvas__stage[\s\S]*overflow:\s*(auto|scroll)/.test(designCanvasScss), "Design Canvas stage uses scrollbars as navigation.");
   expect(designCanvasScss.includes(".crystal-project-design-canvas__capture"), "Capture layer styles are missing.");
   expect(designCanvasScss.includes("pointer-events: none"), "Capture layer is not disabled by default.");
   expect(designCanvasScss.includes("crystal-project-design-canvas--capture-active .crystal-project-design-canvas__capture"), "Capture layer is not activated only through capture-active state.");
@@ -136,7 +151,7 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log("Design Canvas validation passed: mouse, trackpad, wide safe zoom, pan recovery clamp, transient capture layer, sandbox limits, read-only boundaries, and local validation integration.");
+console.log("Design Canvas validation passed: natural mouse, trackpad, pinch classification, scroll containment, wide safe zoom, pan recovery clamp, transient capture layer, sandbox limits, read-only boundaries, and local validation integration.");
 
 async function readText(filePath) {
   return readFile(path.resolve(filePath), "utf8");

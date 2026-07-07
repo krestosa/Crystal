@@ -107,6 +107,7 @@ Covered:
 - pure Design Canvas viewport model under `packages/core/project/design-canvas/`
 - wide safe zoom state with 2% minimum, 6400% maximum, and 100% default
 - wheel and trackpad delta normalization for pixel, line, and page delta modes
+- explicit wheel/trackpad/pinch classification for zoom, pan, iframe scroll passthrough, and safe ignore
 - pan state with transient panning marker and last interaction timestamp
 - fit, center, reset, focal zoom, panning, pan clamp, and finite-number viewport helpers
 - pan recovery margin so the frame cannot be lost completely
@@ -114,14 +115,16 @@ Covered:
 - toolbar controls outside the transformed stage
 - Preview visual frame inside the transformed stage only
 - simple desktop page frame at 1280 × 720
+- no scrollbars as the primary Design Canvas navigation model
+- overflow-hidden and overscroll-contained Design Canvas surface
 - Space + drag panning
 - middle mouse panning where the event reaches the canvas
 - empty-background drag and wheel/trackpad panning without blocking the iframe
-- Ctrl/Cmd + wheel or trackpad canvas zooming while normal wheel and two-finger trackpad scroll remain available to Preview
-- keyboard zoom, reset, fit, center, and arrow-key pan when the canvas surface has focus
+- Ctrl/Cmd + wheel or Chromium-emulated pinch canvas zooming while normal wheel and two-finger trackpad scroll remain available to Preview
+- focused-canvas keyboard zoom, reset, fit, center, and arrow-key pan
 - Fit, Center, and Reset recovery controls
 - visible zoom percentage
-- temporary Space/Ctrl/Cmd/pan capture states so Preview returns to normal interaction outside canvas gestures
+- temporary Space/Ctrl/Cmd/pan/zoom capture states so Preview returns to normal interaction outside canvas gestures
 - external capture layer that defaults to `pointer-events: none`
 - in-memory viewport state persistence for the current renderer session
 - non-visual `validate:design-canvas` script

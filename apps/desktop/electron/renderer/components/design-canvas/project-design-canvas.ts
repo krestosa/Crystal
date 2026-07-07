@@ -10,12 +10,23 @@ import {
   createProjectDesignCanvasViewportState,
   finishProjectDesignCanvasPanning,
   normalizeProjectDesignCanvasWheelDelta,
+  type ProjectDesignCanvasPoint,
   type ProjectDesignCanvasViewportState
 } from "../../../../../../packages/core/project/design-canvas/project-design-canvas-viewport";
 import { measureProjectDesignCanvasBounds, type ProjectDesignCanvasElements, type ProjectDesignCanvasInteractionTarget, type ProjectDesignCanvasPanSession, type ProjectDesignCanvasPanSource } from "./project-design-canvas.types";
 
 const PROJECT_DESIGN_CANVAS_KEYBOARD_ZOOM_STEP = 1.2;
 const PROJECT_DESIGN_CANVAS_KEYBOARD_PAN_STEP = 64;
+const PROJECT_DESIGN_CANVAS_ZOOM_CAPTURE_RELEASE_DELAY = 180;
+
+type ProjectDesignCanvasWheelGestureKind = "zoom-canvas" | "pan-canvas" | "pass-through-iframe-scroll" | "ignore";
+
+interface ProjectDesignCanvasWheelGesture {
+  readonly kind: ProjectDesignCanvasWheelGestureKind;
+  readonly delta: ProjectDesignCanvasPoint;
+  readonly zoomDelta: number;
+  readonly focusPoint: ProjectDesignCanvasPoint;
+}
 
 let activeProjectDesignCanvasCleanup: (() => void) | null = null;
 let sessionViewportState: ProjectDesignCanvasViewportState | null = null;
@@ -31,6 +42,8 @@ export function initializeProjectDesignCanvas(): void {
   let viewportState = sessionViewportState ?? createProjectDesignCanvasViewportState();
   let spacePressed = false;
   let modifierPressed = false;
+  let zoomGestureActive = false;
+  let zoomCaptureReleaseTimer: ReturnType<typeof window.setTimeout> | null = null;
   let panSession: ProjectDesignCanvasPanSession | null = null;
 
   const render = (): void => {
@@ -39,13 +52,41 @@ export function initializeProjectDesignCanvas(): void {
     elements.zoomDisplay.textContent = `${Math.round(viewportState.zoom * 100)}%`;
     elements.root.classList.toggle("crystal-project-design-canvas--space-active", spacePressed);
     elements.root.classList.toggle("crystal-project-design-canvas--modifier-active", modifierPressed);
+    elements.root.classList.toggle("crystal-project-design-canvas--zoom-active", zoomGestureActive);
     elements.root.classList.toggle("crystal-project-design-canvas--panning", viewportState.isPanning);
-    elements.root.classList.toggle("crystal-project-design-canvas--capture-active", spacePressed || modifierPressed || viewportState.isPanning);
+    elements.root.classList.toggle("crystal-project-design-canvas--capture-active", spacePressed || modifierPressed || zoomGestureActive || viewportState.isPanning);
   };
 
   const setViewportState = (nextState: ProjectDesignCanvasViewportState): void => {
     viewportState = nextState;
     render();
+  };
+
+  const clearZoomCaptureReleaseTimer = (): void => {
+    if (zoomCaptureReleaseTimer === null) return;
+    window.clearTimeout(zoomCaptureReleaseTimer);
+    zoomCaptureReleaseTimer = null;
+  };
+
+  const releaseZoomCaptureSoon = (): void => {
+    clearZoomCaptureReleaseTimer();
+    if (modifierPressed) return;
+    zoomCaptureReleaseTimer = window.setTimeout(() => {
+      zoomCaptureReleaseTimer = null;
+      zoomGestureActive = false;
+      render();
+    }, PROJECT_DESIGN_CANVAS_ZOOM_CAPTURE_RELEASE_DELAY);
+  };
+
+  const activateZoomCapture = (): void => {
+    zoomGestureActive = true;
+    render();
+    releaseZoomCaptureSoon();
+  };
+
+  const clearZoomCapture = (): void => {
+    clearZoomCaptureReleaseTimer();
+    zoomGestureActive = false;
   };
 
   const fitCanvas = (): void => setViewportState(calculateProjectDesignCanvasFitViewport(measureProjectDesignCanvasBounds(elements), Date.now()));
@@ -61,27 +102,35 @@ export function initializeProjectDesignCanvas(): void {
   };
 
   const handleWheel = (event: WheelEvent): void => {
-    const wheelDelta = normalizeProjectDesignCanvasWheelDelta({ deltaX: event.deltaX, deltaY: event.deltaY, deltaMode: event.deltaMode });
-    if (event.ctrlKey || event.metaKey) {
-      event.preventDefault();
-      const bounds = measureProjectDesignCanvasBounds(elements);
-      const surfaceRect = elements.surface.getBoundingClientRect();
-      const focusPoint = { x: event.clientX - surfaceRect.left, y: event.clientY - surfaceRect.top };
-      const zoomDelta = wheelDelta.y !== 0 ? wheelDelta.y : wheelDelta.x;
-      const nextZoom = calculateProjectDesignCanvasWheelZoom(viewportState.zoom, zoomDelta);
-      setViewportState(calculateProjectDesignCanvasZoomAtPoint(viewportState, bounds, focusPoint, nextZoom, Date.now()));
+    const gesture = classifyCanvasWheelGesture(event, elements, spacePressed, modifierPressed);
+
+    if (gesture.kind === "ignore") return;
+
+    if (gesture.kind === "pass-through-iframe-scroll") {
+      event.stopPropagation();
       return;
     }
 
-    if (!shouldPanCanvasFromWheel(event, elements, spacePressed)) return;
+    if (gesture.kind === "zoom-canvas") {
+      event.preventDefault();
+      event.stopPropagation();
+      activateZoomCapture();
+      const bounds = measureProjectDesignCanvasBounds(elements);
+      const nextZoom = calculateProjectDesignCanvasWheelZoom(viewportState.zoom, gesture.zoomDelta);
+      setViewportState(calculateProjectDesignCanvasZoomAtPoint(viewportState, bounds, gesture.focusPoint, nextZoom, Date.now()));
+      return;
+    }
+
     event.preventDefault();
-    panCanvasBy(-wheelDelta.x, -wheelDelta.y, "trackpad");
+    event.stopPropagation();
+    panCanvasBy(-gesture.delta.x, -gesture.delta.y, "trackpad");
   };
 
   const handlePointerDown = (event: PointerEvent): void => {
     const panSource = getProjectDesignCanvasPointerPanSource(event, elements, spacePressed, modifierPressed);
     if (!panSource) return;
     event.preventDefault();
+    event.stopPropagation();
     elements.surface.focus({ preventScroll: true });
     panSession = { pointerId: event.pointerId, lastClientX: event.clientX, lastClientY: event.clientY, source: panSource };
     elements.surface.setPointerCapture(event.pointerId);
@@ -91,6 +140,7 @@ export function initializeProjectDesignCanvas(): void {
   const handlePointerMove = (event: PointerEvent): void => {
     if (!panSession || panSession.pointerId !== event.pointerId) return;
     event.preventDefault();
+    event.stopPropagation();
     const deltaX = event.clientX - panSession.lastClientX;
     const deltaY = event.clientY - panSession.lastClientY;
     panSession = { pointerId: event.pointerId, lastClientX: event.clientX, lastClientY: event.clientY, source: panSession.source };
@@ -99,6 +149,7 @@ export function initializeProjectDesignCanvas(): void {
 
   const finishPanning = (event: PointerEvent): void => {
     if (!panSession || panSession.pointerId !== event.pointerId) return;
+    event.stopPropagation();
     panSession = null;
     if (elements.surface.hasPointerCapture(event.pointerId)) elements.surface.releasePointerCapture(event.pointerId);
     setViewportState(finishProjectDesignCanvasPanning(viewportState, measureProjectDesignCanvasBounds(elements), Date.now()));
@@ -111,12 +162,13 @@ export function initializeProjectDesignCanvas(): void {
   };
 
   const handleAuxClick = (event: MouseEvent): void => {
-    if (event.button === 1 && shouldUseCanvasBackgroundTarget(event.target, elements)) event.preventDefault();
+    if (event.button === 1 && shouldUseCanvasNavigationTarget(event.target, elements)) event.preventDefault();
   };
 
   const handleKeyDown = (event: KeyboardEvent): void => {
     if ((event.key === "Control" || event.key === "Meta") && !isCrystalUiEditingTarget(event.target)) {
       modifierPressed = true;
+      clearZoomCaptureReleaseTimer();
       render();
     }
     if (handleShortcutKeyDown(event)) return;
@@ -186,6 +238,7 @@ export function initializeProjectDesignCanvas(): void {
   const handleKeyUp = (event: KeyboardEvent): void => {
     if (event.key === "Control" || event.key === "Meta") {
       modifierPressed = false;
+      releaseZoomCaptureSoon();
       render();
     }
     if (event.code !== "Space") return;
@@ -197,6 +250,7 @@ export function initializeProjectDesignCanvas(): void {
   const handleWindowBlur = (): void => {
     spacePressed = false;
     modifierPressed = false;
+    clearZoomCapture();
     if (panSession) cancelPanning();
     else render();
   };
@@ -230,6 +284,7 @@ export function initializeProjectDesignCanvas(): void {
   cleanup.push(() => document.removeEventListener("keyup", handleKeyUp));
   cleanup.push(() => window.removeEventListener("blur", handleWindowBlur));
   cleanup.push(() => window.removeEventListener("resize", handleWindowResize));
+  cleanup.push(clearZoomCaptureReleaseTimer);
 
   activeProjectDesignCanvasCleanup = () => {
     for (const destroy of cleanup.splice(0).reverse()) destroy();
@@ -260,19 +315,41 @@ function queryDesignCanvasElement<TElement extends HTMLElement>(root: HTMLElemen
   return element;
 }
 
+function classifyCanvasWheelGesture(event: WheelEvent, elements: ProjectDesignCanvasElements, spacePressed: boolean, modifierPressed: boolean): ProjectDesignCanvasWheelGesture {
+  const delta = normalizeProjectDesignCanvasWheelDelta({ deltaX: event.deltaX, deltaY: event.deltaY, deltaMode: event.deltaMode });
+  const focusPoint = getProjectDesignCanvasPointerFocusPoint(event, elements);
+  const zoomDelta = delta.y !== 0 ? delta.y : delta.x;
+  if (delta.x === 0 && delta.y === 0) return { kind: "ignore", delta, zoomDelta, focusPoint };
+  if (isCanvasZoomGesture(event, modifierPressed)) return { kind: "zoom-canvas", delta, zoomDelta, focusPoint };
+  if (spacePressed || shouldUseCanvasNavigationTarget(event.target, elements)) return { kind: "pan-canvas", delta, zoomDelta, focusPoint };
+  if (isCanvasIframeScrollTarget(event.target, elements)) return { kind: "pass-through-iframe-scroll", delta, zoomDelta, focusPoint };
+  return { kind: "ignore", delta, zoomDelta, focusPoint };
+}
+
+function isCanvasZoomGesture(event: WheelEvent, modifierPressed: boolean): boolean {
+  return event.ctrlKey || event.metaKey || modifierPressed;
+}
+
+function getProjectDesignCanvasPointerFocusPoint(event: MouseEvent, elements: ProjectDesignCanvasElements): ProjectDesignCanvasPoint {
+  const surfaceRect = elements.surface.getBoundingClientRect();
+  return { x: event.clientX - surfaceRect.left, y: event.clientY - surfaceRect.top };
+}
+
 function getProjectDesignCanvasPointerPanSource(event: PointerEvent, elements: ProjectDesignCanvasElements, spacePressed: boolean, modifierPressed: boolean): ProjectDesignCanvasPanSource | null {
   if (spacePressed && event.button === 0) return "space";
-  if (event.button === 1 && shouldUseCanvasBackgroundTarget(event.target, elements)) return "middle";
-  if (!modifierPressed && event.button === 0 && shouldUseCanvasBackgroundTarget(event.target, elements)) return "background";
+  if (event.button === 1 && shouldUseCanvasNavigationTarget(event.target, elements)) return "middle";
+  if (!modifierPressed && event.button === 0 && shouldUseCanvasNavigationTarget(event.target, elements)) return "background";
   return null;
 }
 
-function shouldPanCanvasFromWheel(event: WheelEvent, elements: ProjectDesignCanvasElements, spacePressed: boolean): boolean {
-  return spacePressed || shouldUseCanvasBackgroundTarget(event.target, elements);
+function shouldUseCanvasNavigationTarget(target: ProjectDesignCanvasInteractionTarget, elements: ProjectDesignCanvasElements): boolean {
+  if (target === elements.surface || target === elements.captureLayer) return true;
+  return target instanceof Element && elements.surface.contains(target) && !isCanvasIframeScrollTarget(target, elements);
 }
 
-function shouldUseCanvasBackgroundTarget(target: ProjectDesignCanvasInteractionTarget, elements: ProjectDesignCanvasElements): boolean {
-  return target === elements.surface || target === elements.captureLayer;
+function isCanvasIframeScrollTarget(target: ProjectDesignCanvasInteractionTarget, elements: ProjectDesignCanvasElements): boolean {
+  if (!(target instanceof Element) || !elements.surface.contains(target)) return false;
+  return !!target.closest(".crystal-project-preview-panel__frame, .crystal-project-preview-panel__frame-wrap");
 }
 
 function isDesignCanvasShortcutTarget(elements: ProjectDesignCanvasElements): boolean {
