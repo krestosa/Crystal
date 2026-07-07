@@ -43,7 +43,7 @@ export function initializeProjectDesignCanvas(): void {
   let spacePressed = false;
   let modifierPressed = false;
   let zoomGestureActive = false;
-  let zoomCaptureReleaseTimer: ReturnType<typeof window.setTimeout> | null = null;
+  let zoomCaptureReleaseTimer: number | null = null;
   let panSession: ProjectDesignCanvasPanSession | null = null;
 
   const render = (): void => {
