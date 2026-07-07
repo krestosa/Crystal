@@ -1,8 +1,13 @@
 .crystal-app-shell {
-  --crystal-window-controls-width: 152px;
+  --crystal-app-chrome-height: 32px;
+  --crystal-window-controls-fallback-width: 178px;
+  --crystal-window-controls-width: max(
+    var(--crystal-window-controls-fallback-width),
+    calc(100vw - env(titlebar-area-width, calc(100vw - var(--crystal-window-controls-fallback-width))) - env(titlebar-area-x, 0px))
+  );
 
   display: grid;
-  grid-template-rows: 28px minmax(0, 1fr) 20px;
+  grid-template-rows: var(--crystal-app-chrome-height) minmax(0, 1fr) 20px;
   width: 100vw;
   height: 100vh;
   overflow: hidden;
@@ -17,15 +22,31 @@
   align-items: center;
   gap: 8px;
   min-width: 0;
+  min-height: var(--crystal-app-chrome-height);
   padding: 0 var(--crystal-window-controls-width) 0 8px;
+  padding-right: calc(var(--crystal-window-controls-width) + 12px);
+  padding-left: 10px;
   background: var(--crystal-color-surface-strong);
   -webkit-app-region: drag;
   user-select: none;
 }
 
+.crystal-app-shell__chrome::before {
+  position: absolute;
+  z-index: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: var(--crystal-window-controls-width);
+  background: var(--crystal-color-surface-strong);
+  content: "";
+  pointer-events: none;
+}
+
 .crystal-app-shell__chrome::after {
   position: absolute;
-  right: var(--crystal-window-controls-width);
+  z-index: 0;
+  right: calc(var(--crystal-window-controls-width) + 1px);
   bottom: 0;
   left: 0;
   height: 1px;
@@ -35,6 +56,8 @@
 }
 
 .crystal-app-shell__chrome-identity {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -66,11 +89,13 @@
   display: flex;
   align-items: center;
   gap: 4px;
+  min-width: 0;
   -webkit-app-region: no-drag;
 }
 
 .crystal-app-shell__diagnostics-button {
   display: grid;
+  flex: 0 0 auto;
   place-items: center;
   width: 22px;
   height: 22px;
@@ -155,4 +180,10 @@
 .crystal-app-shell__body--resizing-left {
   cursor: col-resize;
   user-select: none;
+}
+
+@media (max-width: 720px) {
+  .crystal-app-shell__chrome-meta {
+    display: none;
+  }
 }
