@@ -4,9 +4,9 @@
   justify-content: space-between;
   min-height: 20px;
   padding: 0 8px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.42);
-  background: #05070b;
+  border-top: 1px solid var(--crystal-color-border-soft);
+  color: var(--crystal-color-subtle);
+  background: var(--crystal-color-surface-strong);
   font-size: 10px;
   letter-spacing: 0.02em;
 }

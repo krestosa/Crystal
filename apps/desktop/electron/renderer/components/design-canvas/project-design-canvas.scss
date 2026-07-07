@@ -14,8 +14,8 @@
   gap: 8px;
   min-height: 28px;
   padding: 4px 6px;
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  background: #090c13;
+  border: 1px solid var(--crystal-color-border-soft);
+  background: var(--crystal-color-surface);
 }
 
 .crystal-project-design-canvas__identity {
@@ -27,7 +27,7 @@
 
 .crystal-project-design-canvas__title {
   margin: 0;
-  color: rgba(255, 255, 255, 0.82);
+  color: rgba(247, 242, 236, 0.84);
   font-size: 10px;
   letter-spacing: 0.12em;
   line-height: 1;
@@ -37,7 +37,7 @@
 .crystal-project-design-canvas__hint {
   overflow: hidden;
   margin: 0;
-  color: rgba(255, 255, 255, 0.36);
+  color: rgba(247, 242, 236, 0.38);
   font-size: 10px;
   line-height: 1;
   text-overflow: ellipsis;
@@ -53,21 +53,33 @@
 .crystal-project-design-canvas__button {
   min-height: 22px;
   padding: 3px 6px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.045);
-  color: rgba(255, 255, 255, 0.72);
+  border: 1px solid var(--crystal-color-border-soft);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(247, 242, 236, 0.74);
   font: inherit;
   font-size: 10px;
   cursor: pointer;
 }
 
+.crystal-project-design-canvas__button:hover,
+.crystal-project-design-canvas__button:focus-visible {
+  border-color: var(--crystal-color-accent-border);
+  background: rgba(249, 115, 22, 0.1);
+  color: var(--crystal-color-text);
+}
+
+.crystal-project-design-canvas__button:focus-visible {
+  outline: 2px solid var(--crystal-focus-ring);
+  outline-offset: 1px;
+}
+
 .crystal-project-design-canvas__zoom {
   min-width: 44px;
   padding: 4px 5px;
-  background: rgba(0, 0, 0, 0.28);
+  background: rgba(0, 0, 0, 0.34);
   text-align: center;
   font-size: 10px;
-  color: rgba(255, 255, 255, 0.58);
+  color: rgba(247, 242, 236, 0.58);
 }
 
 .crystal-project-design-canvas__surface {
@@ -78,12 +90,12 @@
   overscroll-behavior: contain;
   overscroll-behavior-x: contain;
   overscroll-behavior-y: contain;
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  border: 1px solid var(--crystal-color-border-soft);
   background:
-    radial-gradient(circle at 50% 34%, rgba(124, 58, 237, 0.12), transparent 24%),
-    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
-    #090d14;
+    radial-gradient(circle at 50% 34%, rgba(249, 115, 22, 0.1), transparent 24%),
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    #0a0806;
   background-size: auto, 28px 28px, 28px 28px, auto;
   contain: paint;
   outline: none;
@@ -91,7 +103,7 @@
 }
 
 .crystal-project-design-canvas__surface:focus-visible {
-  box-shadow: 0 0 0 2px rgba(147, 197, 253, 0.28);
+  box-shadow: 0 0 0 2px var(--crystal-focus-ring);
 }
 
 .crystal-project-design-canvas__start {
@@ -105,8 +117,8 @@
   width: min(380px, calc(100% - 48px));
   padding: 13px;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(8, 12, 19, 0.84);
-  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.28);
+  background: rgba(10, 8, 6, 0.86);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.34);
   transform: translate(-50%, -50%);
   backdrop-filter: blur(12px);
 }
@@ -120,9 +132,9 @@
   place-items: center;
   width: 30px;
   height: 30px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.045);
-  color: rgba(255, 255, 255, 0.74);
+  border: 1px solid var(--crystal-color-border-soft);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(247, 242, 236, 0.76);
   font-size: 15px;
 }
 
@@ -138,7 +150,7 @@
 
 .crystal-project-design-canvas__start-text {
   margin-top: 3px;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(247, 242, 236, 0.52);
   font-size: 11px;
   line-height: 1.35;
 }
@@ -156,16 +168,22 @@
   min-height: 52px;
   padding: 9px 10px;
   border: 1px solid rgba(255, 255, 255, 0.11);
-  background: rgba(255, 255, 255, 0.055);
-  color: rgba(255, 255, 255, 0.86);
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(247, 242, 236, 0.88);
   font: inherit;
   text-align: left;
   cursor: pointer;
 }
 
-.crystal-project-design-canvas__start-action:hover {
-  border-color: rgba(147, 197, 253, 0.32);
-  background: rgba(255, 255, 255, 0.085);
+.crystal-project-design-canvas__start-action:hover,
+.crystal-project-design-canvas__start-action:focus-visible {
+  border-color: var(--crystal-color-accent-border);
+  background: rgba(249, 115, 22, 0.12);
+}
+
+.crystal-project-design-canvas__start-action:focus-visible {
+  outline: 2px solid var(--crystal-focus-ring);
+  outline-offset: 1px;
 }
 
 .crystal-project-design-canvas__start-action span {
@@ -174,7 +192,7 @@
 }
 
 .crystal-project-design-canvas__start-action small {
-  color: rgba(255, 255, 255, 0.42);
+  color: rgba(247, 242, 236, 0.44);
   font-size: 10px;
 }
 
@@ -200,9 +218,9 @@
 .crystal-project-design-canvas__page-frame {
   width: 1280px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   background: #ffffff;
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.42);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.48);
 }
 
 .crystal-project-design-canvas__page-header {
