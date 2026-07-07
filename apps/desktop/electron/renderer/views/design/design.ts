@@ -6,13 +6,23 @@ const CRYSTAL_RIGHT_SIDEBAR_MAX_WIDTH = 420;
 const CRYSTAL_MIN_CANVAS_WIDTH = 560;
 const CRYSTAL_DIAGNOSTICS_PANEL_MIN_WIDTH = 360;
 const CRYSTAL_DIAGNOSTICS_PANEL_MIN_HEIGHT = 220;
-const CRYSTAL_DIAGNOSTICS_PANEL_MAX_WIDTH = 920;
-const CRYSTAL_DIAGNOSTICS_PANEL_MAX_HEIGHT = 520;
+const CRYSTAL_DIAGNOSTICS_PANEL_MAX_WIDTH = 1040;
+const CRYSTAL_DIAGNOSTICS_PANEL_MAX_HEIGHT = 640;
 const CRYSTAL_DIAGNOSTICS_PANEL_MARGIN = 12;
 const CRYSTAL_DIAGNOSTICS_PINNED_BOTTOM = 48;
 const CRYSTAL_RESIZE_KEYBOARD_STEP = 12;
 
-type CrystalWorkspaceInteractionKind = "right-resize" | "diagnostics-drag" | "diagnostics-resize-top-left" | "diagnostics-resize-top-right" | "diagnostics-resize-bottom-left" | "diagnostics-resize-bottom-right";
+type CrystalWorkspaceInteractionKind =
+  | "right-resize"
+  | "diagnostics-drag"
+  | "diagnostics-resize-top-left"
+  | "diagnostics-resize-top"
+  | "diagnostics-resize-top-right"
+  | "diagnostics-resize-right"
+  | "diagnostics-resize-bottom-right"
+  | "diagnostics-resize-bottom"
+  | "diagnostics-resize-bottom-left"
+  | "diagnostics-resize-left";
 
 interface CrystalWorkspaceInteractionSession {
   readonly pointerId: number;
@@ -23,6 +33,11 @@ interface CrystalWorkspaceInteractionSession {
   readonly startHeight: number;
   readonly startLeft: number;
   readonly startTop: number;
+}
+
+interface CrystalDiagnosticsResizeHandle {
+  readonly element: HTMLElement;
+  readonly kind: CrystalWorkspaceInteractionKind;
 }
 
 let activeWorkspaceResizeCleanup: (() => void) | null = null;
@@ -59,13 +74,26 @@ function initializeWorkspaceResize(): void {
   const diagnosticsPopover = document.querySelector<HTMLElement>("[data-crystal-diagnostics-popover]");
   const diagnosticsDragHandle = document.querySelector<HTMLElement>("[data-crystal-diagnostics-drag-handle]");
   const diagnosticsResizeTopLeft = document.querySelector<HTMLElement>("[data-crystal-diagnostics-resize-top-left]");
+  const diagnosticsResizeTop = document.querySelector<HTMLElement>("[data-crystal-diagnostics-resize-top]");
   const diagnosticsResizeTopRight = document.querySelector<HTMLElement>("[data-crystal-diagnostics-resize-top-right]");
-  const diagnosticsResizeBottomLeft = document.querySelector<HTMLElement>("[data-crystal-diagnostics-resize-bottom-left]");
+  const diagnosticsResizeRight = document.querySelector<HTMLElement>("[data-crystal-diagnostics-resize-right]");
   const diagnosticsResizeBottomRight = document.querySelector<HTMLElement>("[data-crystal-diagnostics-resize-bottom-right]");
-  if (!workspace || !rightResizer || !diagnosticsToggle || !diagnosticsClose || !diagnosticsPin || !diagnosticsPopover || !diagnosticsDragHandle || !diagnosticsResizeTopLeft || !diagnosticsResizeTopRight || !diagnosticsResizeBottomLeft || !diagnosticsResizeBottomRight) return;
+  const diagnosticsResizeBottom = document.querySelector<HTMLElement>("[data-crystal-diagnostics-resize-bottom]");
+  const diagnosticsResizeBottomLeft = document.querySelector<HTMLElement>("[data-crystal-diagnostics-resize-bottom-left]");
+  const diagnosticsResizeLeft = document.querySelector<HTMLElement>("[data-crystal-diagnostics-resize-left]");
+  if (!workspace || !rightResizer || !diagnosticsToggle || !diagnosticsClose || !diagnosticsPin || !diagnosticsPopover || !diagnosticsDragHandle || !diagnosticsResizeTopLeft || !diagnosticsResizeTop || !diagnosticsResizeTopRight || !diagnosticsResizeRight || !diagnosticsResizeBottomRight || !diagnosticsResizeBottom || !diagnosticsResizeBottomLeft || !diagnosticsResizeLeft) return;
 
   const cleanup: Array<() => void> = [];
-  const diagnosticsResizeHandles = [diagnosticsResizeTopLeft, diagnosticsResizeTopRight, diagnosticsResizeBottomLeft, diagnosticsResizeBottomRight];
+  const diagnosticsResizeHandles: CrystalDiagnosticsResizeHandle[] = [
+    { element: diagnosticsResizeTopLeft, kind: "diagnostics-resize-top-left" },
+    { element: diagnosticsResizeTop, kind: "diagnostics-resize-top" },
+    { element: diagnosticsResizeTopRight, kind: "diagnostics-resize-top-right" },
+    { element: diagnosticsResizeRight, kind: "diagnostics-resize-right" },
+    { element: diagnosticsResizeBottomRight, kind: "diagnostics-resize-bottom-right" },
+    { element: diagnosticsResizeBottom, kind: "diagnostics-resize-bottom" },
+    { element: diagnosticsResizeBottomLeft, kind: "diagnostics-resize-bottom-left" },
+    { element: diagnosticsResizeLeft, kind: "diagnostics-resize-left" }
+  ];
   let rightWidth = readPixelCustomProperty(workspace, "--crystal-right-sidebar-width", 284);
   let diagnosticsOpen = !diagnosticsPopover.hidden;
   let diagnosticsPinned = diagnosticsPopover.getAttribute("data-crystal-diagnostics-pinned") !== "false";
@@ -76,8 +104,8 @@ function initializeWorkspaceResize(): void {
   let interactionSession: CrystalWorkspaceInteractionSession | null = null;
 
   const getMaxRightWidth = (): number => Math.max(CRYSTAL_RIGHT_SIDEBAR_MIN_WIDTH, Math.min(CRYSTAL_RIGHT_SIDEBAR_MAX_WIDTH, workspace.getBoundingClientRect().width - CRYSTAL_MIN_CANVAS_WIDTH));
-  const getMaxDiagnosticsWidth = (): number => Math.max(240, Math.min(CRYSTAL_DIAGNOSTICS_PANEL_MAX_WIDTH, workspace.getBoundingClientRect().width - CRYSTAL_DIAGNOSTICS_PANEL_MARGIN * 2));
-  const getMaxDiagnosticsHeight = (): number => Math.max(180, Math.min(CRYSTAL_DIAGNOSTICS_PANEL_MAX_HEIGHT, workspace.getBoundingClientRect().height - CRYSTAL_DIAGNOSTICS_PANEL_MARGIN - CRYSTAL_DIAGNOSTICS_PINNED_BOTTOM));
+  const getMaxDiagnosticsWidth = (): number => Math.max(240, Math.min(CRYSTAL_DIAGNOSTICS_PANEL_MAX_WIDTH, window.innerWidth - CRYSTAL_DIAGNOSTICS_PANEL_MARGIN * 2));
+  const getMaxDiagnosticsHeight = (): number => Math.max(180, Math.min(CRYSTAL_DIAGNOSTICS_PANEL_MAX_HEIGHT, window.innerHeight - CRYSTAL_DIAGNOSTICS_PANEL_MARGIN * 2));
 
   const setRightWidth = (nextWidth: number): void => {
     rightWidth = clampResizeValue(nextWidth, CRYSTAL_RIGHT_SIDEBAR_MIN_WIDTH, getMaxRightWidth());
@@ -86,9 +114,8 @@ function initializeWorkspaceResize(): void {
   };
 
   const setDiagnosticsPosition = (nextLeft: number, nextTop: number): void => {
-    const workspaceRect = workspace.getBoundingClientRect();
-    const maxLeft = Math.max(CRYSTAL_DIAGNOSTICS_PANEL_MARGIN, workspaceRect.width - diagnosticsWidth - CRYSTAL_DIAGNOSTICS_PANEL_MARGIN);
-    const maxTop = Math.max(CRYSTAL_DIAGNOSTICS_PANEL_MARGIN, workspaceRect.height - diagnosticsHeight - CRYSTAL_DIAGNOSTICS_PANEL_MARGIN);
+    const maxLeft = Math.max(CRYSTAL_DIAGNOSTICS_PANEL_MARGIN, window.innerWidth - diagnosticsWidth - CRYSTAL_DIAGNOSTICS_PANEL_MARGIN);
+    const maxTop = Math.max(CRYSTAL_DIAGNOSTICS_PANEL_MARGIN, window.innerHeight - diagnosticsHeight - CRYSTAL_DIAGNOSTICS_PANEL_MARGIN);
     diagnosticsLeft = clampResizeValue(nextLeft, CRYSTAL_DIAGNOSTICS_PANEL_MARGIN, maxLeft);
     diagnosticsTop = clampResizeValue(nextTop, CRYSTAL_DIAGNOSTICS_PANEL_MARGIN, maxTop);
     workspace.style.setProperty("--crystal-diagnostics-panel-left", `${Math.round(diagnosticsLeft)}px`);
@@ -100,15 +127,14 @@ function initializeWorkspaceResize(): void {
     diagnosticsHeight = clampResizeValue(nextHeight, CRYSTAL_DIAGNOSTICS_PANEL_MIN_HEIGHT, getMaxDiagnosticsHeight());
     workspace.style.setProperty("--crystal-diagnostics-panel-width", `${Math.round(diagnosticsWidth)}px`);
     workspace.style.setProperty("--crystal-diagnostics-panel-height", `${Math.round(diagnosticsHeight)}px`);
-    for (const handle of diagnosticsResizeHandles) syncSeparatorValue(handle, CRYSTAL_DIAGNOSTICS_PANEL_MIN_WIDTH, getMaxDiagnosticsWidth(), diagnosticsWidth);
+    for (const handle of diagnosticsResizeHandles) syncSeparatorValue(handle.element, CRYSTAL_DIAGNOSTICS_PANEL_MIN_WIDTH, getMaxDiagnosticsWidth(), diagnosticsWidth);
     if (!diagnosticsPinned) setDiagnosticsPosition(nextLeft, nextTop);
   };
 
   const captureCurrentDiagnosticsPosition = (): void => {
     if (diagnosticsPopover.hidden) return;
-    const workspaceRect = workspace.getBoundingClientRect();
     const popoverRect = diagnosticsPopover.getBoundingClientRect();
-    setDiagnosticsPosition(popoverRect.left - workspaceRect.left, popoverRect.top - workspaceRect.top);
+    setDiagnosticsPosition(popoverRect.left, popoverRect.top);
   };
 
   const setDiagnosticsPinned = (isPinned: boolean): void => {
@@ -145,19 +171,15 @@ function initializeWorkspaceResize(): void {
       startLeft: diagnosticsLeft,
       startTop: diagnosticsTop
     };
-    const handle = getInteractionHandle(kind, rightResizer, diagnosticsDragHandle, diagnosticsResizeTopLeft, diagnosticsResizeTopRight, diagnosticsResizeBottomLeft, diagnosticsResizeBottomRight);
+    const handle = getInteractionHandle(kind, rightResizer, diagnosticsDragHandle, diagnosticsResizeHandles);
     handle.setPointerCapture(event.pointerId);
     workspace.classList.toggle("crystal-design-view__workspace--resizing-right", kind === "right-resize");
-    workspace.classList.toggle("crystal-design-view__workspace--resizing-diagnostics", kind.startsWith("diagnostics-resize"));
+    workspace.classList.toggle("crystal-design-view__workspace--resizing-diagnostics", isDiagnosticsResizeKind(kind));
     workspace.classList.toggle("crystal-design-view__workspace--dragging-diagnostics", kind === "diagnostics-drag");
   };
 
   const handleRightPointerDown = (event: PointerEvent): void => startInteraction(event, "right-resize");
   const handleDiagnosticsDragPointerDown = (event: PointerEvent): void => startInteraction(event, "diagnostics-drag");
-  const handleDiagnosticsTopLeftPointerDown = (event: PointerEvent): void => startInteraction(event, "diagnostics-resize-top-left");
-  const handleDiagnosticsTopRightPointerDown = (event: PointerEvent): void => startInteraction(event, "diagnostics-resize-top-right");
-  const handleDiagnosticsBottomLeftPointerDown = (event: PointerEvent): void => startInteraction(event, "diagnostics-resize-bottom-left");
-  const handleDiagnosticsBottomRightPointerDown = (event: PointerEvent): void => startInteraction(event, "diagnostics-resize-bottom-right");
 
   const handlePointerMove = (event: PointerEvent): void => {
     if (!interactionSession || interactionSession.pointerId !== event.pointerId) return;
@@ -173,10 +195,12 @@ function initializeWorkspaceResize(): void {
       setDiagnosticsPosition(interactionSession.startLeft + deltaX, interactionSession.startTop + deltaY);
       return;
     }
-    const usesLeftEdge = interactionSession.kind === "diagnostics-resize-top-left" || interactionSession.kind === "diagnostics-resize-bottom-left";
-    const usesTopEdge = interactionSession.kind === "diagnostics-resize-top-left" || interactionSession.kind === "diagnostics-resize-top-right";
-    const nextWidth = interactionSession.startWidth + (usesLeftEdge ? -deltaX : deltaX);
-    const nextHeight = interactionSession.startHeight + (usesTopEdge ? -deltaY : deltaY);
+    const usesLeftEdge = interactionSession.kind === "diagnostics-resize-top-left" || interactionSession.kind === "diagnostics-resize-bottom-left" || interactionSession.kind === "diagnostics-resize-left";
+    const usesRightEdge = interactionSession.kind === "diagnostics-resize-top-right" || interactionSession.kind === "diagnostics-resize-bottom-right" || interactionSession.kind === "diagnostics-resize-right";
+    const usesTopEdge = interactionSession.kind === "diagnostics-resize-top-left" || interactionSession.kind === "diagnostics-resize-top-right" || interactionSession.kind === "diagnostics-resize-top";
+    const usesBottomEdge = interactionSession.kind === "diagnostics-resize-bottom-left" || interactionSession.kind === "diagnostics-resize-bottom-right" || interactionSession.kind === "diagnostics-resize-bottom";
+    const nextWidth = interactionSession.startWidth + (usesLeftEdge ? -deltaX : usesRightEdge ? deltaX : 0);
+    const nextHeight = interactionSession.startHeight + (usesTopEdge ? -deltaY : usesBottomEdge ? deltaY : 0);
     const clampedWidth = clampResizeValue(nextWidth, CRYSTAL_DIAGNOSTICS_PANEL_MIN_WIDTH, getMaxDiagnosticsWidth());
     const clampedHeight = clampResizeValue(nextHeight, CRYSTAL_DIAGNOSTICS_PANEL_MIN_HEIGHT, getMaxDiagnosticsHeight());
     const nextLeft = usesLeftEdge ? interactionSession.startLeft + interactionSession.startWidth - clampedWidth : interactionSession.startLeft;
@@ -187,7 +211,7 @@ function initializeWorkspaceResize(): void {
   const finishInteraction = (event: PointerEvent): void => {
     if (!interactionSession || interactionSession.pointerId !== event.pointerId) return;
     event.stopPropagation();
-    const handle = getInteractionHandle(interactionSession.kind, rightResizer, diagnosticsDragHandle, diagnosticsResizeTopLeft, diagnosticsResizeTopRight, diagnosticsResizeBottomLeft, diagnosticsResizeBottomRight);
+    const handle = getInteractionHandle(interactionSession.kind, rightResizer, diagnosticsDragHandle, diagnosticsResizeHandles);
     if (handle.hasPointerCapture(event.pointerId)) handle.releasePointerCapture(event.pointerId);
     interactionSession = null;
     workspace.classList.remove("crystal-design-view__workspace--resizing-right", "crystal-design-view__workspace--resizing-diagnostics", "crystal-design-view__workspace--dragging-diagnostics");
@@ -240,21 +264,22 @@ function initializeWorkspaceResize(): void {
   diagnosticsPin.addEventListener("click", handleTogglePinned);
   rightResizer.addEventListener("pointerdown", handleRightPointerDown);
   diagnosticsDragHandle.addEventListener("pointerdown", handleDiagnosticsDragPointerDown);
-  diagnosticsResizeTopLeft.addEventListener("pointerdown", handleDiagnosticsTopLeftPointerDown);
-  diagnosticsResizeTopRight.addEventListener("pointerdown", handleDiagnosticsTopRightPointerDown);
-  diagnosticsResizeBottomLeft.addEventListener("pointerdown", handleDiagnosticsBottomLeftPointerDown);
-  diagnosticsResizeBottomRight.addEventListener("pointerdown", handleDiagnosticsBottomRightPointerDown);
+  for (const resizeHandle of diagnosticsResizeHandles) {
+    const handlePointerDown = (event: PointerEvent): void => startInteraction(event, resizeHandle.kind);
+    resizeHandle.element.addEventListener("pointerdown", handlePointerDown);
+    cleanup.push(() => resizeHandle.element.removeEventListener("pointerdown", handlePointerDown));
+  }
   rightResizer.addEventListener("pointermove", handlePointerMove);
   diagnosticsDragHandle.addEventListener("pointermove", handlePointerMove);
-  for (const handle of diagnosticsResizeHandles) handle.addEventListener("pointermove", handlePointerMove);
+  for (const resizeHandle of diagnosticsResizeHandles) resizeHandle.element.addEventListener("pointermove", handlePointerMove);
   rightResizer.addEventListener("pointerup", finishInteraction);
   diagnosticsDragHandle.addEventListener("pointerup", finishInteraction);
-  for (const handle of diagnosticsResizeHandles) handle.addEventListener("pointerup", finishInteraction);
+  for (const resizeHandle of diagnosticsResizeHandles) resizeHandle.element.addEventListener("pointerup", finishInteraction);
   rightResizer.addEventListener("pointercancel", finishInteraction);
   diagnosticsDragHandle.addEventListener("pointercancel", finishInteraction);
-  for (const handle of diagnosticsResizeHandles) handle.addEventListener("pointercancel", finishInteraction);
+  for (const resizeHandle of diagnosticsResizeHandles) resizeHandle.element.addEventListener("pointercancel", finishInteraction);
   rightResizer.addEventListener("keydown", handleRightKeyDown);
-  for (const handle of diagnosticsResizeHandles) handle.addEventListener("keydown", handleDiagnosticsResizeKeyDown);
+  for (const resizeHandle of diagnosticsResizeHandles) resizeHandle.element.addEventListener("keydown", handleDiagnosticsResizeKeyDown);
   document.addEventListener("keydown", handleDocumentKeyDown);
   window.addEventListener("resize", handleWindowResize);
 
@@ -263,21 +288,17 @@ function initializeWorkspaceResize(): void {
   cleanup.push(() => diagnosticsPin.removeEventListener("click", handleTogglePinned));
   cleanup.push(() => rightResizer.removeEventListener("pointerdown", handleRightPointerDown));
   cleanup.push(() => diagnosticsDragHandle.removeEventListener("pointerdown", handleDiagnosticsDragPointerDown));
-  cleanup.push(() => diagnosticsResizeTopLeft.removeEventListener("pointerdown", handleDiagnosticsTopLeftPointerDown));
-  cleanup.push(() => diagnosticsResizeTopRight.removeEventListener("pointerdown", handleDiagnosticsTopRightPointerDown));
-  cleanup.push(() => diagnosticsResizeBottomLeft.removeEventListener("pointerdown", handleDiagnosticsBottomLeftPointerDown));
-  cleanup.push(() => diagnosticsResizeBottomRight.removeEventListener("pointerdown", handleDiagnosticsBottomRightPointerDown));
   cleanup.push(() => rightResizer.removeEventListener("pointermove", handlePointerMove));
   cleanup.push(() => diagnosticsDragHandle.removeEventListener("pointermove", handlePointerMove));
-  cleanup.push(() => { for (const handle of diagnosticsResizeHandles) handle.removeEventListener("pointermove", handlePointerMove); });
+  cleanup.push(() => { for (const resizeHandle of diagnosticsResizeHandles) resizeHandle.element.removeEventListener("pointermove", handlePointerMove); });
   cleanup.push(() => rightResizer.removeEventListener("pointerup", finishInteraction));
   cleanup.push(() => diagnosticsDragHandle.removeEventListener("pointerup", finishInteraction));
-  cleanup.push(() => { for (const handle of diagnosticsResizeHandles) handle.removeEventListener("pointerup", finishInteraction); });
+  cleanup.push(() => { for (const resizeHandle of diagnosticsResizeHandles) resizeHandle.element.removeEventListener("pointerup", finishInteraction); });
   cleanup.push(() => rightResizer.removeEventListener("pointercancel", finishInteraction));
   cleanup.push(() => diagnosticsDragHandle.removeEventListener("pointercancel", finishInteraction));
-  cleanup.push(() => { for (const handle of diagnosticsResizeHandles) handle.removeEventListener("pointercancel", finishInteraction); });
+  cleanup.push(() => { for (const resizeHandle of diagnosticsResizeHandles) resizeHandle.element.removeEventListener("pointercancel", finishInteraction); });
   cleanup.push(() => rightResizer.removeEventListener("keydown", handleRightKeyDown));
-  cleanup.push(() => { for (const handle of diagnosticsResizeHandles) handle.removeEventListener("keydown", handleDiagnosticsResizeKeyDown); });
+  cleanup.push(() => { for (const resizeHandle of diagnosticsResizeHandles) resizeHandle.element.removeEventListener("keydown", handleDiagnosticsResizeKeyDown); });
   cleanup.push(() => document.removeEventListener("keydown", handleDocumentKeyDown));
   cleanup.push(() => window.removeEventListener("resize", handleWindowResize));
 
@@ -291,17 +312,15 @@ function getInteractionHandle(
   kind: CrystalWorkspaceInteractionKind,
   rightResizer: HTMLElement,
   diagnosticsDragHandle: HTMLElement,
-  diagnosticsResizeTopLeft: HTMLElement,
-  diagnosticsResizeTopRight: HTMLElement,
-  diagnosticsResizeBottomLeft: HTMLElement,
-  diagnosticsResizeBottomRight: HTMLElement
+  diagnosticsResizeHandles: CrystalDiagnosticsResizeHandle[]
 ): HTMLElement {
   if (kind === "right-resize") return rightResizer;
   if (kind === "diagnostics-drag") return diagnosticsDragHandle;
-  if (kind === "diagnostics-resize-top-left") return diagnosticsResizeTopLeft;
-  if (kind === "diagnostics-resize-top-right") return diagnosticsResizeTopRight;
-  if (kind === "diagnostics-resize-bottom-left") return diagnosticsResizeBottomLeft;
-  return diagnosticsResizeBottomRight;
+  return diagnosticsResizeHandles.find((resizeHandle) => resizeHandle.kind === kind)?.element ?? diagnosticsResizeHandles[0].element;
+}
+
+function isDiagnosticsResizeKind(kind: CrystalWorkspaceInteractionKind): boolean {
+  return kind.startsWith("diagnostics-resize");
 }
 
 function isInteractiveDiagnosticsTarget(target: EventTarget | null): boolean {

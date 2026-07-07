@@ -74,8 +74,8 @@
 }
 
 .crystal-design-view__diagnostics-toggle {
-  position: absolute;
-  z-index: 23;
+  position: fixed;
+  z-index: 83;
   right: 12px;
   bottom: 12px;
   min-height: 30px;
@@ -108,17 +108,17 @@
 }
 
 .crystal-design-view__diagnostics-popover {
-  position: absolute;
-  z-index: 24;
+  position: fixed;
+  z-index: 82;
   right: 12px;
   bottom: 48px;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
-  width: min(var(--crystal-diagnostics-panel-width, 760px), calc(100% - 24px));
-  height: min(var(--crystal-diagnostics-panel-height, 360px), calc(100% - 64px));
-  min-width: min(360px, calc(100% - 24px));
-  min-height: min(220px, calc(100% - 64px));
-  overflow: hidden;
+  width: min(var(--crystal-diagnostics-panel-width, 760px), calc(100vw - 24px));
+  height: min(var(--crystal-diagnostics-panel-height, 360px), calc(100vh - 24px));
+  min-width: min(360px, calc(100vw - 24px));
+  min-height: min(220px, calc(100vh - 24px));
+  overflow: visible;
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: rgba(8, 6, 4, 0.96);
   box-shadow: 0 28px 90px rgba(0, 0, 0, 0.58);
@@ -138,8 +138,6 @@
 .crystal-design-view__diagnostics-resize-handle {
   position: absolute;
   z-index: 3;
-  width: 18px;
-  height: 18px;
   border: 0;
   background: transparent;
   outline: none;
@@ -150,28 +148,68 @@
   box-shadow: 0 0 0 2px var(--crystal-focus-ring);
 }
 
+.crystal-design-view__diagnostics-resize-handle--top-left,
+.crystal-design-view__diagnostics-resize-handle--top-right,
+.crystal-design-view__diagnostics-resize-handle--bottom-left,
+.crystal-design-view__diagnostics-resize-handle--bottom-right {
+  width: 14px;
+  height: 14px;
+}
+
+.crystal-design-view__diagnostics-resize-handle--top,
+.crystal-design-view__diagnostics-resize-handle--bottom {
+  right: 14px;
+  left: 14px;
+  height: 8px;
+  cursor: ns-resize;
+}
+
+.crystal-design-view__diagnostics-resize-handle--right,
+.crystal-design-view__diagnostics-resize-handle--left {
+  top: 14px;
+  bottom: 14px;
+  width: 8px;
+  cursor: ew-resize;
+}
+
 .crystal-design-view__diagnostics-resize-handle--top-left {
-  top: 0;
-  left: 0;
+  top: -4px;
+  left: -4px;
   cursor: nwse-resize;
+}
+
+.crystal-design-view__diagnostics-resize-handle--top {
+  top: -4px;
 }
 
 .crystal-design-view__diagnostics-resize-handle--top-right {
-  top: 0;
-  right: 0;
+  top: -4px;
+  right: -4px;
   cursor: nesw-resize;
 }
 
-.crystal-design-view__diagnostics-resize-handle--bottom-left {
-  bottom: 0;
-  left: 0;
-  cursor: nesw-resize;
+.crystal-design-view__diagnostics-resize-handle--right {
+  right: -4px;
 }
 
 .crystal-design-view__diagnostics-resize-handle--bottom-right {
-  right: 0;
-  bottom: 0;
+  right: -4px;
+  bottom: -4px;
   cursor: nwse-resize;
+}
+
+.crystal-design-view__diagnostics-resize-handle--bottom {
+  bottom: -4px;
+}
+
+.crystal-design-view__diagnostics-resize-handle--bottom-left {
+  bottom: -4px;
+  left: -4px;
+  cursor: nesw-resize;
+}
+
+.crystal-design-view__diagnostics-resize-handle--left {
+  left: -4px;
 }
 
 .crystal-design-view__diagnostics-header {
@@ -253,6 +291,8 @@
 }
 
 .crystal-design-view__diagnostics-body {
+  position: relative;
+  z-index: 1;
   min-width: 0;
   min-height: 0;
   overflow: auto;
