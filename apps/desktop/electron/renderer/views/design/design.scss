@@ -216,9 +216,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
   min-width: 0;
-  padding: 9px 10px;
+  padding: 7px 8px;
   border-bottom: 1px solid var(--crystal-color-border-soft);
   background: var(--crystal-color-surface-strong);
 }
@@ -238,34 +238,34 @@
 
 .crystal-design-view__diagnostics-header h2 {
   color: rgba(247, 242, 236, 0.84);
-  font-size: 11px;
+  font-size: 10px;
   letter-spacing: 0.12em;
-  line-height: 1.2;
+  line-height: 1.15;
   text-transform: uppercase;
 }
 
 .crystal-design-view__diagnostics-header p {
-  margin-top: 2px;
+  margin-top: 1px;
   color: rgba(247, 242, 236, 0.46);
-  font-size: 10px;
-  line-height: 1.2;
+  font-size: 9px;
+  line-height: 1.15;
 }
 
 .crystal-design-view__diagnostics-actions {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
 }
 
 .crystal-design-view__diagnostics-pin,
 .crystal-design-view__diagnostics-close {
-  min-height: 24px;
-  padding: 4px 7px;
+  min-height: 21px;
+  padding: 3px 6px;
   border: 1px solid var(--crystal-color-border-soft);
   background: rgba(255, 255, 255, 0.04);
   color: rgba(247, 242, 236, 0.74);
   font: inherit;
-  font-size: 10px;
+  font-size: 9px;
   cursor: pointer;
 }
 
@@ -297,7 +297,7 @@
   min-height: 0;
   overflow: auto;
   overscroll-behavior: contain;
-  padding: 8px;
+  padding: 6px;
 }
 
 .crystal-design-view__workspace--resizing-right,
@@ -411,8 +411,8 @@
 
 .crystal-design-view__debug-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 6px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 5px;
 }
 
 .crystal-design-view__debug-panel {
@@ -420,34 +420,68 @@
   align-content: start;
   gap: 5px;
   min-width: 0;
-  padding: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  background: var(--crystal-color-surface);
+  padding: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.065);
+  background: rgba(255, 255, 255, 0.026);
+}
+
+.crystal-design-view__debug-panel-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px;
+  align-items: baseline;
+  min-width: 0;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.055);
 }
 
 .crystal-design-view__debug-panel h3 {
   margin: 0;
   color: rgba(247, 242, 236, 0.74);
-  font-size: 10px;
+  font-size: 9px;
   letter-spacing: 0.12em;
+  line-height: 1.1;
   text-transform: uppercase;
+}
+
+.crystal-design-view__debug-panel-header span,
+.crystal-design-view__debug-section-title {
+  color: rgba(247, 242, 236, 0.34);
+  font-size: 8px;
+  letter-spacing: 0.1em;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.crystal-design-view__debug-section {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  padding: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.045);
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.crystal-design-view__debug-section--events,
+.crystal-design-view__debug-section--tree {
+  min-height: 0;
 }
 
 .crystal-design-view__debug-row {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(78px, 1fr));
-  gap: 4px;
+  grid-template-columns: repeat(auto-fit, minmax(68px, 1fr));
+  gap: 3px;
 }
 
 .crystal-design-view__debug-button {
-  min-height: 22px;
+  min-height: 20px;
   overflow: hidden;
-  padding: 2px 5px;
+  padding: 2px 4px;
   border: 1px solid var(--crystal-color-border-soft);
   background: rgba(255, 255, 255, 0.04);
   color: rgba(247, 242, 236, 0.74);
   font: inherit;
-  font-size: 10px;
+  font-size: 9px;
   text-align: left;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -471,7 +505,7 @@
   gap: 2px;
   margin: 0;
   color: rgba(247, 242, 236, 0.52);
-  font-size: 10px;
+  font-size: 9px;
   line-height: 1.25;
 }
 
@@ -479,8 +513,13 @@
   margin: 0;
 }
 
+.crystal-design-view__debug-meta--stack {
+  gap: 1px;
+}
+
 .crystal-design-view__debug-meta--dl {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 3px 6px;
 }
 
 .crystal-design-view__debug-meta--dl div {
@@ -509,12 +548,22 @@
 
 .crystal-design-view__debug-list {
   display: grid;
-  gap: 2px;
+  gap: 1px;
+  max-height: 132px;
   margin: 0;
-  padding-left: 14px;
+  padding-left: 12px;
+  overflow: auto;
   color: rgba(247, 242, 236, 0.54);
-  font-size: 10px;
+  font-size: 9px;
   line-height: 1.25;
+}
+
+.crystal-design-view__debug-list--compact {
+  max-height: 86px;
+}
+
+.crystal-design-view__debug-list--events {
+  max-height: 260px;
 }
 
 .crystal-design-view__debug-empty,
@@ -522,7 +571,7 @@
   margin: 0;
   padding: 1px 0;
   color: rgba(247, 242, 236, 0.44);
-  font-size: 10px;
+  font-size: 9px;
   line-height: 1.25;
 }
 
@@ -532,14 +581,15 @@
 
 .crystal-design-view__debug-tree {
   max-width: 100%;
+  max-height: 220px;
   margin: 0;
-  padding: 5px;
+  padding: 4px;
   overflow: auto;
   border: 1px solid rgba(255, 255, 255, 0.06);
   background: rgba(0, 0, 0, 0.28);
   color: rgba(247, 242, 236, 0.6);
   font-family: monospace;
-  font-size: 10px;
-  line-height: 1.3;
+  font-size: 9px;
+  line-height: 1.25;
   white-space: pre;
 }
