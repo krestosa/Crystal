@@ -10,6 +10,7 @@ const paths = {
   base: "apps/desktop/electron/renderer/styles/base/_base.scss",
   appShellHtml: "apps/desktop/electron/renderer/layout/app-shell/app-shell.html",
   appShellScss: "apps/desktop/electron/renderer/layout/app-shell/app-shell.scss",
+  appShellTs: "apps/desktop/electron/renderer/layout/app-shell/app-shell.ts",
   sideBarHtml: "apps/desktop/electron/renderer/layout/side-bar/side-bar.html",
   sideBarScss: "apps/desktop/electron/renderer/layout/side-bar/side-bar.scss",
   workbenchScss: "apps/desktop/electron/renderer/layout/workbench/workbench.scss",
@@ -37,12 +38,24 @@ expect(source.appShellScss.includes("overflow: hidden"), "App shell does not pre
 expect(source.reset.includes("overflow: hidden"), "Document reset does not prevent window-level app scrolling.");
 expect(source.base.includes("::-webkit-scrollbar"), "Crystal UI scrollbars are not styled.");
 
+expect(source.appShellHtml.includes("data-crystal-left-sidebar-resizer"), "App shell does not expose the left sidebar resize handle.");
+expect(source.appShellScss.includes("grid-template-columns: var(--crystal-left-sidebar-width, 232px) minmax(0, 1fr)"), "App shell left sidebar width is not controlled by a clamped resize variable.");
+expect(source.appShellTs.includes("CRYSTAL_MIN_WORKBENCH_WIDTH"), "App shell resize logic does not clamp against a minimum workbench width.");
+expect(source.appShellTs.includes("setPointerCapture"), "App shell resize handle does not capture pointer drags.");
+
 expect(source.designHtml.includes("crystal-design-view__workspace"), "Design view does not expose a workspace shell.");
 expect(source.designHtml.includes("crystal-design-view__canvas"), "Design view does not reserve a central canvas area.");
 expect(source.designHtml.includes("crystal-design-view__right-sidebar"), "Design view does not expose a right sidebar.");
 expect(source.designHtml.includes("crystal-design-view__bottom-diagnostics"), "Design view does not expose a bottom diagnostics dock.");
-expect(source.designScss.includes("grid-template-columns: minmax(0, 1fr) 284px"), "Canvas is not the dominant central column.");
+expect(source.designHtml.includes("data-crystal-right-sidebar-resizer"), "Design view does not expose the right sidebar resize handle.");
+expect(source.designHtml.includes("data-crystal-bottom-diagnostics-resizer"), "Design view does not expose the diagnostics resize handle.");
+expect(source.designScss.includes("grid-template-columns: minmax(0, 1fr) var(--crystal-right-sidebar-width, 284px)"), "Canvas is not the dominant central column with a resizable right sidebar.");
 expect(source.designScss.includes("grid-template-rows: minmax(0, 1fr) auto"), "Bottom diagnostics are not separated from the main workspace row.");
+expect(source.designScss.includes("max-height: var(--crystal-bottom-diagnostics-height, 184px)"), "Bottom diagnostics height is not controlled by a clamped resize variable.");
+expect(source.designTs.includes("CRYSTAL_MIN_CANVAS_WIDTH"), "Right sidebar resize logic does not clamp against a minimum canvas width.");
+expect(source.designTs.includes("CRYSTAL_MIN_CANVAS_HEIGHT"), "Bottom diagnostics resize logic does not clamp against a minimum canvas height.");
+expect(source.designTs.includes("setPointerCapture"), "Design resize handles do not capture pointer drags.");
+expect(!source.appShellTs.includes("localStorage") && !source.designTs.includes("localStorage"), "Resizable shell panels introduced persistence without a preferences contract.");
 
 expect(source.designCanvasHtml.includes("data-crystal-start-screen"), "Canvas start block is missing.");
 expect(source.designCanvasHtml.includes("Open a project"), "Canvas start block title is missing.");
@@ -102,7 +115,7 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log("UI flow validation passed: no internal top bar, full-height workspace, central canvas, clean sidebars, bottom diagnostics, styled UI scrollbars, dependency guard, and iframe safety boundaries.");
+console.log("UI flow validation passed: no internal top bar, full-height workspace, central canvas, clean sidebars, resizable shell panels, bottom diagnostics, styled UI scrollbars, dependency guard, and iframe safety boundaries.");
 
 async function readText(filePath) {
   return readFile(path.resolve(filePath), "utf8");
