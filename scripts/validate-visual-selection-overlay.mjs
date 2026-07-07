@@ -36,13 +36,18 @@ try {
   expect(packageData.scripts?.["validate:visual-selection-overlay"] === "node scripts/validate-visual-selection-overlay.mjs", "package.json does not expose validate:visual-selection-overlay.");
   expect(source.validateLocal.includes("npm run validate:visual-selection-overlay"), "validate-local does not run validate:visual-selection-overlay.");
 
-  expect(source.designCanvasHtml.includes("data-project-design-canvas-stage"), "Design Canvas transform stage is missing.");
+  const designCanvasStageRange = findHtmlElementRangeByAttribute(source.designCanvasHtml, "data-project-design-canvas-stage");
+  const previewFrameRange = findHtmlElementRangeByAttribute(source.designCanvasHtml, "data-project-preview-frame");
+  const selectionOverlayRootRange = findHtmlElementRangeByAttribute(source.designCanvasHtml, "data-project-design-canvas-selection-overlay");
+
+  expect(designCanvasStageRange !== null, "Design Canvas transform stage is missing.");
   expect(source.designCanvasHtml.includes("data-project-design-canvas-selection-overlay-toggle"), "Design Canvas overlay toggle is missing.");
-  expect(source.designCanvasHtml.includes("data-project-design-canvas-selection-overlay"), "Selection overlay root is missing.");
+  expect(selectionOverlayRootRange !== null, "Selection overlay root is missing.");
   expect(source.designCanvasHtml.includes("data-project-design-canvas-selection-box"), "Selection overlay box is missing.");
   expect(source.designCanvasHtml.includes("data-project-design-canvas-selection-message"), "Selection overlay defensive message is missing.");
-  expect(source.designCanvasHtml.indexOf("data-project-preview-frame") < source.designCanvasHtml.indexOf("data-project-design-canvas-selection-overlay"), "Selection overlay is not external to the iframe.");
-  expect(source.designCanvasHtml.indexOf("data-project-design-canvas-stage") < source.designCanvasHtml.indexOf("data-project-design-canvas-selection-overlay"), "Selection overlay is not inside the transformed Design Canvas stage.");
+  expect(previewFrameRange !== null, "Preview iframe is missing.");
+  expect(previewFrameRange !== null && selectionOverlayRootRange !== null && selectionOverlayRootRange.start > previewFrameRange.end, "Selection overlay is not external to the iframe.");
+  expect(designCanvasStageRange !== null && selectionOverlayRootRange !== null && selectionOverlayRootRange.start > designCanvasStageRange.start && selectionOverlayRootRange.end <= designCanvasStageRange.end, "Selection overlay is not inside the transformed Design Canvas stage.");
   expect(source.designCanvasHtml.includes("sandbox=\"allow-scripts allow-forms allow-popups\""), "Preview iframe sandbox changed unexpectedly.");
   expect(!source.designCanvasHtml.includes("allow-same-origin"), "Preview iframe sandbox was relaxed with allow-same-origin.");
 
@@ -126,6 +131,9 @@ try {
   const invalidInfinityRect = validators.validateProjectPreviewSelectedNodePayload(createSelectedNodePayload({ selectionRect: { coordinateSpace: "iframe-viewport", x: 0, y: Number.POSITIVE_INFINITY, width: 10, height: 10 } }));
   expect(!invalidInfinityRect.ok && invalidInfinityRect.issue?.code === "invalid-selection-rect", "Infinity selectionRect was not rejected.");
 
+  const invalidOutOfRangeRect = validators.validateProjectPreviewSelectedNodePayload(createSelectedNodePayload({ selectionRect: { coordinateSpace: "iframe-viewport", x: 1000001, y: 0, width: 10, height: 10 } }));
+  expect(!invalidOutOfRangeRect.ok && invalidOutOfRangeRect.issue?.code === "invalid-selection-rect", "Out-of-range selectionRect was not rejected.");
+
   const matched = overlay.selectProjectDesignCanvasSelectionOverlayState({ enabled: true, previewSelection: createPreviewSelectionState("matched", { selectionRect: { coordinateSpace: "iframe-viewport", x: 8, y: 16, width: 80, height: 40 } }) });
   expect(matched.status === "matched" && matched.projection?.left === 8 && matched.projection?.width === 80, "Matched selection did not produce a projected overlay rect.");
 
@@ -134,6 +142,9 @@ try {
 
   const noSelection = overlay.selectProjectDesignCanvasSelectionOverlayState({ enabled: true, previewSelection: createPreviewSelectionState("unknown", { selectedNode: null }) });
   expect(noSelection.status === "hidden", "No selection should hide the overlay.");
+
+  const notMatched = overlay.selectProjectDesignCanvasSelectionOverlayState({ enabled: true, previewSelection: createPreviewSelectionState("unknown", { selectionRect: { coordinateSpace: "iframe-viewport", x: 0, y: 0, width: 80, height: 40 } }) });
+  expect(notMatched.status === "unavailable" && notMatched.projection === null, "Non-matched selection should not produce a highlight projection.");
 
   const missingSnapshot = overlay.selectProjectDesignCanvasSelectionOverlayState({ enabled: true, previewSelection: createPreviewSelectionState("missing-snapshot") });
   expect(missingSnapshot.status === "missing-snapshot" && missingSnapshot.projection === null, "Missing snapshot should not produce a highlight projection.");
@@ -146,6 +157,12 @@ try {
 
   const unavailable = overlay.selectProjectDesignCanvasSelectionOverlayState({ enabled: true, previewSelection: createPreviewSelectionState("matched", { selectionRect: null }) });
   expect(unavailable.status === "unavailable" && unavailable.projection === null, "Matched selection without reliable coordinates should not produce a highlight projection.");
+
+  const zeroWidth = overlay.selectProjectDesignCanvasSelectionOverlayState({ enabled: true, previewSelection: createPreviewSelectionState("matched", { selectionRect: { coordinateSpace: "iframe-viewport", x: 0, y: 0, width: 0, height: 40 } }) });
+  expect(zeroWidth.status === "unavailable" && zeroWidth.projection === null, "Matched selection with zero width should not produce a highlight projection.");
+
+  const zeroHeight = overlay.selectProjectDesignCanvasSelectionOverlayState({ enabled: true, previewSelection: createPreviewSelectionState("matched", { selectionRect: { coordinateSpace: "iframe-viewport", x: 0, y: 0, width: 80, height: 0 } }) });
+  expect(zeroHeight.status === "unavailable" && zeroHeight.projection === null, "Matched selection with zero height should not produce a highlight projection.");
 } finally {
   await rm(tempDir, { recursive: true, force: true });
 }
@@ -190,7 +207,13 @@ function createSelectedNodePayload(overrides = {}) {
 }
 
 function createPreviewSelectionState(mappingStatus, overrides = {}) {
-  const selectedNode = overrides.selectedNode === null ? null : createSelectedNodePayload({ selectionRect: overrides.selectionRect ?? { coordinateSpace: "iframe-viewport", x: 0, y: 0, width: 10, height: 10 }, ...(overrides.selectedNode ?? {}) });
+  const defaultSelectionRect = { coordinateSpace: "iframe-viewport", x: 0, y: 0, width: 10, height: 10 };
+  const selectedNodeOverrides = overrides.selectedNode && typeof overrides.selectedNode === "object" ? overrides.selectedNode : {};
+  const hasNodeSelectionRect = Object.prototype.hasOwnProperty.call(selectedNodeOverrides, "selectionRect");
+  const hasStateSelectionRect = Object.prototype.hasOwnProperty.call(overrides, "selectionRect");
+  const selectionRect = hasNodeSelectionRect ? selectedNodeOverrides.selectionRect : hasStateSelectionRect ? overrides.selectionRect : defaultSelectionRect;
+  const selectedNode = overrides.selectedNode === null ? null : createSelectedNodePayload({ ...selectedNodeOverrides, selectionRect });
+
   return {
     enabled: true,
     mode: selectedNode ? "selected" : "idle",
@@ -203,6 +226,63 @@ function createPreviewSelectionState(mappingStatus, overrides = {}) {
     mappingCheckedAt: 1000,
     snapshotGeneratedAt: 900
   };
+}
+
+function findHtmlElementRangeByAttribute(html, attributeName) {
+  const openTagPattern = /<([a-zA-Z][\w:-]*)(?:\s[^<>]*)?>/g;
+  const attributePattern = new RegExp(`(?:^|\\s)${escapeRegExp(attributeName)}(?:[\\s=>]|$)`);
+  let match = openTagPattern.exec(html);
+
+  while (match) {
+    const openingTag = match[0];
+    if (attributePattern.test(openingTag)) return findHtmlElementRangeFromOpeningTag(html, match.index, match[1]);
+    match = openTagPattern.exec(html);
+  }
+
+  return null;
+}
+
+function findHtmlElementRangeFromOpeningTag(html, openingTagStart, tagName) {
+  const normalizedTagName = tagName.toLowerCase();
+  const tagPattern = new RegExp(`<\\/?${escapeRegExp(normalizedTagName)}(?:\\s[^<>]*)?>`, "gi");
+  tagPattern.lastIndex = openingTagStart;
+  let depth = 0;
+  let match = tagPattern.exec(html);
+
+  while (match) {
+    const tag = match[0];
+    const isClosingTag = tag.startsWith("</");
+    const isSelfClosingTag = /\/\s*>$/.test(tag) || isVoidHtmlElement(normalizedTagName);
+
+    if (!isClosingTag && !isSelfClosingTag) depth += 1;
+    if (isClosingTag) depth -= 1;
+    if (depth === 0) return { start: openingTagStart, end: tagPattern.lastIndex };
+
+    match = tagPattern.exec(html);
+  }
+
+  return null;
+}
+
+function isVoidHtmlElement(tagName) {
+  return tagName === "area"
+    || tagName === "base"
+    || tagName === "br"
+    || tagName === "col"
+    || tagName === "embed"
+    || tagName === "hr"
+    || tagName === "img"
+    || tagName === "input"
+    || tagName === "link"
+    || tagName === "meta"
+    || tagName === "param"
+    || tagName === "source"
+    || tagName === "track"
+    || tagName === "wbr";
+}
+
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 function expect(ok, message) {
