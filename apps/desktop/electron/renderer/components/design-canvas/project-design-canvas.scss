@@ -1,7 +1,7 @@
 .crystal-project-design-canvas {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
   width: 100%;
   height: 100%;
   min-height: 0;
@@ -11,9 +11,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  min-height: 28px;
-  padding: 4px 6px;
+  gap: 6px;
+  min-height: 24px;
+  padding: 3px 5px;
   border: 1px solid var(--crystal-color-border-soft);
   background: var(--crystal-color-surface);
 }
@@ -21,14 +21,14 @@
 .crystal-project-design-canvas__identity {
   display: flex;
   align-items: baseline;
-  gap: 8px;
+  gap: 6px;
   min-width: 0;
 }
 
 .crystal-project-design-canvas__title {
   margin: 0;
   color: rgba(247, 242, 236, 0.84);
-  font-size: 10px;
+  font-size: 9px;
   letter-spacing: 0.12em;
   line-height: 1;
   text-transform: uppercase;
@@ -38,7 +38,7 @@
   overflow: hidden;
   margin: 0;
   color: rgba(247, 242, 236, 0.38);
-  font-size: 10px;
+  font-size: 9px;
   line-height: 1;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -47,17 +47,17 @@
 .crystal-project-design-canvas__controls {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
 }
 
 .crystal-project-design-canvas__button {
-  min-height: 22px;
-  padding: 3px 6px;
+  min-height: 20px;
+  padding: 2px 5px;
   border: 1px solid var(--crystal-color-border-soft);
   background: rgba(255, 255, 255, 0.04);
   color: rgba(247, 242, 236, 0.74);
   font: inherit;
-  font-size: 10px;
+  font-size: 9px;
   cursor: pointer;
 }
 
@@ -74,11 +74,11 @@
 }
 
 .crystal-project-design-canvas__zoom {
-  min-width: 44px;
-  padding: 4px 5px;
+  min-width: 40px;
+  padding: 3px 5px;
   background: rgba(0, 0, 0, 0.34);
   text-align: center;
-  font-size: 10px;
+  font-size: 9px;
   color: rgba(247, 242, 236, 0.58);
 }
 
@@ -112,9 +112,9 @@
   left: 50%;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
-  gap: 10px 12px;
-  width: min(380px, calc(100% - 48px));
-  padding: 13px;
+  gap: 8px 10px;
+  width: min(360px, calc(100% - 44px));
+  padding: 11px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(10, 8, 6, 0.86);
   box-shadow: 0 24px 70px rgba(0, 0, 0, 0.34);
@@ -129,12 +129,12 @@
 .crystal-project-design-canvas__start-icon {
   display: grid;
   place-items: center;
-  width: 30px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
   border: 1px solid var(--crystal-color-border-soft);
   background: rgba(255, 255, 255, 0.04);
   color: rgba(247, 242, 236, 0.76);
-  font-size: 15px;
+  font-size: 14px;
 }
 
 .crystal-project-design-canvas__start-title,
@@ -143,29 +143,29 @@
 }
 
 .crystal-project-design-canvas__start-title {
-  font-size: 14px;
-  line-height: 1.2;
+  font-size: 13px;
+  line-height: 1.15;
 }
 
 .crystal-project-design-canvas__start-text {
-  margin-top: 3px;
+  margin-top: 2px;
   color: rgba(247, 242, 236, 0.52);
-  font-size: 11px;
-  line-height: 1.35;
+  font-size: 10px;
+  line-height: 1.3;
 }
 
 .crystal-project-design-canvas__start-actions {
   grid-column: 1 / -1;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 6px;
+  gap: 5px;
 }
 
 .crystal-project-design-canvas__start-action {
   display: grid;
   gap: 2px;
-  min-height: 52px;
-  padding: 9px 10px;
+  min-height: 46px;
+  padding: 7px 8px;
   border: 1px solid rgba(255, 255, 255, 0.11);
   background: rgba(255, 255, 255, 0.05);
   color: rgba(247, 242, 236, 0.88);
@@ -186,13 +186,13 @@
 }
 
 .crystal-project-design-canvas__start-action span {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 650;
 }
 
 .crystal-project-design-canvas__start-action small {
   color: rgba(247, 242, 236, 0.44);
-  font-size: 10px;
+  font-size: 9px;
 }
 
 .crystal-project-design-canvas__stage {
@@ -226,12 +226,12 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 24px;
-  padding: 0 10px;
+  height: 22px;
+  padding: 0 9px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.1);
   background: #f3f4f6;
   color: rgba(17, 24, 39, 0.72);
-  font-size: 10px;
+  font-size: 9px;
 }
 
 .crystal-project-design-canvas .crystal-project-preview-panel__frame-wrap {
