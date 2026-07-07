@@ -13,6 +13,7 @@ const validationSteps = [
   { label: "npm run validate:dom-snapshot", command: "npm", args: ["run", "validate:dom-snapshot"] },
   { label: "npm run validate:preview-selection", command: "npm", args: ["run", "validate:preview-selection"] },
   { label: "npm run validate:preview-inspector", command: "npm", args: ["run", "validate:preview-inspector"] },
+  { label: "npm run validate:design-canvas", command: "npm", args: ["run", "validate:design-canvas"] },
   { label: "watcher filesystem validation", command: "npm", args: ["run", "validate:local:watch"] },
   { label: "npm run doctor:electron", command: "npm", args: ["run", "doctor:electron"] }
 ];

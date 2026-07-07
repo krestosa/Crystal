@@ -1,0 +1,154 @@
+.crystal-project-design-canvas {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 520px;
+}
+
+.crystal-project-design-canvas__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.crystal-project-design-canvas__title {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+.crystal-project-design-canvas__hint {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.crystal-project-design-canvas__controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.crystal-project-design-canvas__button {
+  padding: 7px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.92);
+  font: inherit;
+  cursor: pointer;
+}
+
+.crystal-project-design-canvas__zoom {
+  min-width: 56px;
+  padding: 7px 8px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.24);
+  text-align: center;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.76);
+}
+
+.crystal-project-design-canvas__surface {
+  position: relative;
+  flex: 1;
+  min-height: 440px;
+  overflow: hidden;
+  overscroll-behavior: contain;
+  overscroll-behavior-x: contain;
+  overscroll-behavior-y: contain;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+    #0b0e15;
+  background-size: 32px 32px;
+  contain: paint;
+  outline: none;
+  touch-action: auto;
+}
+
+.crystal-project-design-canvas__surface:focus-visible {
+  box-shadow: 0 0 0 2px rgba(147, 197, 253, 0.3);
+}
+
+.crystal-project-design-canvas__stage {
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  left: 0;
+  overflow: visible;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+
+.crystal-project-design-canvas__capture {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  pointer-events: none;
+  overscroll-behavior: contain;
+  touch-action: none;
+}
+
+.crystal-project-design-canvas__page-frame {
+  width: 1280px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.42);
+}
+
+.crystal-project-design-canvas__page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 28px;
+  padding: 0 12px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  background: #f3f4f6;
+  color: rgba(17, 24, 39, 0.74);
+  font-size: 12px;
+}
+
+.crystal-project-design-canvas .crystal-project-preview-panel__frame-wrap {
+  width: 1280px;
+  height: 720px;
+  min-height: 720px;
+  overflow: hidden;
+  overscroll-behavior: contain;
+  border: 0;
+  border-radius: 0;
+}
+
+.crystal-project-design-canvas .crystal-project-preview-panel__frame {
+  width: 100%;
+  height: 100%;
+  min-height: 720px;
+  pointer-events: auto;
+  overscroll-behavior: contain;
+}
+
+.crystal-project-design-canvas--space-active .crystal-project-design-canvas__surface,
+.crystal-project-design-canvas--capture-active .crystal-project-design-canvas__surface {
+  cursor: grab;
+}
+
+.crystal-project-design-canvas--panning .crystal-project-design-canvas__surface {
+  cursor: grabbing;
+}
+
+.crystal-project-design-canvas--capture-active .crystal-project-design-canvas__capture {
+  pointer-events: auto;
+}
+
+.crystal-project-design-canvas--panning .crystal-project-design-canvas__capture {
+  cursor: grabbing;
+}

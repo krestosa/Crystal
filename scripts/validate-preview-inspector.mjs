@@ -8,11 +8,13 @@ const bundledInspector = path.join(tempDir, "project-preview-inspector-selector.
 const failures = [];
 
 const previewPanelHtmlPath = "apps/desktop/electron/renderer/components/project-preview-panel/project-preview-panel.html";
+const designCanvasHtmlPath = "apps/desktop/electron/renderer/components/design-canvas/project-design-canvas.html";
 const previewPanelSourcePath = "apps/desktop/electron/renderer/components/project-preview-panel/project-preview-panel.ts";
 const previewInspectorRendererPath = "apps/desktop/electron/renderer/components/project-preview-panel/inspector/project-preview-inspector-renderer.ts";
 const previewInspectorSelectorPath = "packages/core/project/preview-inspector/project-preview-inspector-selector.ts";
 
 const previewPanelHtml = await readText(previewPanelHtmlPath);
+const designCanvasHtml = await readText(designCanvasHtmlPath);
 const previewPanelSource = await readText(previewPanelSourcePath);
 const previewInspectorRendererSource = await readText(previewInspectorRendererPath);
 const previewInspectorSelectorSource = await readText(previewInspectorSelectorPath);
@@ -29,10 +31,11 @@ try {
   expect(!/<button\b/i.test(inspectorSection), "Preview Inspector contains a button.");
   expect(!/contenteditable/i.test(inspectorSection), "Preview Inspector contains contenteditable UI.");
 
-  expect(!previewPanelHtml.includes("allow-same-origin"), "Preview iframe sandbox includes allow-same-origin.");
-  expect(previewPanelHtml.includes("sandbox=\"allow-scripts allow-forms allow-popups\""), "Preview iframe sandbox changed unexpectedly.");
+  const previewFrameHtml = `${previewPanelHtml}\n${designCanvasHtml}`;
+  expect(!previewFrameHtml.includes("allow-same-origin"), "Preview iframe sandbox includes allow-same-origin.");
+  expect(previewFrameHtml.includes("sandbox=\"allow-scripts allow-forms allow-popups\""), "Preview iframe sandbox changed unexpectedly.");
 
-  const runtimeSource = `${previewPanelHtml}\n${previewPanelSource}\n${previewInspectorRendererSource}\n${previewInspectorSelectorSource}`;
+  const runtimeSource = `${previewFrameHtml}\n${previewPanelSource}\n${previewInspectorRendererSource}\n${previewInspectorSelectorSource}`;
   expect(!runtimeSource.includes("getComputedStyle"), "Preview Inspector introduced computed styles.");
   expect(!runtimeSource.includes("contentDocument"), "Preview Inspector accesses iframe.contentDocument.");
   expect(!runtimeSource.includes("contentWindow.document"), "Preview Inspector accesses iframe.contentWindow.document.");

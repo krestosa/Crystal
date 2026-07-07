@@ -45,7 +45,25 @@ Preview issues are coalesced by issue type, safe path, and reason. The state kee
 
 The renderer does not build absolute file paths. It calls explicit preload methods for load, reload, target selection, and state. Main resolves targets from the active Project Graph and returns a safe Preview URL.
 
-The Preview frame is intentionally limited to real HTML rendering, diagnostics, read-only DOM snapshots, basic read-only node selection, conservative selection-to-snapshot mapping, and minimal read-only structural inspection. It is not an editor, browser console, canvas, CSS Inspector, or overlay engine in this phase.
+The Preview frame is intentionally limited to real HTML rendering, diagnostics, read-only DOM snapshots, basic read-only node selection, conservative selection-to-snapshot mapping, and minimal read-only structural inspection. It is not an editor, browser console, CSS Inspector, or overlay engine in this phase.
+
+## Design Canvas navigation boundary
+
+The first Design Canvas navigation layer is split between pure core viewport math and renderer UI. Core owns wide safe zoom bounds, viewport state shape, fit, center, reset, panning, focal zoom, pan recovery clamp, finite-number normalization, and wheel/trackpad delta normalization under `packages/core/project/design-canvas/`. It has no Electron, DOM, filesystem, or renderer dependencies.
+
+Renderer Design Canvas code lives under `apps/desktop/electron/renderer/components/design-canvas/`. The component owns the toolbar, visual surface, transform stage, simple desktop page frame, zoom display, explicit wheel/trackpad/pinch classification, explicit pointer gesture classification, Space + drag panning, middle mouse panning where the event reaches the canvas, double tap/click zoom-drag when Chromium/Electron exposes a detectable sequence, focused-canvas keyboard navigation, Ctrl/Cmd + wheel or trackpad zooming, Fit, Center, Reset, and in-memory viewport persistence for the renderer session. Normal mouse wheel and trackpad two-finger input remain available to the Preview iframe for page scrolling.
+
+Design Canvas navigation has explicit modes: `idle`, `panning`, `zooming-wheel`, and `zooming-drag`. Wheel gestures classify as canvas zoom, canvas pan, iframe scroll passthrough, or safe ignore. Pointer gestures classify as canvas pan, zoom-drag, or safe ignore. Zoom-drag starts from a double tap/click or equivalent detectable sequence on the navigable canvas surface, stores the start zoom and focus point, uses upward movement for zoom in and downward movement for zoom out, and cancels safely on pointer release, pointer cancel, blur, or Escape.
+
+The transform is intentionally scoped to the visual Preview frame stage only. Preview panel controls, target selection, Preview issues, selected-node summary, and Preview Inspector stay outside the transform so Crystal UI remains readable and clickable at every zoom level. Canvas navigation does not use scrollbars, straight vertical scroll, or straight horizontal scroll as its primary model; the surface hides overflow, contains overscroll, and moves the frame by transform-based free pan and focal zoom. Diagonal input remains diagonal pan when the gesture belongs to the canvas background.
+
+The zoom model is intentionally broad, not mathematically infinite. It uses a low safe minimum, a high safe maximum, exponential wheel zoom, finite-number normalization, `deltaMode` normalization, pointer-focused zoom, and pan clamps so a frame cannot be moved completely outside recoverability. Fit, Center, and Reset are explicit recovery commands.
+
+The external capture layer belongs to Crystal UI, not the user's document. It defaults to `pointer-events: none`; it only captures during explicit navigation states such as Space, Ctrl/Cmd, active pan, wheel zoom, or zoom-drag. When the interaction ends, the layer returns to non-blocking mode so the iframe can receive normal click, wheel, scroll, and Preview selection events. Pinch support depends on how Chromium and the operating system emit the gesture, but `wheel` + `ctrlKey` is always classified as Design Canvas zoom rather than pan or Crystal UI scroll.
+
+Design Canvas navigation is read-only. It must not edit HTML, insert elements, move nodes, mutate attributes, edit text, write files, call computed styles, inspect box model, draw persistent bounding boxes, create a canvas overlay, access WebGPU, use Rust/WASM, or relax iframe sandboxing. It must not read `iframe.contentDocument`, `iframe.contentWindow.document`, `.contentDocument`, or `.contentWindow.document`. Outside active navigation capture states, iframe click, wheel, scroll, and Preview selection interaction remain enabled.
+
+The next layer is Visual Selection and Overlay MVP. That future layer may add technical read-only overlays, but editing still requires command-backed source mutation, write policy, and undo/redo.
 
 ## Preview selection boundary
 
@@ -97,7 +115,7 @@ The DOM Tree panel remains read-only text output. It may show subtle path metada
 
 ## Design, editing, and overlay boundaries
 
-Design Canvas, visual overlays, and editing are separate layers. The future Design Canvas should own pan/zoom, viewport state, canvas framing, rulers, guides, and overlay presentation. It should not mutate HTML source by itself.
+Design Canvas, visual overlays, and editing are separate layers. The current Design Canvas owns only navigation: viewport state, page framing, natural free pan, wide safe zoom, zoom-drag when available, pan recovery, fit, center, and reset. It does not mutate HTML source by itself.
 
 Visual editing must go through a command pipeline. Commands validate the selected node, mapping state, target source file, allowed operation, and resulting source patch. The renderer may request actions, but main/core services own persistence. Undo/redo must be available before destructive editing becomes normal workflow.
 
@@ -129,4 +147,4 @@ Preview reload is downstream of Project Graph refresh. Watcher events do not rel
 
 ## Current limitations
 
-The current Project Graph is intentionally shallow. It detects files, HTML pages, direct dependencies, basic CSS references, basic script imports, external routes, and missing local routes. It now includes watcher/cache plumbing, conservative semi-incremental refresh planning, the first real Chromium Preview, sanitized Preview diagnostics, a hardened read-only static DOM snapshot foundation, a basic read-only Preview selection bridge, conservative read-only selection mapping, and a minimal read-only Preview Inspector. It does not implement Inspector MVP editing, visual editing, editable attributes, computed styles, box model inspection, CSS cascade analysis, framework alias resolution, editor features, WebGPU overlay, or Rust/WASM analysis.
+The current Project Graph is intentionally shallow. It detects files, HTML pages, direct dependencies, basic CSS references, basic script imports, external routes, and missing local routes. It now includes watcher/cache plumbing, conservative semi-incremental refresh planning, the first real Chromium Preview, sanitized Preview diagnostics, a hardened read-only static DOM snapshot foundation, a basic read-only Preview selection bridge, conservative read-only selection mapping, a minimal read-only Preview Inspector, and read-only Design Canvas navigation with broad safe zoom, trackpad/mouse/pinch input handling, zoom-drag where platform events allow it, scroll containment, and iframe interaction passthrough. It does not implement Inspector MVP editing, visual editing, editable attributes, computed styles, box model inspection, CSS cascade analysis, framework alias resolution, editor features, WebGPU overlay, or Rust/WASM analysis.
