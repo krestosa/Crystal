@@ -31,9 +31,8 @@
 .crystal-app-shell__native-titlebar {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr);
   align-items: center;
-  gap: 8px;
   min-width: 0;
   min-height: var(--crystal-native-titlebar-height);
   padding: 0 calc(var(--crystal-window-controls-width) + 12px) 0 10px;
@@ -106,6 +105,7 @@
 }
 
 .crystal-app-shell__diagnostics-button {
+  position: relative;
   display: grid;
   flex: 0 0 auto;
   place-items: center;
@@ -118,14 +118,23 @@
   cursor: pointer;
 }
 
-.crystal-app-shell__diagnostics-button svg {
-  width: 13px;
-  height: 13px;
-  fill: none;
-  stroke: currentColor;
-  stroke-linecap: square;
-  stroke-linejoin: miter;
-  stroke-width: 1.15;
+.crystal-app-shell__diagnostics-button::before {
+  width: 10px;
+  height: 8px;
+  border: 1px solid currentColor;
+  background: transparent;
+  box-shadow: -5px 2px 0 -4px currentColor, 5px 2px 0 -4px currentColor, -5px 6px 0 -4px currentColor, 5px 6px 0 -4px currentColor;
+  content: "";
+}
+
+.crystal-app-shell__diagnostics-button::after {
+  position: absolute;
+  top: 5px;
+  width: 6px;
+  height: 1px;
+  background: currentColor;
+  box-shadow: 0 4px 0 currentColor;
+  content: "";
 }
 
 .crystal-app-shell__diagnostics-button:hover {
