@@ -78,6 +78,13 @@ const principalDocs = [
   "docs/architecture/commands/future-command-execution.md"
 ];
 
+const decisionDocs = [
+  "docs/decisions/0001-electron-security-boundaries.md",
+  "docs/decisions/0002-read-only-preview-first.md",
+  "docs/decisions/0003-command-preview-before-write.md",
+  "docs/decisions/0004-modular-shell-ui-primitives.md"
+];
+
 const requiredArchitectureSections = [
   "## Purpose",
   "## Current implementation",
@@ -177,6 +184,14 @@ for (const docPath of principalDocs) {
   if (countMatches(content, /^\| .* \|$/gm) < 8) {
     errors.push(`${docPath} should include multiple Markdown tables for scanability.`);
   }
+}
+
+for (const docPath of decisionDocs) {
+  requireIncludes(docPath, [
+    "Decision in one sentence",
+    "## Options considered",
+    "| Option | Why rejected or accepted |"
+  ]);
 }
 
 if (mermaidDiagramCount < 18) errors.push(`Expected at least 18 Mermaid diagrams, found ${mermaidDiagramCount}.`);

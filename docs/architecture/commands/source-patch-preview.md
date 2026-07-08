@@ -16,7 +16,7 @@
 
 ## Purpose
 
-Source Patch Preview is a verifiable description of a possible source change. It gives the user and validators something concrete to inspect before Crystal has permission to modify files.
+Source Patch Preview is a verifiable description of a possible source change. Source Patch Preview is not a write operation. It gives the user and validators something concrete to inspect before Crystal has permission to modify files.
 
 ## Why this exists
 
