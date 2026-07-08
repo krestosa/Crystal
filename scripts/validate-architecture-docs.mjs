@@ -79,7 +79,8 @@ const requiredSecurityPhrases = [
 const forbiddenPositiveWriteClaims = [
   "real source writes are implemented",
   "source patch application is implemented",
-  "write IPC exists",
+  "write IPC is implemented",
+  "write IPC channels are implemented",
   "undo/redo execution is implemented",
   "DOM mutation is implemented",
   "Element Library inserts HTML",
