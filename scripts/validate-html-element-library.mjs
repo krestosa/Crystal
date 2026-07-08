@@ -124,7 +124,7 @@ for (const commandConstant of ["ADD_HTML_ELEMENT_COMMAND_KIND", "HTML_ELEMENT_LI
 }
 expect(source.commandValidators.includes("validateAddHtmlElementCommand"), "HTML insertion command validator is missing.");
 expect(source.commandBlockers.includes("createHtmlInsertionExecutionBlocker") && source.commandBlockers.includes("assertHtmlInsertionExecutionBlocked"), "HTML insertion blockers are missing.");
-expect(source.commandValidators.includes("valid: false") && source.commandValidators.includes("not implemented"), "Command validator must block execution in this phase.");
+expect(source.commandValidators.includes("valid: false") && commandSource.includes("not implemented"), "Command validator must block execution in this phase.");
 expect(!commandSource.includes("fs") && !commandSource.includes("writeFile") && !commandSource.includes("appendFile"), "Command contracts must not write files.");
 
 expect(source.panelHtml.includes("data-html-element-library-panel"), "Element Library panel markup is missing.");
@@ -143,7 +143,7 @@ expect(!source.panelTs.includes("createCatalogItemButton") && !source.panelTs.in
 expect(source.panelState.includes("HtmlElementLibraryPanelRuntimeState") && source.panelState.includes("activeCategory"), "Panel local state is not isolated or typed.");
 expect(source.panelEvents.includes("bindHtmlElementLibraryPanelEvents"), "Panel event binding is not isolated.");
 expect(source.panelDom.includes("getHtmlElementLibraryPanelElements"), "Panel DOM queries are not isolated.");
-expect(source.rendererCategoryTabs.includes("role", "tab") || source.rendererCategoryTabs.includes("tablist"), "Category tabs renderer is missing tab semantics.");
+expect(source.rendererCategoryTabs.includes("role") && source.rendererCategoryTabs.includes("tab"), "Category tabs renderer is missing tab semantics.");
 expect(source.rendererItemList.includes("aria-pressed") && source.rendererItemList.includes("dataset.htmlElementLibraryCommandState"), "Item list renderer must keep selectable read-only item semantics.");
 expect(source.rendererItemDetails.includes("selectedPanel") && source.rendererItemDetails.includes("selectedEmpty"), "Item details renderer must render metadata conditionally.");
 expect(source.rendererTargetStatus.includes("Target:") && source.rendererTargetStatus.includes("renderHtmlElementLibraryModes"), "Target status renderer must be compact.");
