@@ -31,9 +31,23 @@ Covered:
 - structure validation script
 - build scripts
 - local validation runner for pre-merge checks
-- quick local validation scripts that skip dependency installation after the local workspace is already installed
+- quick local validation scripts that skip dependency installation after the local workspace is already installed:
+  - `validate:local:quick`
+  - `validate:local:quick:core`
+  - `validate:local:quick:preview`
+  - `validate:local:quick:ui`
 - Electron diagnostic script
 - optional manual DevTools opening through the status bar button only
+
+Still future hardening:
+
+- source tree boundary validation
+- import boundary validation
+- dist manifest validation
+- worker bundle validation
+- WASM build validation
+- HTML include source map support
+- circular include reporting
 
 ### Phase 1 — Project Graph foundation
 
@@ -41,14 +55,36 @@ Covered:
 
 - opening a project folder or an HTML file through Electron dialog IPC
 - recursive file scanning with ignored directories and initial limits
-- HTML page, dependency, asset, and issue detection
+- file classification for HTML, CSS, Sass/SCSS, JS, TS, images, SVG, fonts, media, assets, and unknown files
+- HTML page detection
+- direct HTML dependency detection
+- CSS/SCSS dependency detection for `@import` and `url(...)`
+- basic JS/TS dependency detection
+- local, external, resolved, and missing route classification
 - Project Graph state integration
 - renderer Project panel
 - sample fixture project and validation scripts
-- filesystem watcher adapter and batched watch events
+- filesystem watcher adapter
+- batched watch events
 - in-memory Project Graph cache foundation
 - conservative semi-incremental refresh planning with full-rescan fallback
 - typed IPC for watcher/cache control
+- automated local watcher filesystem validation over a temporary project
+
+Still future hardening:
+
+- parsed DOM per HTML page in the Project Graph model
+- class usage expansion
+- selector/rule ownership expansion
+- unused files/assets candidates
+- project health signals
+- framework alias resolution
+- TypeScript path alias resolution
+- Sass include path support
+- npm package asset resolution
+- large-project indexing and persistence
+- worker-backed scanning and analysis
+- Rust/WASM acceleration behind typed boundaries
 
 ### Phase 2 — Real Preview, DOM Snapshot, Preview Selection
 
@@ -105,6 +141,14 @@ Covered:
 - in-memory viewport state persistence for the current renderer session
 - non-visual `validate:design-canvas` script wired into local validation
 
+Still out of scope:
+
+- persistent viewport state across app restarts
+- device viewport presets
+- rulers, guides, grids, snapping, and measurement overlays beyond current shell/canvas visuals
+- safe mode surface in Design when Preview fails beyond current diagnostics
+- keyboard shortcut registry as a full app-level system
+
 ### Phase 5 — Visual Selection and Overlay MVP
 
 Covered:
@@ -115,6 +159,16 @@ Covered:
 - overlay lifecycle tied to Preview selection/state rather than persistent DOM mutation
 - no mutation of user DOM beyond the existing temporary selection script
 - non-visual `validate:visual-selection-overlay` script
+
+Partially covered / still future:
+
+- hover highlight as a separate optional state
+- read-only selection handles beyond basic selection visualization
+- multi-frame awareness for multiple preview viewports
+- visual breadcrumbs foundation
+- layout type badges
+- overlay desync hardening after iframe scroll/resize/reflow
+- ruler/guide/measurement overlay integration
 
 ### Phase 6A — HTML Element Library command foundation
 
@@ -191,22 +245,24 @@ Covered:
 - `SourceConflictPreview` contracts under `packages/core/source-conflict/`
 - `WriteRuntimeCapabilityPreview` contracts under `packages/core/write-runtime/`
 - `DesignEditingReadinessPreview` contracts under `packages/core/design-editing/`
-- preview-only readiness linkage from `CommandTransactionPlanPreview` to dirty-state, source-conflict, and write-runtime capability previews
+- preview-only linkage from CommandTransactionPlanPreview to DirtyStatePreview, SourceConflictPreview, and WriteRuntimeCapabilityPreview
+- validation guarding that Phase 6D remains preflight-only and Apply-blocked
 - `validate:design-editing-preflight` wired into `validate:local:quick:core`
 
-Phase 6D is a preflight/readiness model layer only. No source files are written. No patch apply is available. No write IPC exists. Apply remains unavailable. No undo/redo execution runs. Dirty-state is not persisted. No refresh execution runs. No Preview DOM mutation occurs.
+Phase 6D boundary: No source files are written. No patch apply is available. No write IPC exists. Apply remains unavailable. No undo/redo execution runs. Dirty-state is not persisted. No refresh execution runs. No Preview DOM mutation occurs.
 
 Still out of scope:
 
-- real source mutation command runtime
-- source patch application
-- write IPC
-- Apply enablement
+- real source writes
+- patch apply
+- IPC write
+- save/apply workflow
 - real undo/redo execution
 - dirty-state persistence
+- conflict detection against real source files
 - refresh execution
-- Preview DOM mutation
-- renderer UI connection for editing actions
+- DOM mutation
+- Apply enablement
 
 ### Cross-cutting shell, Diagnostics, and UI system polish
 
@@ -222,6 +278,13 @@ Covered:
 - compact control tokens for shared button/select/icon-button styling
 - no-install quick validation path
 - UI flow validator coverage for shell, Diagnostics, DevTools button, dark fixtures, compact controls, and security guards
+
+Still out of scope:
+
+- theme customization UI
+- persisted user UI preferences
+- screenshot/UI automation testing
+- full accessibility pass beyond targeted labels/focus states
 
 ## Recommended next module
 
@@ -311,6 +374,12 @@ For Phase 6D-specific validation, run:
 
 ```bash
 npm run validate:design-editing-preflight
+```
+
+For Electron launch checks, run manually:
+
+```bash
+npm run dev
 ```
 
 Feature-specific scripts should be added as phases land, for example:
