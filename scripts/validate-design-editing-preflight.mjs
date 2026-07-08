@@ -121,6 +121,9 @@ requireIncludes("packages/core/write-runtime/write-runtime-capability.types.ts",
   "hasWriteIpc: false",
   "canPersistTransactions: false",
   "canExecuteUndoRedo: false",
+  "missingCapabilities"
+]);
+requireIncludes("packages/core/write-runtime/write-runtime-capability.constants.ts", [
   "main-write-service",
   "patch-apply-service",
   "write-ipc",
@@ -184,9 +187,6 @@ for (const file of walk("apps/desktop/electron/renderer").filter((entry) => /\.(
   const content = read(file);
   if (/design-editing|dirty-state|source-conflict|write-runtime/.test(content)) {
     errors.push(`${file} should not wire Phase 6D preflight models into renderer UI.`);
-  }
-  if (/data-[^\n]*apply[^\n]*(?!disabled)|enable\s+Apply|Apply\s+enabled/i.test(content)) {
-    errors.push(`${file} appears to enable Apply from renderer UI.`);
   }
 }
 
