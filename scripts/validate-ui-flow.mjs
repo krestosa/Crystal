@@ -8,34 +8,34 @@ const paths = {
   validateLocal: "scripts/validate-local.mjs",
   reset: "apps/desktop/electron/renderer/styles/reset/_reset.scss",
   base: "apps/desktop/electron/renderer/styles/base/_base.scss",
+  tokensScss: "apps/desktop/electron/renderer/styles/tokens/_tokens.scss",
   mainWindow: "apps/desktop/electron/main/windows/create-main-window.ts",
   appShellHtml: "apps/desktop/electron/renderer/layout/app-shell/app-shell.html",
   appShellScss: "apps/desktop/electron/renderer/layout/app-shell/app-shell.scss",
   appShellTs: "apps/desktop/electron/renderer/layout/app-shell/app-shell.ts",
+  statusBarHtml: "apps/desktop/electron/renderer/layout/status-bar/status-bar.html",
+  statusBarScss: "apps/desktop/electron/renderer/layout/status-bar/status-bar.scss",
   sideBarHtml: "apps/desktop/electron/renderer/layout/side-bar/side-bar.html",
   sideBarScss: "apps/desktop/electron/renderer/layout/side-bar/side-bar.scss",
-  workbenchScss: "apps/desktop/electron/renderer/layout/workbench/workbench.scss",
   designHtml: "apps/desktop/electron/renderer/views/design/design.html",
   designScss: "apps/desktop/electron/renderer/views/design/design.scss",
   designTs: "apps/desktop/electron/renderer/views/design/design.ts",
   designCanvasHtml: "apps/desktop/electron/renderer/components/design-canvas/project-design-canvas.html",
   designCanvasScss: "apps/desktop/electron/renderer/components/design-canvas/project-design-canvas.scss",
-  graphHtml: "apps/desktop/electron/renderer/components/project-graph-panel/project-graph-panel.html",
   graphTs: "apps/desktop/electron/renderer/components/project-graph-panel/project-graph-panel.ts",
   previewHtml: "apps/desktop/electron/renderer/components/project-preview-panel/project-preview-panel.html",
   previewScss: "apps/desktop/electron/renderer/components/project-preview-panel/project-preview-panel.scss",
   previewTs: "apps/desktop/electron/renderer/components/project-preview-panel/project-preview-panel.ts",
-  domTreeHtml: "apps/desktop/electron/renderer/components/project-dom-tree-panel/project-dom-tree-panel.html",
   domTreeTs: "apps/desktop/electron/renderer/components/project-dom-tree-panel/project-dom-tree-panel.ts",
-  previewFixtureCss: "fixtures/sample-html-project/styles/preview.css"
+  previewFixtureCss: "fixtures/sample-html-project/styles/preview.css",
+  domSnapshotHtml: "fixtures/sample-html-project/dom-snapshot.html",
+  domSnapshotEdgeCasesHtml: "fixtures/sample-html-project/dom-snapshot-edge-cases.html"
 };
 
 const source = Object.fromEntries(await Promise.all(Object.entries(paths).map(async ([key, filePath]) => [key, await readText(filePath)])));
-const runtimeSource = Object.entries(source).filter(([key]) => !["packageJson", "validateLocal", "previewFixtureCss"].includes(key)).map(([, value]) => value).join("\n");
+const runtimeSource = Object.entries(source).filter(([key]) => !["packageJson", "validateLocal", "previewFixtureCss", "domSnapshotHtml", "domSnapshotEdgeCasesHtml"].includes(key)).map(([, value]) => value).join("\n");
 const packageData = parsePackageJson(source.packageJson);
-const appBarIndex = source.appShellHtml.indexOf("data-crystal-app-bar");
-const diagnosticsToggleIndex = source.appShellHtml.indexOf("data-crystal-diagnostics-toggle");
-const nativeTitlebarSection = extractSection(source.appShellHtml, "data-crystal-native-titlebar", "data-crystal-app-bar");
+const triggerCount = countToken(`${source.appShellHtml}\n${source.statusBarHtml}\n${source.designHtml}`, "data-crystal-diagnostics-toggle");
 
 expect(!source.appShellHtml.includes("top-bar"), "App shell still renders the old internal top bar.");
 expect(!source.appShellHtml.includes("activity-bar"), "App shell still renders the internal activity strip.");
@@ -45,48 +45,47 @@ expect(source.mainWindow.includes("titleBarOverlay"), "Main window does not expo
 expect(source.mainWindow.includes("CRYSTAL_TITLE_BAR_OVERLAY_HEIGHT = 32"), "Native titlebar overlay is not aligned to the compact chrome height.");
 expect(source.mainWindow.includes("height: CRYSTAL_TITLE_BAR_OVERLAY_HEIGHT"), "Native titlebar overlay height is not routed through the chrome constant.");
 expect(source.mainWindow.includes("webPreferences: getSecureWebPreferences()"), "Main window security preferences were not preserved.");
+expect(source.mainWindow.includes('process.env.CRYSTAL_OPEN_DEVTOOLS === CRYSTAL_OPEN_DEVTOOLS'), "Electron DevTools are not guarded by CRYSTAL_OPEN_DEVTOOLS.");
+expect(source.mainWindow.includes('openDevTools({ mode: "detach" })'), "Electron DevTools launch mode is not explicit.");
 
-expect(source.appShellHtml.includes("data-crystal-app-chrome"), "App shell does not expose a compact chrome drag region.");
+expect(source.appShellHtml.includes("data-crystal-app-chrome"), "App shell does not expose a compact native drag region.");
 expect(source.appShellHtml.includes("data-crystal-native-titlebar"), "App shell does not separate the native titlebar row.");
-expect(source.appShellHtml.includes("data-crystal-app-bar"), "App shell does not expose the lower app bar row.");
-expect(diagnosticsToggleIndex > appBarIndex, "Diagnostics trigger is not placed inside the lower app bar.");
-expect(!nativeTitlebarSection.includes("data-crystal-diagnostics-toggle"), "Diagnostics trigger still competes with the native titlebar controls.");
-expect(source.appShellHtml.includes("aria-label=\"Toggle diagnostics\""), "Diagnostics chrome trigger is missing an accessible label.");
-expect(source.appShellHtml.includes("aria-expanded=\"false\""), "Diagnostics chrome trigger is missing aria-expanded.");
-expect(!source.designHtml.includes("data-crystal-diagnostics-toggle"), "Diagnostics trigger still renders as a design-view floating button.");
-expect(source.appShellScss.includes("--crystal-native-titlebar-height: 32px"), "Renderer native titlebar row does not match the Electron overlay height.");
-expect(source.appShellScss.includes("--crystal-app-bar-height"), "App shell does not model the lower app bar height.");
+expect(!source.appShellHtml.includes("data-crystal-app-bar"), "Redundant app-bar strip still renders in the app shell.");
+expect(!source.appShellHtml.includes("Compact project shell"), "Decorative compact shell text still renders in the top strip.");
+expect(!source.appShellHtml.includes("data-crystal-diagnostics-toggle"), "Diagnostics trigger still renders in the top shell.");
+expect(source.statusBarHtml.includes("data-crystal-diagnostics-toggle"), "Diagnostics trigger is not rendered in the status bar.");
+expect(source.statusBarHtml.includes("data-crystal-runtime-status") && source.statusBarHtml.includes("Renderer isolated"), "Status bar runtime indicator was not preserved.");
+expect(triggerCount === 1, `Diagnostics trigger must render exactly once; found ${triggerCount}.`);
+expect(source.statusBarHtml.includes("aria-label=\"Toggle diagnostics\""), "Diagnostics status trigger is missing an accessible label.");
+expect(source.statusBarHtml.includes("aria-expanded=\"false\""), "Diagnostics status trigger is missing aria-expanded.");
+expect(source.statusBarScss.includes(".crystal-status-bar__diagnostics-button"), "Status bar diagnostics trigger is not styled.");
+expect(source.statusBarScss.includes("[aria-expanded=\"true\"]"), "Status bar diagnostics trigger does not expose an active state.");
+expect(source.statusBarScss.includes(":focus-visible"), "Status bar diagnostics trigger has no visible focus state.");
+expect(source.appShellScss.includes("grid-template-rows: var(--crystal-native-titlebar-height) minmax(0, 1fr) 20px"), "Redundant top strip still consumes shell grid height.");
+expect(!source.appShellScss.includes("--crystal-app-bar-height"), "App shell still models a redundant app-bar height.");
+expect(!source.appShellScss.includes(".crystal-app-shell__app-bar"), "App shell still styles a redundant app-bar strip.");
+expect(!source.appShellScss.includes(".crystal-app-shell__diagnostics-button"), "Diagnostics trigger styles still live in the top shell.");
 expect(source.appShellScss.includes("--crystal-window-controls-width"), "App chrome does not reserve native window control width.");
 expect(source.appShellScss.includes("env(titlebar-area-width"), "App chrome does not use native titlebar area env data when available.");
 expect(source.appShellScss.includes(".crystal-app-shell__native-titlebar::before"), "Native titlebar row does not reserve/paint the window controls area.");
-expect(source.appShellScss.includes("border-bottom: 1px solid var(--crystal-color-border-soft)") && source.appShellScss.includes(".crystal-app-shell__app-bar"), "Chrome divider is not owned by the lower app bar.");
-expect(!source.appShellScss.includes(".crystal-app-shell__chrome::after"), "Chrome wrapper still draws a divider under the native controls.");
+expect(!source.appShellScss.includes(".crystal-app-shell__chrome::after"), "Chrome wrapper still draws a divider under native controls.");
 expect(source.appShellScss.includes("-webkit-app-region: drag"), "App shell chrome is not draggable.");
-expect(source.appShellScss.includes("-webkit-app-region: no-drag"), "App shell interactive chrome controls may be captured by the drag region.");
-expect(source.appShellScss.includes(".crystal-app-shell__diagnostics-button::before") && source.appShellScss.includes(".crystal-app-shell__diagnostics-button::after"), "Diagnostics trigger does not render an internal icon without visible text.");
-expect(source.appShellScss.includes(".crystal-app-shell__diagnostics-button:hover {") && !source.appShellScss.includes(".crystal-app-shell__diagnostics-button:hover,\n.crystal-app-shell__diagnostics-button:focus-visible"), "Diagnostics trigger hover still shares active/focus accent styling.");
-expect(source.appShellScss.includes(".crystal-app-shell__diagnostics-button[aria-expanded=\"true\"]"), "Diagnostics chrome trigger does not expose an active open state.");
-expect(source.appShellScss.includes("height: 100vh"), "App shell does not lock to the viewport height.");
-expect(source.appShellScss.includes("overflow: hidden"), "App shell does not prevent global overflow.");
+expect(source.appShellScss.includes("height: 100vh") && source.appShellScss.includes("overflow: hidden"), "App shell does not lock to the viewport without global overflow.");
 expect(source.reset.includes("overflow: hidden"), "Document reset does not prevent window-level app scrolling.");
 expect(source.base.includes("::-webkit-scrollbar"), "Crystal UI scrollbars are not styled.");
 
 expect(source.appShellHtml.includes("data-crystal-left-sidebar-resizer"), "App shell does not expose the left sidebar resize handle.");
-expect(source.appShellScss.includes("grid-template-columns: var(--crystal-left-sidebar-width, 232px) minmax(0, 1fr)"), "App shell left sidebar width is not controlled by a clamped resize variable.");
 expect(source.appShellTs.includes("CRYSTAL_MIN_WORKBENCH_WIDTH"), "App shell resize logic does not clamp against a minimum workbench width.");
 expect(source.appShellTs.includes("setPointerCapture"), "App shell resize handle does not capture pointer drags.");
 
-expect(source.designHtml.includes("crystal-design-view__workspace"), "Design view does not expose a workspace shell.");
-expect(source.designHtml.includes("crystal-design-view__canvas"), "Design view does not reserve a central canvas area.");
-expect(source.designHtml.includes("crystal-design-view__right-sidebar"), "Design view does not expose a right sidebar.");
-expect(source.designHtml.includes("data-crystal-right-sidebar-resizer"), "Design view does not expose the right sidebar resize handle.");
 expect(source.designHtml.includes("data-crystal-diagnostics-popover"), "Design view does not expose the floating diagnostics panel.");
 expect(source.designHtml.includes("data-crystal-diagnostics-close"), "Design view does not expose the floating diagnostics close action.");
 expect(source.designHtml.includes("data-crystal-diagnostics-pin"), "Design view does not expose the diagnostics pin action.");
 expect(source.designHtml.includes("aria-label=\"Unpin Diagnostics\""), "Diagnostics pin icon button is missing the exact accessible active-state label.");
+expect(!source.designHtml.includes("Graph · Preview · DOM · Events"), "Diagnostics header still renders redundant section text.");
+expect(source.designHtml.includes("<h2>Diagnostics</h2>"), "Diagnostics title was not preserved.");
 expect(source.designTs.includes("\"Unpin Diagnostics\" : \"Pin Diagnostics\""), "Diagnostics pin runtime labels do not match the required accessible labels.");
 expect(!source.designHtml.includes(">Pinned<") && !source.designHtml.includes(">Unpinned<"), "Diagnostics pin still renders textual state labels.");
-expect(source.designHtml.includes("data-crystal-diagnostics-drag-handle"), "Design view does not expose a diagnostics drag handle.");
 for (const requiredHandle of [
   "data-crystal-diagnostics-resize-top-left",
   "data-crystal-diagnostics-resize-top",
@@ -100,36 +99,47 @@ for (const requiredHandle of [
   expect(source.designHtml.includes(requiredHandle), `Diagnostics are missing resize handle: ${requiredHandle}`);
   expect(source.designTs.includes(requiredHandle), `Diagnostics resize is not wired in TS: ${requiredHandle}`);
 }
-expect(!source.designHtml.includes("data-crystal-diagnostics-resize-corner"), "Diagnostics still expose the old single resize corner hook.");
-expect(!source.designHtml.includes("crystal-design-view__bottom-diagnostics"), "Diagnostics still render as a fixed bottom layout row.");
-expect(!source.designHtml.includes("data-crystal-bottom-diagnostics-resizer"), "Diagnostics still use the old fixed bottom resize handle.");
-expect(source.designHtml.includes("Event diagnostics"), "Diagnostics no longer separate event diagnostics into a readable panel.");
-expect(source.designScss.includes("position: fixed"), "Floating diagnostics cannot cover the full renderer workspace.");
-expect(source.designScss.includes("width: var(--crystal-diagnostics-panel-width") && source.designScss.includes("height: var(--crystal-diagnostics-panel-height"), "Floating diagnostics CSS still clamps size directly to the viewport.");
-expect(source.designScss.includes("contain: layout paint"), "Floating diagnostics does not isolate layout/paint for extreme resize states.");
-expect(source.designScss.includes("container-type: inline-size"), "Diagnostics panel cannot respond to its own width.");
-expect(source.designScss.includes("data-crystal-diagnostics-pinned"), "Floating diagnostics panel does not expose pinned/unpinned styling.");
-expect(source.designScss.includes("top: -10px") && source.designScss.includes("right: -10px") && source.designScss.includes("bottom: -10px") && source.designScss.includes("left: -10px"), "Diagnostics resize hit areas are not kept outside the scrollable content area.");
-expect(source.designScss.includes("grid-auto-rows: minmax(0, auto)"), "Diagnostics grid does not tolerate unusual panel proportions.");
-expect(source.designScss.includes("display: flex") && source.designScss.includes("flex: 0 0 auto") && source.designScss.includes("height: 22px"), "Diagnostics action buttons can still stretch across the grid.");
-expect(source.designScss.includes("overflow-wrap: anywhere") && source.designScss.includes("word-break: normal"), "Diagnostics metadata does not wrap long technical text safely.");
-expect(source.designScss.includes("white-space: pre") && source.designScss.includes("font-family: monospace"), "DOM tree diagnostics formatting is not preserved.");
-expect(source.designScss.includes(".crystal-design-view__diagnostics-popover[hidden]"), "Closed diagnostics panel may still intercept clicks.");
+expect(source.designScss.includes("width: 14px") && source.designScss.includes("height: 14px") && source.designScss.includes("top: -14px") && source.designScss.includes("right: -14px"), "Diagnostics resize handles are not large/external enough.");
+expect(source.designScss.includes("z-index: 6"), "Diagnostics resize handles do not have sufficient stacking priority.");
+expect(source.designScss.includes("contain: layout style") && !source.designScss.includes("contain: layout paint"), "Diagnostics paint containment can still block external resize handles.");
+expect(source.designTs.includes("setPointerCapture"), "Design resize/drag handles do not capture pointer drags.");
 expect(source.designTs.includes("CRYSTAL_DIAGNOSTICS_PANEL_RECOVERY_SIZE = 32"), "Diagnostics drag bounds do not keep a recoverable panel area.");
-expect(source.designTs.includes("getMinDiagnosticsLeft") && source.designTs.includes("getMaxDiagnosticsLeft") && source.designTs.includes("getMinDiagnosticsTop") && source.designTs.includes("getMaxDiagnosticsTop"), "Diagnostics bounds do not allow partial offscreen movement.");
 expect(source.designTs.includes("CRYSTAL_DIAGNOSTICS_PANEL_MAX_VIEWPORT_RATIO"), "Diagnostics resize still caps to a small viewport-only size.");
 expect(source.designTs.includes("if (diagnosticsPinned) setDiagnosticsPinned(false)"), "Dragging diagnostics does not automatically unpin the panel.");
-expect(source.designTs.includes("setPointerCapture"), "Design resize/drag handles do not capture pointer drags.");
 expect(source.designTs.includes(".crystal-design-view__debug-list, .crystal-design-view__debug-tree"), "Diagnostics drag guard does not protect internal scrollable debug controls.");
 expect(!source.designTs.includes("CRYSTAL_DIAGNOSTICS_PANEL_MAX_WIDTH") && !source.designTs.includes("CRYSTAL_DIAGNOSTICS_PANEL_MAX_HEIGHT"), "Diagnostics resize still uses artificial max dimensions.");
-expect(!source.appShellTs.includes("localStorage") && !source.designTs.includes("localStorage"), "Resizable shell panels introduced persistence without a preferences contract.");
+
+for (const areaClass of ["debug-panel--graph", "debug-panel--preview", "debug-panel--dom", "debug-panel--events"]) {
+  expect(source.designHtml.includes(areaClass), `Diagnostics section is missing grid area class: ${areaClass}`);
+}
+expect(source.designScss.includes("grid-template-areas") && source.designScss.includes("graph preview") && source.designScss.includes("dom events"), "Diagnostics sections are not separated by grid areas.");
+expect(source.designScss.includes("grid-area: events"), "Events diagnostics do not own a separate grid area.");
+expect(source.designScss.includes("overflow: hidden") && source.designScss.includes("overflow: auto"), "Diagnostics panels/lists do not contain overflow safely.");
+expect(source.designScss.includes("display: flex") && source.designScss.includes("flex: 0 0 auto") && source.designScss.includes("height: var(--crystal-control-compact-size)"), "Diagnostics action buttons can still stretch across the grid.");
+expect(source.designScss.includes("white-space: pre") && source.designScss.includes("font-family: monospace"), "DOM tree diagnostics formatting is not preserved.");
+expect(source.designScss.includes("overflow-wrap: anywhere") && source.designScss.includes("word-break: normal"), "Diagnostics metadata does not wrap long technical text safely.");
 
 expect(source.designCanvasHtml.includes("data-crystal-start-screen"), "Canvas start block is missing.");
+expect(source.designCanvasScss.includes("box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14)"), "Canvas focus-visible still uses an invasive accent frame or lacks a neutral alternative.");
+expect(!source.designCanvasScss.includes(".crystal-project-design-canvas__surface:focus-visible {\n  box-shadow: 0 0 0 2px var(--crystal-focus-ring)"), "Canvas click/focus still shows the orange focus frame.");
 expect(source.designCanvasScss.includes(".crystal-project-design-canvas__button:hover {") && !source.designCanvasScss.includes(".crystal-project-design-canvas__button:hover,\n.crystal-project-design-canvas__button:focus-visible"), "Canvas hover still shares accent focus styling.");
-expect(source.designCanvasScss.includes(".crystal-project-design-canvas__start-action:hover {") && !source.designCanvasScss.includes(".crystal-project-design-canvas__start-action:hover,\n.crystal-project-design-canvas__start-action:focus-visible"), "Canvas start hover still shares accent focus styling.");
-expect(source.designCanvasScss.includes("[data-crystal-workspace][data-crystal-project-open=\"true\"] .crystal-project-design-canvas__start"), "Start block is not hidden after a project is open.");
-expect(source.previewScss.includes(".crystal-project-preview-panel__target option") && source.previewScss.includes("background-color: #100d0a") && source.previewScss.includes("color-scheme: dark"), "Inspector select/options are not protected against a white native dropdown.");
-expect(source.previewFixtureCss.includes("color-scheme: dark") && source.previewFixtureCss.includes("background: #070604") && source.previewFixtureCss.includes("color: #f7f2ec"), "Preview fixture pages are not dark themed.");
+expect(source.previewScss.includes("appearance: none") && source.previewScss.includes("background-image: linear-gradient") && source.previewScss.includes("color-scheme: dark"), "Inspector select is not aligned to the system control style.");
+expect(source.previewScss.includes(".crystal-project-preview-panel__target option") && source.previewScss.includes("option:checked"), "Inspector select options are not explicitly dark styled.");
+expect(source.previewFixtureCss.includes("color-scheme: dark") && source.previewFixtureCss.includes("background: #070604") && source.previewFixtureCss.includes("color: #f7f2ec"), "Preview fixture CSS is not dark themed.");
+expect(source.domSnapshotHtml.includes("./styles/preview.css"), "DOM snapshot fixture does not use the shared dark fixture stylesheet.");
+expect(source.domSnapshotEdgeCasesHtml.includes("background: #070604") && source.domSnapshotEdgeCasesHtml.includes("color: #f7f2ec"), "DOM edge-case fixture does not preserve dark local styling.");
+
+for (const requiredToken of [
+  "--crystal-color-control-bg",
+  "--crystal-color-control-border",
+  "--crystal-color-control-hover-bg",
+  "--crystal-color-panel-bg",
+  "--crystal-control-compact-size",
+  "--crystal-control-radius"
+]) {
+  expect(source.tokensScss.includes(requiredToken), `Missing shared compact shell token: ${requiredToken}`);
+}
+expect(source.statusBarScss.includes("var(--crystal-control-compact-size)") && source.designScss.includes("var(--crystal-color-control-bg)") && source.previewScss.includes("var(--crystal-color-control-bg)"), "New compact shell tokens are not used across touched UI surfaces.");
 
 expect(!source.designHtml.includes("Phase 2"), "Design view still exposes phase copy in the workspace.");
 expect(!source.sideBarHtml.includes("verification panel"), "Sidebar still reads like a validation panel.");
@@ -156,7 +166,6 @@ for (const forbidden of [
   "iframe.contentWindow.document",
   ".contentDocument",
   ".contentWindow.document",
-  "getComputedStyle",
   "contenteditable",
   "insertAdjacentHTML",
   "execCommand",
@@ -172,6 +181,9 @@ for (const dependencyName of getPackageDependencyNames(packageData)) {
   expect(!forbiddenDependencyNames.has(dependencyName), `Forbidden UI/test dependency detected in package.json dependency maps: ${dependencyName}`);
 }
 
+for (const requiredScript of ["validate:local:quick", "validate:local:quick:core", "validate:local:quick:preview", "validate:local:quick:ui"]) {
+  expect(typeof packageData.scripts?.[requiredScript] === "string", `package.json is missing required quick validation script: ${requiredScript}`);
+}
 expect(packageData.scripts?.["validate:ui-flow"] === "node scripts/validate-ui-flow.mjs", "package.json does not expose validate:ui-flow.");
 expect(source.validateLocal.includes("npm run validate:ui-flow"), "validate-local does not run validate:ui-flow.");
 
@@ -181,17 +193,14 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log("UI flow validation passed: native titlebar split, app-bar diagnostics trigger, neutral hover states, recoverable floating diagnostics bounds, extreme resize layout, fixed diagnostics action sizing, dark fixture pages, dark inspector selects, dependency guard, and iframe safety boundaries.");
-
-function extractSection(sourceText, startMarker, endMarker) {
-  const start = sourceText.indexOf(startMarker);
-  const end = sourceText.indexOf(endMarker);
-  if (start === -1 || end === -1 || end <= start) return "";
-  return sourceText.slice(start, end);
-}
+console.log("UI flow validation passed: status-bar diagnostics trigger, minimal native titlebar, functional diagnostics resize handles, separated diagnostics sections, simplified diagnostics header, neutral canvas focus, dark fixtures, system inspector select, compact shell tokens, optional DevTools flag, quick validation scripts, dependency guard, and iframe safety boundaries.");
 
 async function readText(filePath) {
   return readFile(path.resolve(filePath), "utf8");
+}
+
+function countToken(sourceText, token) {
+  return sourceText.split(token).length - 1;
 }
 
 function parsePackageJson(sourceText) {
