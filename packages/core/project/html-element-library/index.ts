@@ -157,7 +157,7 @@ export const HTML_ELEMENT_LIBRARY_CATALOG: readonly HtmlElementLibraryItem[] = [
   item("hero-section", "Hero section", "presets", "Hero block composition placeholder.", "preset"),
   item("card", "Card", "presets", "Content card composition placeholder.", "preset"),
   item("navbar", "Navbar", "presets", "Navigation bar composition placeholder.", "preset"),
-  item("footer", "Footer preset", "presets", "Footer composition placeholder.", "preset"),
+  item("footer-preset", "Footer preset", "presets", "Footer composition placeholder.", "preset"),
   item("product-grid", "Product grid", "presets", "Product listing grid placeholder.", "preset"),
   item("modal", "Modal", "presets", "Dialog composition placeholder.", "preset"),
   item("form-group", "Form group", "presets", "Label/control group placeholder.", "preset"),
