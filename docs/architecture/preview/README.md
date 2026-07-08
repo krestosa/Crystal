@@ -2,49 +2,131 @@
 
 [Docs index](../../README.md)
 
+## At a glance
+
+| Question | Answer |
+| --- | --- |
+| Is this implemented? | Yes, as a read-only Preview pipeline. |
+| Can it write source files? | No. |
+| Runtime owner | Main serves resources; renderer displays UI; core models snapshot, selection, inspector, and overlay state. |
+| Safety risk controlled | Prevents project HTML from becoming a privileged editing surface. |
+| Related next phase | Phase 6C refresh-boundary planning. |
+
+> **Read this first:** Preview has two parallel views of the same page: Chromium renders it, while Crystal builds a static source-derived snapshot for reasoning.
+
 ## Purpose
 
-Preview is where Crystal shows the user's real HTML, but it is not where Crystal grants editing authority. This documentation keeps the Preview pipeline split into smaller responsibilities: serving project files safely, building a static source snapshot, reporting read-only selection, deriving inspection data, and projecting overlays outside the user document.
+Preview is where Crystal shows the user's real HTML, but it is not where Crystal grants editing authority. This page keeps the Preview pipeline split into serving, snapshotting, selecting, inspecting, and projecting overlays.
+
+## Why this exists
+
+A browser-rendered node and a source node are not automatically the same thing. Preview architecture exists to preserve that distinction before any future editing workflow can rely on selection.
+
+## How to read this page
+
+| Need | Read next |
+| --- | --- |
+| Safe file serving | [Project Preview](./project-preview.md) |
+| Static source structure | [DOM Snapshot](./dom-snapshot.md) |
+| Click-to-source reasoning | [Preview Selection](./preview-selection.md) |
+| Visual highlight projection | [Visual Selection Overlay](./visual-selection-overlay.md) |
+| Derived node details | [Preview Inspector](./preview-inspector.md) |
 
 ## Current implementation
 
 The implemented Preview layer is a safe project-relative protocol plus renderer UI. It supports target selection, load/reload, diagnostics, static DOM Snapshot, read-only selection messages, conservative selection-to-snapshot mapping, Visual Selection Overlay, and Preview Inspector.
 
-The diagram shows two parallel interpretations of the same target: Chromium renders the page in the iframe, while Crystal builds a source-derived snapshot for reasoning. Selection becomes useful only when those interpretations can be mapped safely.
-
-```mermaid
-flowchart TD
-  Graph[Project Graph pages] --> Target[Preview target]
-  Target --> Protocol[crystal-preview protocol]
-  Protocol --> Iframe[Preview iframe]
-  Target --> Snapshot[DOM Snapshot from source]
-  Iframe --> Selection[Read-only selection message]
-  Selection --> Mapping[Selection mapping]
-  Mapping --> Inspector[Preview Inspector]
-  Mapping --> Overlay[Visual Selection Overlay]
-```
+| Implemented | Blocked | Future |
+| --- | --- | --- |
+| Secure `crystal-preview://` serving. | File writes. | Refresh invalidation after future writes. |
+| Static DOM Snapshot. | Live iframe DOM reads. | Stronger source mapping. |
+| Read-only selection and Inspector. | Editable Inspector. | Hover and multi-select states. |
+| External Visual Selection Overlay. | DOM mutation. | Layout guides and measurement overlays. |
 
 ## Key files
 
 These paths divide the Preview system by responsibility. Main owns serving and source reads; core owns models and mapping; renderer owns display and iframe message handling.
 
-- `packages/core/project/preview/**`
-- `packages/core/project/dom/**`
-- `packages/core/project/preview-selection/**`
-- `packages/core/project/preview-inspector/**`
-- `packages/core/project/design-canvas/selection-overlay/**`
-- `apps/desktop/electron/main/preview/**`
-- `apps/desktop/electron/main/dom/**`
-- `apps/desktop/electron/main/preview-selection/**`
-- `apps/desktop/electron/renderer/components/project-preview-panel/**`
+## Key files and responsibilities
+
+| File or path | Responsibility | Reads | Must not do |
+| --- | --- | --- | --- |
+| `apps/desktop/electron/main/preview/**` | Preview service and protocol. | Active root and Project Graph. | Serve outside-root files. |
+| `apps/desktop/electron/main/dom/**` | DOM Snapshot source reads. | Active Preview target source. | Inspect live iframe DOM. |
+| `packages/core/project/dom/**` | Static snapshot models and parser. | HTML source text. | Execute scripts. |
+| `packages/core/project/preview-selection/**` | Selection state and mapping. | Bounded selected-node payload + snapshot. | Treat every click as writable. |
+| `packages/core/project/preview-inspector/**` | Derived Inspector model. | Preview, selection, snapshot state. | Edit attributes or styles. |
+| `packages/core/project/design-canvas/selection-overlay/**` | Overlay projection types. | Selection and canvas state. | Insert overlay nodes into user DOM. |
 
 ## Data flow
 
-Main resolves a target from Project Graph pages and serves it through `crystal-preview://`. DOM Snapshot reads the same target from static source. Preview Selection emits a bounded click summary from the iframe. Core mapping compares that visual identity to the snapshot. Inspector and overlay render derived states; they do not become authoritative project state.
+| Input | Decision | Output |
+| --- | --- | --- |
+| Project Graph page | Is it safe and inside the active root? | Preview target URL. |
+| Active target source | Can it be parsed within limits? | DOM Snapshot state. |
+| Iframe click summary | Can it map to snapshot? | Matched or defensive selection. |
+| Matched selection | Can UI derive details or geometry? | Inspector and overlay state. |
+
+## Main diagram
+
+The diagram shows the two interpretations of the page. Solid lines are current read-only flows; dotted lines are explicitly blocked mutation shortcuts.
+
+```mermaid
+flowchart TD
+  subgraph Main[Main: privileged serving]
+    Graph[Project Graph pages]
+    Target{Safe target?}
+    Protocol[crystal-preview protocol]
+    SourceRead[Static source read]
+  end
+
+  subgraph Browser[Preview iframe]
+    Rendered[Rendered HTML]
+    Click[Bounded selection message]
+  end
+
+  subgraph Core[Core: source reasoning]
+    Snapshot[DOM Snapshot]
+    Mapping{Trusted mapping?}
+    Inspector[Inspector model]
+    OverlayModel[Overlay model]
+  end
+
+  subgraph Renderer[Renderer: UI]
+    PreviewPanel[Preview panel]
+    InspectorPanel[Inspector panel]
+    Overlay[External overlay]
+  end
+
+  Graph --> Target
+  Target -->|yes| Protocol --> Rendered
+  Target -->|yes| SourceRead --> Snapshot
+  Rendered --> Click --> Mapping
+  Snapshot --> Mapping
+  Mapping -->|matched| Inspector --> InspectorPanel
+  Mapping -->|matched| OverlayModel --> Overlay
+  Mapping -->|defensive| PreviewPanel
+  Rendered -. must not mutate .-> Snapshot
+```
 
 ## Boundaries
 
 Preview does not mutate files or DOM. Renderer does not receive absolute filesystem paths and does not read the iframe document. A selected visual node is not automatically writable because browser recovery, script execution, and static source parsing can diverge.
+
+> **Safety boundary:** Preview may render project HTML, but it must not become the editor or a privileged source of truth.
+
+## What this does not do
+
+| Not provided | Reason |
+| --- | --- |
+| Real source editing | Write runtime is future-only. |
+| Patch application | Command previews stay dry-run. |
+| Live DOM inspection | Would weaken iframe isolation. |
+| Computed styles / box model | Style Engine is future work. |
+
+## Common misunderstanding
+
+> **Common misunderstanding:** A selected iframe node is only a visual event until DOM Snapshot mapping confirms a source-derived target.
 
 ## Validation
 
