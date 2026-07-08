@@ -1,0 +1,33 @@
+.crystal-shell-metadata {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+  margin: 0;
+  color: var(--crystal-color-text-subtle);
+  font-size: var(--crystal-font-size-caption);
+  line-height: 1.2;
+}
+
+.crystal-shell-metadata-row {
+  display: grid;
+  grid-template-columns: minmax(28px, max-content) minmax(0, 1fr);
+  gap: var(--crystal-space-1);
+  min-width: 0;
+}
+
+.crystal-shell-metadata-row__label,
+.crystal-shell-metadata-row__value {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crystal-shell-metadata-row__label {
+  color: var(--crystal-color-text-faint);
+}
+
+.crystal-shell-metadata-row__value {
+  color: var(--crystal-color-text-dim);
+}

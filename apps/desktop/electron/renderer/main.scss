@@ -7,6 +7,13 @@
 @use "./layout/side-bar/side-bar";
 @use "./layout/workbench/workbench";
 @use "./layout/status-bar/status-bar";
+@use "./components/shell-ui/panel-section/panel-section";
+@use "./components/shell-ui/panel-header/panel-header";
+@use "./components/shell-ui/metadata-row/metadata-row";
+@use "./components/shell-ui/empty-state/empty-state";
+@use "./components/shell-ui/compact-control/compact-control";
+@use "./components/shell-ui/status-badge/status-badge";
+@use "./components/shell-ui/scroll-region/scroll-region";
 @use "./components/tabs/tabs";
 @use "./components/project-graph-panel/project-graph-panel";
 @use "./components/html-element-library-panel/html-element-library-panel";

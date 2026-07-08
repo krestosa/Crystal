@@ -1,0 +1,78 @@
+.crystal-shell-panel {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid var(--crystal-color-panel-border);
+  background: var(--crystal-color-panel-bg);
+  color: var(--crystal-color-text);
+}
+
+.crystal-shell-panel--flat {
+  border-color: transparent;
+  background: transparent;
+}
+
+.crystal-shell-panel--compact {
+  min-height: 0;
+}
+
+.crystal-shell-panel__body {
+  display: grid;
+  align-content: start;
+  gap: var(--crystal-space-1);
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  padding: var(--crystal-space-1);
+}
+
+.crystal-shell-section {
+  display: grid;
+  gap: var(--crystal-space-1);
+  min-width: 0;
+  min-height: 0;
+  padding-top: var(--crystal-space-1);
+  border-top: 1px solid var(--crystal-color-border-soft);
+}
+
+.crystal-shell-section:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.crystal-shell-section--compact {
+  gap: 2px;
+  padding-top: 3px;
+}
+
+.crystal-shell-panel-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crystal-space-2);
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.crystal-shell-panel-stack__tool {
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+.crystal-shell-panel-stack__main {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  scrollbar-gutter: stable;
+}
+
+.crystal-shell-panel-stack__secondary {
+  flex: 0 1 clamp(86px, 20vh, 180px);
+  min-width: 0;
+  min-height: 72px;
+  overflow: auto;
+  scrollbar-gutter: stable;
+}
