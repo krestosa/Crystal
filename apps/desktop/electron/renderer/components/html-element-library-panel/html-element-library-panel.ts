@@ -114,10 +114,10 @@ function createCatalogItemButton(item: HtmlElementLibraryItem, selectItem: (item
   const button = document.createElement("button");
   button.type = "button";
   button.className = "crystal-html-element-library-panel__item";
-  button.setAttribute("aria-disabled", "true");
   button.setAttribute("aria-pressed", "false");
   button.title = "Command foundation only";
   button.dataset.htmlElementLibraryItem = item.id;
+  button.dataset.htmlElementLibraryCommandState = "foundation-only";
 
   const label = document.createElement("span");
   label.className = "crystal-html-element-library-panel__item-label";
