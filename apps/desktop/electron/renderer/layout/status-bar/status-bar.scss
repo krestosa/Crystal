@@ -10,3 +10,63 @@
   font-size: 9px;
   letter-spacing: 0.02em;
 }
+
+.crystal-status-bar__runtime {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.crystal-status-bar__diagnostics-button {
+  position: relative;
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: var(--crystal-control-compact-size);
+  height: var(--crystal-control-compact-size);
+  padding: 0;
+  border: 1px solid var(--crystal-color-control-border);
+  border-radius: var(--crystal-control-radius);
+  background: var(--crystal-color-control-bg);
+  color: var(--crystal-color-control-text);
+  cursor: pointer;
+}
+
+.crystal-status-bar__diagnostics-button::before {
+  width: 10px;
+  height: 8px;
+  border: 1px solid currentColor;
+  background: transparent;
+  box-shadow: -5px 2px 0 -4px currentColor, 5px 2px 0 -4px currentColor, -5px 6px 0 -4px currentColor, 5px 6px 0 -4px currentColor;
+  content: "";
+}
+
+.crystal-status-bar__diagnostics-button::after {
+  position: absolute;
+  top: 5px;
+  width: 6px;
+  height: 1px;
+  background: currentColor;
+  box-shadow: 0 4px 0 currentColor;
+  content: "";
+}
+
+.crystal-status-bar__diagnostics-button:hover {
+  border-color: var(--crystal-color-control-hover-border);
+  background: var(--crystal-color-control-hover-bg);
+  color: var(--crystal-color-control-hover-text);
+}
+
+.crystal-status-bar__diagnostics-button[aria-expanded="true"] {
+  border-color: var(--crystal-color-accent-border);
+  background: var(--crystal-color-accent-soft);
+  color: var(--crystal-color-text);
+}
+
+.crystal-status-bar__diagnostics-button:focus-visible {
+  border-color: var(--crystal-color-accent-border);
+  color: var(--crystal-color-text);
+  outline: 2px solid var(--crystal-focus-ring);
+  outline-offset: 1px;
+}
