@@ -2,61 +2,68 @@
 
 [Docs index](./README.md)
 
-## Active project root
+> **Read this first:** Terms in Crystal often encode a boundary. In particular, `Preview`, `Snapshot`, `Patch Preview`, and `Write` are intentionally different concepts.
 
-The filesystem root selected through Open Folder or inferred from Open HTML. Main uses it to resolve Project Graph scans, Preview targets, DOM Snapshot source reads, and safe project-relative paths.
+## At a glance
 
-## Blocked
+| Category | Why it matters |
+| --- | --- |
+| Runtime and security | Defines where authority lives. |
+| Preview and inspection | Separates rendered HTML from source-derived state. |
+| Commands and patch planning | Separates intent, dry-run preview, and future execution. |
+| Future write system | Names blocked capabilities without claiming implementation. |
+| Validation | Names the checks that keep boundaries visible. |
 
-A deliberate non-feature. A blocked path is not missing because of UI polish; it is unavailable because the system lacks the safety or correctness contracts required to enable it.
+## Runtime and security
 
-## Command Preview Bus
+| Term | Short meaning | Implemented today? | Related docs |
+| --- | --- | --- | --- |
+| Active project root | Filesystem root selected or inferred for the current project. | Yes | [Project open flow](./architecture/flows/project-open-flow.md) |
+| Main | Electron runtime that owns privileged services. | Yes | [Runtime boundaries](./architecture/runtime-boundaries.md) |
+| Preload | Isolated bridge exposing `window.crystal`. | Yes | [Security model](./architecture/security-model.md) |
+| Renderer | Browser UI runtime for Crystal shell. | Yes | [Module boundaries](./architecture/module-boundaries.md) |
+| Preview iframe | Sandboxed iframe rendering project HTML. | Yes | [Preview safety](./architecture/preview/preview-safety.md) |
+| Write IPC | Future explicit IPC layer for write-capable operations. | No | [Future write flow](./architecture/flows/future-write-flow.md) |
 
-The dry-run bus under `packages/core/commands/command-preview-bus/`. It returns preview-ready, blocked, or unsupported results for command previews. It does not replace `packages/core/commands/command-bus.ts` and does not execute writes.
+## Preview and inspection
 
-## Design Canvas
+| Term | Short meaning | Implemented today? | Related docs |
+| --- | --- | --- | --- |
+| Project Graph | Scanned model of pages, dependencies, assets, missing routes, and issues. | Yes | [Project open flow](./architecture/flows/project-open-flow.md) |
+| Project Preview | Safe rendering of an active Project Graph page. | Yes | [Project Preview](./architecture/preview/project-preview.md) |
+| DOM Snapshot | Static source-derived structural tree. | Yes | [DOM Snapshot](./architecture/preview/dom-snapshot.md) |
+| Preview Selection | Read-only selected-node state from the Preview iframe. | Yes | [Preview Selection](./architecture/preview/preview-selection.md) |
+| Preview Inspector | Read-only derived panel for selected structural details. | Yes | [Preview Inspector](./architecture/preview/preview-inspector.md) |
+| Visual Selection Overlay | External overlay projected over Preview, outside user DOM. | Yes | [Visual Selection Overlay](./architecture/preview/visual-selection-overlay.md) |
 
-The renderer component that wraps the visual Preview frame and provides pan, zoom, fit, center, reset, and read-only overlay projection boundaries.
+## Commands and patch planning
 
-## DOM Snapshot
+| Term | Short meaning | Implemented today? | Related docs |
+| --- | --- | --- | --- |
+| HTML Element Library | Catalog and intent producer for future insertion. | Yes, preview-only | [HTML Element Library](./architecture/commands/html-element-library.md) |
+| AddHtmlElementCommand | Command-shaped dry-run intent for element insertion. | Yes, preview-only | [HTML insertion preview planner](./architecture/commands/html-insertion-preview-planner.md) |
+| Command Preview Bus | Dry-run bus under `packages/core/commands/command-preview-bus/`. | Yes, preview-only | [Command Preview Bus](./architecture/commands/command-preview-bus.md) |
+| Source Patch Preview | Verifiable description of a possible source change. | Yes, preview-only | [Source Patch Preview](./architecture/commands/source-patch-preview.md) |
+| Source anchor | Static source position used to preview before/after/inside insertion. | Yes, preview-only | [Source Patch Preview flow](./architecture/flows/source-patch-preview-flow.md) |
 
-A bounded static structural tree built from the active Preview target source. It is not the live browser DOM.
+## Future write system
 
-## Future
+| Term | Short meaning | Implemented today? | Related docs |
+| --- | --- | --- | --- |
+| Blocked | Deliberately unavailable because safety/correctness contracts are missing. | Yes, as state/docs | [Future write flow](./architecture/flows/future-write-flow.md) |
+| Future command execution | Later runtime that may execute validated commands. | No | [Future command execution](./architecture/commands/future-command-execution.md) |
+| Patch apply | Later operation that would persist a source patch. | No | [Source Patch Preview](./architecture/commands/source-patch-preview.md) |
+| Real undo/redo | Later transaction-backed history execution. | No | [Future write flow](./architecture/flows/future-write-flow.md) |
+| Dirty state | Later save/apply state for changed files. | No | [Future write flow](./architecture/flows/future-write-flow.md) |
 
-A planned capability that is not implemented. Future items should not be described as available behavior.
+## Validation
 
-## Preview iframe
+| Term | Short meaning | Implemented today? | Related docs |
+| --- | --- | --- | --- |
+| Architecture docs validator | Checks docs shape, links, diagrams, tables, callouts, and safety language. | Yes | [Validation system](./architecture/validation-system.md) |
+| Feature validator | Script checking a specific runtime or source boundary. | Yes | [Validation flow](./architecture/flows/validation-flow.md) |
+| Local quick validation | Installed-workspace aggregate gate. | Yes | [Validation gates](./architecture/diagrams/validation-gates.md) |
 
-The sandboxed iframe that renders project HTML through `crystal-preview://current/<relative-project-path>`.
+## Common misunderstanding
 
-## Preview Inspector
-
-A read-only derived panel that combines Preview, Preview Selection, and DOM Snapshot state to show structural details.
-
-## Preview Selection
-
-A read-only selection mode that sends bounded selected-node summaries from the Preview iframe to renderer/main/core. It does not edit.
-
-## Project Graph
-
-The core model describing scanned project files, pages, dependencies, assets, missing routes, watcher/cache state, and issues.
-
-## Source Patch Preview
-
-A dry-run, verifiable description of a possible source change. It does not apply a patch or persist data.
-
-## Visual Selection Overlay
-
-An external Crystal UI overlay that projects selected-element visualization outside the user document.
-
-## Write IPC
-
-A future explicit IPC layer for write-capable operations. It does not exist in the current implementation.
-
-## Related docs
-
-- [Architecture index](./architecture/README.md)
-- [Commands architecture](./architecture/commands/README.md)
-- [Preview architecture](./architecture/preview/README.md)
-- [Future write flow](./architecture/flows/future-write-flow.md)
+> **Common misunderstanding:** `Preview`, `Source Patch Preview`, and `Future write` are three different states. Only the first two exist today, and both are non-mutating.

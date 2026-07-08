@@ -2,6 +2,8 @@
 
 [Docs index](../README.md)
 
+> **Decision in one sentence:** Crystal keeps renderer and Preview content unprivileged, with filesystem and protocol authority owned by main.
+
 ## Status
 
 Accepted.
@@ -13,6 +15,15 @@ Crystal loads real user HTML next to privileged desktop code. Without strict bou
 ## Decision
 
 Keep renderer unprivileged. Use `contextIsolation: true`, `nodeIntegration: false`, `sandbox: true`, and `webSecurity: true`. Expose only a controlled preload API. Keep filesystem access in main/adapters. Keep Preview iframe isolation and avoid live iframe DOM reads from renderer.
+
+## Options considered
+
+| Option | Why rejected or accepted |
+| --- | --- |
+| Hardened Electron preferences and constrained preload | Accepted because it keeps authority explicit. |
+| Raw IPC from renderer | Rejected because renderer could call privileged effects directly. |
+| Relax iframe sandbox for easier inspection | Rejected because it couples UI to untrusted project HTML. |
+| Renderer filesystem helpers | Rejected because main must own project file access. |
 
 ## Consequences
 

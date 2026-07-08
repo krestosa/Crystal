@@ -2,6 +2,8 @@
 
 [Docs index](../README.md)
 
+> **Decision in one sentence:** Crystal builds read-only Preview, Snapshot, Selection, Overlay, and Inspector foundations before enabling any source mutation.
+
 ## Status
 
 Accepted.
@@ -13,6 +15,15 @@ Crystal eventually needs to edit source, but a visual editor without reliable Pr
 ## Decision
 
 Build read-only Preview, DOM Snapshot, Preview Selection, Visual Selection Overlay, and Preview Inspector before enabling writes. Treat missing, stale, mismatched, or ambiguous mapping as defensive state.
+
+## Options considered
+
+| Option | Why rejected or accepted |
+| --- | --- |
+| Read-only foundations first | Accepted because source reasoning must precede mutation. |
+| Visual editing before mapping | Rejected because a click would not be trustworthy enough to write. |
+| Live iframe DOM as source truth | Rejected because runtime DOM can diverge from source. |
+| Editable Inspector in same phase | Rejected because it requires command/history/write contracts. |
 
 ## Consequences
 

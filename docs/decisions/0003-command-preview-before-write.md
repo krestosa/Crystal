@@ -2,6 +2,8 @@
 
 [Docs index](../README.md)
 
+> **Decision in one sentence:** Crystal previews command effects as inspectable source descriptions before any write execution path exists.
+
 ## Status
 
 Accepted.
@@ -13,6 +15,15 @@ HTML insertion and later visual editing need trustworthy source planning. Applyi
 ## Decision
 
 Introduce command contracts, Source Patch Preview, HTML insertion preview planning, and Command Preview Bus dry-run results before implementing command execution. Keep real writes, patch apply, write IPC, undo/redo, and save/apply workflow blocked.
+
+## Options considered
+
+| Option | Why rejected or accepted |
+| --- | --- |
+| Preview before write | Accepted because users and validators can inspect intent. |
+| Hidden apply inside preview helpers | Rejected because side effects would be hard to validate. |
+| Renderer-owned file writes | Rejected because main/core must own privileged mutation. |
+| Treat `preview-ready` as write-ready | Rejected because preview lacks transaction and freshness checks. |
 
 ## Consequences
 

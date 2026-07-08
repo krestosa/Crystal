@@ -2,6 +2,8 @@
 
 [Docs index](../README.md)
 
+> **Decision in one sentence:** Crystal uses small presentational shell primitives so feature panels share structure without sharing feature logic.
+
 ## Status
 
 Accepted.
@@ -13,6 +15,15 @@ Crystal's renderer shell has several panels with similar chrome: Project Graph, 
 ## Decision
 
 Use small shell UI primitives for panel headers, sections, scroll regions, sidebar stacks, metadata rows, empty states, status badges, and compact controls. Keep primitives presentational. Feature logic should stay in feature modules.
+
+## Options considered
+
+| Option | Why rejected or accepted |
+| --- | --- |
+| Presentational shell primitives | Accepted because it reduces UI drift without centralizing feature logic. |
+| Feature-specific duplicated chrome | Rejected because panels would visually diverge. |
+| Primitives calling preload directly | Rejected because presentation components should not own effects. |
+| Single monolithic shell component | Rejected because it fights the modular source architecture. |
 
 ## Consequences
 
