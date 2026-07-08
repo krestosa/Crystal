@@ -2,7 +2,7 @@
 
 This document tracks implementation status. The complete product roadmap lives in [`docs/full-product-roadmap.md`](./full-product-roadmap.md).
 
-Crystal is a new Electron/Node desktop application for creating, inspecting, and modifying real HTML projects and their dependencies. This status file should stay conservative: it records what has landed, what is intentionally out of scope, and what validation is required before merge.
+Crystal is a new Electron/Node desktop application for creating, inspecting, and modifying real HTML projects and their dependencies. This status file stays conservative: it records what has landed, what is intentionally out of scope, and what validation is required before merge.
 
 ## Implemented foundations
 
@@ -18,9 +18,9 @@ Covered:
 - adapter folders for build-facing external tools
 - documentation of source modularity and runtime outputs
 
-### Phase 0 — Minimal tooling foundation
+### Phase 0 — Tooling foundation
 
-Partially covered:
+Covered:
 
 - Electron minimum application shell
 - TypeScript configuration
@@ -31,6 +31,23 @@ Partially covered:
 - structure validation script
 - build scripts
 - local validation runner for pre-merge checks
+- quick local validation scripts that skip dependency installation after the local workspace is already installed:
+  - `validate:local:quick`
+  - `validate:local:quick:core`
+  - `validate:local:quick:preview`
+  - `validate:local:quick:ui`
+- Electron diagnostic script
+- optional manual DevTools opening through the status bar button only; DevTools no longer auto-opens from `npm run dev`
+
+Still future hardening:
+
+- source tree boundary validation
+- import boundary validation
+- dist manifest validation
+- worker bundle validation
+- WASM build validation
+- HTML include source map support
+- circular include reporting
 
 ### Phase 1 — Project Graph foundation
 
@@ -47,7 +64,7 @@ Covered:
 - local, external, resolved, and missing route classification
 - Project Graph state integration
 - project events and command type definitions
-- minimal renderer verification panel for files, pages, issues, file counts, watcher state, refresh state, and cache state
+- renderer Project panel for files, pages, issues, file counts, watcher state, refresh state, and cache state
 - sample fixture project and validation scripts
 - filesystem watcher adapter
 - Project Graph watch event normalization
@@ -58,7 +75,22 @@ Covered:
 - typed IPC for watcher/cache control
 - automated local watcher filesystem validation over a temporary project
 
-### Phase 2 — Real Preview, DOM Snapshot, Preview Selection, and read-only Preview Inspector
+Still future hardening:
+
+- parsed DOM per HTML page in the Project Graph model
+- class usage expansion
+- selector/rule ownership expansion
+- unused files/assets candidates
+- project health signals
+- framework alias resolution
+- TypeScript path alias resolution
+- Sass include path support
+- npm package asset resolution
+- large-project indexing and persistence
+- worker-backed scanning and analysis
+- Rust/WASM acceleration behind typed boundaries
+
+### Phase 2 — Real Preview, DOM Snapshot, Preview Selection
 
 Covered:
 
@@ -67,15 +99,14 @@ Covered:
 - Project Graph page target selection
 - secure project-relative Preview path resolver
 - custom `crystal-preview://current/<relative-project-path>` protocol
-- basic MIME serving for HTML, CSS, JavaScript, SVG, images, and fonts
-- unsupported MIME fallback reporting as warning
+- basic MIME serving for HTML, CSS, JavaScript, SVG, images, fonts, media, and safe unsupported-MIME fallback reporting
 - missing Preview resource reporting
 - blocked path traversal and outside-root request reporting
 - coalesced Preview issues with bounded recent history
 - active Preview load correlation for stale issue prevention
 - typed IPC and preload Preview API
-- minimal renderer Preview panel in the Design view
-- visible Preview issues section in the Preview panel
+- renderer Preview panel in the Design view
+- visible Preview issues section in the Preview panel and floating Diagnostics panel
 - manual Load Preview and Reload Preview
 - target change reload from Project Graph pages
 - controlled Preview reload after relevant watcher-driven Project Graph refreshes
@@ -86,7 +117,7 @@ Covered:
 - stable DOM snapshot `snapshotPath`, path-based `id`, and `siblingIndex`
 - bounded DOM snapshot issues and limits
 - typed IPC and preload DOM snapshot API
-- minimal read-only DOM Tree panel in the Design view
+- read-only DOM Tree panel in the Design view
 - non-visual `validate:dom-snapshot` script
 - injected inactive-by-default Preview selection script for HTML responses
 - sandbox-preserving renderer `postMessage` bridge for Preview selection
@@ -94,13 +125,29 @@ Covered:
 - conservative read-only mapping between selected Preview nodes and DOM Snapshot paths
 - `matched`, `mismatched`, `ambiguous`, `stale`, and `missing-snapshot` mapping states
 - non-visual `validate:preview-selection` script
+
+### Phase 3 — Preview Inspector read-only
+
+Covered:
+
 - minimal read-only Preview Inspector model and selector
 - mapped DOM Snapshot node details for trusted `matched` selections
 - defensive Inspector states for missing snapshot, stale snapshot, mismatched mapping, ambiguous mapping, and matched path missing from the current snapshot
 - compact read-only Preview Inspector panel
+- target/page selector styling integrated with the carbon shell
 - non-visual `validate:preview-inspector` script
 
-### Phase 3 foundation — Design Canvas Navigation MVP
+Still out of scope:
+
+- attribute editing
+- text editing
+- computed styles
+- box model
+- CSS rule editing
+- DOM Tree navigation
+- scroll-to-node
+
+### Phase 4 — Design Canvas Navigation MVP
 
 Covered:
 
@@ -133,29 +180,78 @@ Covered:
 - external capture layer that defaults to `pointer-events: none`
 - in-memory viewport state persistence for the current renderer session
 - non-visual `validate:design-canvas` script
-- `validate:design-canvas` wired into `validate:local`
+- `validate:design-canvas` wired into local validation
 - documentation of read-only Design Canvas limits
 
-Not covered yet:
+Still out of scope:
 
-- visual editing
+- persistent viewport state across app restarts
+- device viewport presets
+- rulers, guides, grids, snapping, and measurement overlays beyond current shell/canvas visuals
+- safe mode surface in Design when Preview fails beyond current diagnostics
+- keyboard shortcut registry as a full app-level system
+
+### Phase 5 — Visual Selection and Overlay MVP
+
+Covered:
+
+- external read-only Visual Selection Overlay outside the Preview iframe
+- bounding-box/highlight projection for matched Preview selections
+- defensive states for missing snapshot or unavailable overlay data
+- overlay lifecycle tied to Preview selection/state rather than persistent DOM mutation
+- no mutation of user DOM beyond the existing temporary selection script
+- non-visual `validate:visual-selection-overlay` script
+
+Partially covered / still future:
+
+- hover highlight as a separate optional state
+- read-only selection handles beyond basic selection visualization
+- multi-frame awareness for multiple preview viewports
+- visual breadcrumbs foundation
+- layout type badges for `block`, `flex`, `grid`, `absolute`, `fixed`, and `sticky`
+- overlay desync hardening after iframe scroll/resize/reflow
+- ruler/guide/measurement overlay integration
+
+### Cross-cutting shell, Diagnostics, and UI system polish
+
+Covered:
+
+- carbon shell theme with compact density
+- resizable left and right shell panels
+- integrated status bar with runtime badge, Diagnostics button, and manual DevTools button
+- floating Diagnostics panel with open/close, pin/unpin, drag, viewport recovery, and eight-direction resize
+- Diagnostics scroll containment and responsive grid for Graph, Preview, DOM, and Events
+- dark Preview fixture styling
+- dark Inspector select styling
+- compact control tokens for shared button/select/icon-button styling
+- no-install quick validation path
+- UI flow validator coverage for shell, Diagnostics, DevTools button, dark fixtures, compact controls, and security guards
+
+Still out of scope:
+
+- theme customization UI
+- persisted user UI preferences
+- screenshot/UI automation testing
+- full accessibility pass beyond targeted labels/focus states
+
+## Not implemented yet
+
+The following roadmap items remain intentionally pending:
+
 - HTML5 element insertion library
 - grouped HTML5 element panel by intent: structure, text, media, forms, lists/tables, interaction, semantic/accessibility
+- command bus and mutation command runtime for source writes
+- source mutation service in main/core, not renderer
+- source patch generation and reversible patch model
+- undo/redo transaction log
+- save/apply dirty-state workflow
 - Webflow/Pinegrow-like structural editing commands
-- source mutation, save/apply, dirty state, and undo/redo
 - editable attributes or text editing
-- moving DOM nodes
-- persistent bounding boxes
-- rulers, guides, grids, snapping, and measurement overlays
-- safe mode surface in Design when Preview fails beyond current diagnostics
-- visual breadcrumbs and DOM Tree interaction
-- layout visualization for block, flex, grid, absolute, fixed, and sticky contexts
-- hover, focus, and active visual state tooling
+- moving/reordering DOM nodes
 - class management and Class Composer
 - CSS cascade or specificity analysis
 - Style Engine and CSS/Sass Inspector
 - visual style editor categories: layout, spacing, size, position, typography, color, background, border, effects, transform, flex, grid, responsive, custom properties, and states
-- style write policy: existing class, new class, selector, stylesheet, Sass partial, CSS variable, and explicit-only inline style
 - responsive breakpoint tooling
 - component/snippet library
 - asset/font/SVG/media management UI
@@ -166,8 +262,7 @@ Not covered yet:
 - worker-backed parser/analyzer/asset/css/html/ts/preview-sync/wasm processing
 - fallbacks for WebGPU, WASM, Preview, malformed HTML, failed CSS/assets, blocking scripts, and terminal failure
 - explicit build pipeline for source validation, HTML assembly, SCSS compilation, TypeScript bundling, Rust/WASM compilation, assets, manifest, and dist validation
-- command bus and mutation commands
-- event bus and domain events
+- full event bus and domain event expansion
 - state domains for workspace, graph, selection, preview, inspector, developer, files, build, history, and UI
 - WebGPU overlay implementation
 - Rust/WASM analyzer implementation
@@ -179,43 +274,78 @@ Not covered yet:
 
 ## Full roadmap summary
 
-The complete roadmap is documented in [`docs/full-product-roadmap.md`](./full-product-roadmap.md). The high-level sequence after the current Preview and Design Canvas navigation foundations is:
+The complete roadmap is documented in [`docs/full-product-roadmap.md`](./full-product-roadmap.md). The high-level sequence now is:
 
-1. Visual Selection and Overlay MVP.
-2. HTML5 Element Library and Insertion.
-3. Design Editing MVP with commands and undo/redo.
-4. Editable Inspector MVP.
-5. Style Engine and CSS/Sass Inspector.
-6. Responsive Design and Layout Tools.
-7. Components, snippets, and reusable blocks.
-8. Assets, fonts, SVG, and media management.
-9. Developer Mode and IDE tools.
-10. WebGPU Overlay Engine.
-11. Rust/WASM Analyzer.
-12. Automation, assistant workflows, packaging, testing, and product hardening.
+1. ~~Read-only Preview Inspector.~~ Implemented.
+2. ~~Design Canvas Navigation MVP.~~ Implemented foundation.
+3. ~~Visual Selection and Overlay MVP.~~ Implemented MVP; hardening remains.
+4. HTML5 Element Library and safe insertion command foundation.
+5. Design Editing MVP with commands and undo/redo.
+6. Editable Inspector MVP.
+7. Style Engine and CSS/Sass Inspector.
+8. Responsive Design and Layout Tools.
+9. Components, snippets, and reusable blocks.
+10. Assets, fonts, SVG, and media management.
+11. Developer Mode and IDE tools.
+12. WebGPU Overlay Engine.
+13. Rust/WASM Analyzer.
+14. Automation, assistant workflows, packaging, testing, and product hardening.
 
-Directive-level roadmap details are now tracked in `docs/full-product-roadmap.md`, including Design Mode, Inspector submodules, Developer Mode console separation, workers, fallbacks, build pipeline, command/event/state roadmaps, non-negotiable rules, and pending decisions.
+## Recommended next module
+
+Next: **Phase 6A — HTML5 Element Library and safe insertion command foundation**.
+
+Do not jump directly into broad visual editing. The next increment should make the first source-writing feature possible without violating the safety model. It should land in small, validated slices:
+
+1. Add a read-only Element Library panel grouped by intent.
+2. Add insertion target eligibility derived from the current matched Preview/DOM Snapshot selection.
+3. Add command contracts for insertion without writing files yet.
+4. Add source patch preview and validation for one or two safe primitives.
+5. Add one actual persisted insertion command only after the command boundary, preview refresh, graph refresh, and undo model are present.
+
+Recommended first coding branch:
+
+```txt
+feature/html-element-library-command-foundation
+```
+
+Recommended first PR scope:
+
+- Element Library UI skeleton in Design mode.
+- Read-only grouped catalog for common HTML5 elements.
+- Selection-aware target state: no selection, missing snapshot, ambiguous/mismatched, matched target.
+- Insertion command type definitions and validators.
+- No source writes yet.
+- Non-visual validator: `validate:html-element-library`.
+
+This keeps the next step useful while preventing Crystal from becoming a fragile editor before command, undo, patch, and refresh boundaries are reliable.
 
 ## Required validation before PR merge
 
-Run:
+For a full install-backed local gate, run:
 
 ```bash
 npm run validate:local
 ```
 
-The runner executes the current install, build, typecheck, Project Graph, watcher/cache, Preview, DOM snapshot, Preview selection, Preview Inspector, Design Canvas, watcher filesystem, Electron diagnostic checks, and any feature-specific validation scripts that have been wired into it. It stops on the first failure and returns a non-zero exit code.
-
-For the explicit Electron launch check, run:
+For iterative validation after dependencies are already installed, run:
 
 ```bash
-npm run validate:local -- --with-dev
+npm run validate:local:quick
 ```
 
-`--with-dev` opens Electron through `npm run dev`; the user must close the app manually to let the runner finish.
+For Electron launch checks, run manually:
+
+```bash
+npm run dev
+```
+
+Feature-specific scripts should be added as phases land, for example:
+
+- `validate:html-element-library`.
+- `validate:design-editing`.
+- `validate:style-engine`.
+- `validate:webgpu-overlay`.
+- `validate:wasm-analyzer`.
 
 The validation runner is mandatory before requesting PR merge. It must be updated whenever a phase adds new required validation. Manual UI verification remains required where automation is not yet sufficient.
-
-## Recommended next module
-
-After the current Design Canvas navigation foundation, move to Visual Selection and Overlay MVP before HTML insertion or broad visual editing. Do not jump directly to editable Inspector, full Design Editing, Developer Mode, WebGPU, or Rust/WASM before the required intermediate foundations are in place.
