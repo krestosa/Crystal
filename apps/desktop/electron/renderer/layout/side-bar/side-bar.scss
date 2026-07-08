@@ -1,7 +1,7 @@
 .crystal-side-bar {
   min-width: 0;
   min-height: 0;
-  padding: 5px;
+  padding: var(--crystal-space-2);
   border-right: 1px solid var(--crystal-color-border-soft);
   background: var(--crystal-color-surface-strong);
   overflow: auto;
@@ -11,23 +11,23 @@
 
 .crystal-side-bar__section {
   display: grid;
-  gap: 6px;
+  gap: var(--crystal-space-2);
   min-width: 0;
 }
 
 .crystal-side-bar__header {
   display: grid;
-  gap: 2px;
-  padding-bottom: 5px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.065);
+  gap: var(--crystal-space-1);
+  padding-bottom: var(--crystal-space-2);
+  border-bottom: 1px solid var(--crystal-color-border-soft);
 }
 
 .crystal-side-bar__title {
   margin: 0;
-  color: rgba(247, 242, 236, 0.84);
-  font-size: 9px;
+  color: var(--crystal-color-text-muted);
+  font-size: var(--crystal-font-size-label);
   font-weight: 650;
-  letter-spacing: 0.12em;
+  letter-spacing: var(--crystal-letter-spacing-label);
   line-height: 1.15;
   text-transform: uppercase;
 }
@@ -35,6 +35,6 @@
 .crystal-side-bar__text {
   margin: 0;
   color: var(--crystal-color-subtle);
-  font-size: 9px;
+  font-size: var(--crystal-font-size-caption);
   line-height: 1.25;
 }

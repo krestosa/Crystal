@@ -13,7 +13,7 @@ textarea {
 }
 
 * {
-  scrollbar-color: rgba(249, 115, 22, 0.42) rgba(7, 6, 5, 0.72);
+  scrollbar-color: rgba(247, 242, 236, 0.26) rgba(7, 6, 5, 0.72);
   scrollbar-width: thin;
 }
 
@@ -29,7 +29,11 @@ textarea {
 *::-webkit-scrollbar-thumb {
   border: 2px solid rgba(7, 6, 5, 0.72);
   border-radius: 999px;
-  background: rgba(249, 115, 22, 0.48);
+  background: rgba(247, 242, 236, 0.24);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(247, 242, 236, 0.34);
 }
 
 .crystal-view {
