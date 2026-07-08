@@ -1,12 +1,12 @@
 :root {
-  color-scheme: light;
+  color-scheme: dark;
 }
 
 body {
   margin: 0;
   font-family: system-ui, sans-serif;
-  background: #f5f7fb;
-  color: #121826;
+  background: #070604;
+  color: #f7f2ec;
 }
 
 .preview-fixture {
@@ -15,6 +15,8 @@ body {
   place-items: center;
   align-content: center;
   gap: 12px;
+  padding: 24px;
+  background: #070604;
 }
 
 .preview-fixture img {
@@ -25,4 +27,22 @@ body {
 .preview-fixture h1,
 .preview-fixture p {
   margin: 0;
+}
+
+.preview-fixture p {
+  color: rgba(247, 242, 236, 0.64);
+}
+
+a {
+  color: #f7c58e;
+}
+
+button,
+input,
+select,
+textarea {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: #14100c;
+  color: #f7f2ec;
+  color-scheme: dark;
 }
