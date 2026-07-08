@@ -212,6 +212,47 @@ Partially covered / still future:
 - overlay desync hardening after iframe scroll/resize/reflow
 - ruler/guide/measurement overlay integration
 
+### Phase 6A — HTML Element Library command foundation
+
+Covered:
+
+- compact modular Element Library panel grouped by intent: structure, text, media, forms, lists/tables, interaction, semantic/accessibility, and presets
+- read-only HTML element catalog with explicit future insertion modes, required attributes, recommended attributes, child hints, and accessibility notes
+- `AddHtmlElementCommand` contracts, constants, validator, and execution blocker
+- target eligibility selector based on Project Graph, Preview target, DOM Snapshot, and Preview Selection mapping state
+- defensive UI states for no project, no preview target, missing snapshot, stale snapshot, mismatched selection, ambiguous selection, unsupported target, and matched target
+- compact Element Library integration with shell UI primitives and disabled future command action
+- non-visual `validate:html-element-library` script wired into quick UI validation
+
+Still out of scope:
+
+- real source writes
+- patch apply
+- IPC write
+- save/apply workflow
+- undo/redo real history
+- DOM mutation
+
+### Phase 6B — Source Patch Preview and Command Bus Foundation
+
+Covered:
+
+- source patch preview model
+- source insertion anchor model based on DOM Snapshot `sourceLocation`
+- dry-run command bus contracts
+- `AddHtmlElementCommand` preview planner
+- compact Element Library patch preview UI
+- validation guarding against writes, IPC write channels, and iframe internals
+
+Still out of scope:
+
+- real source writes
+- patch apply
+- IPC write
+- save/apply workflow
+- undo/redo real history
+- DOM mutation
+
 ### Cross-cutting shell, Diagnostics, and UI system polish
 
 Covered:
@@ -234,15 +275,27 @@ Still out of scope:
 - screenshot/UI automation testing
 - full accessibility pass beyond targeted labels/focus states
 
+## Recommended next module
+
+### Phase 6C — History/Undo transaction skeleton and refresh boundary planning
+
+Recommended scope:
+
+- command history transaction skeleton without applying project mutations
+- undo/redo contract shapes without real undo/redo behavior
+- patch preview to refresh-boundary planning contracts
+- preview refresh boundary model for future source writes
+- validation that real source writes, patch apply, IPC write, save/apply, and DOM mutation remain blocked
+
+Phase 6C must still avoid real source writes and must not claim actual insertion. It should prepare history and refresh boundaries before any future write-capable command lands.
+
 ## Not implemented yet
 
 The following roadmap items remain intentionally pending:
 
-- HTML5 element insertion library
-- grouped HTML5 element panel by intent: structure, text, media, forms, lists/tables, interaction, semantic/accessibility
-- command bus and mutation command runtime for source writes
+- real source mutation command runtime
 - source mutation service in main/core, not renderer
-- source patch generation and reversible patch model
+- source patch application and reversible patch persistence
 - undo/redo transaction log
 - save/apply dirty-state workflow
 - Webflow/Pinegrow-like structural editing commands
@@ -279,46 +332,19 @@ The complete roadmap is documented in [`docs/full-product-roadmap.md`](./full-pr
 1. ~~Read-only Preview Inspector.~~ Implemented.
 2. ~~Design Canvas Navigation MVP.~~ Implemented foundation.
 3. ~~Visual Selection and Overlay MVP.~~ Implemented MVP; hardening remains.
-4. HTML5 Element Library and safe insertion command foundation.
-5. Design Editing MVP with commands and undo/redo.
-6. Editable Inspector MVP.
-7. Style Engine and CSS/Sass Inspector.
-8. Responsive Design and Layout Tools.
-9. Components, snippets, and reusable blocks.
-10. Assets, fonts, SVG, and media management.
-11. Developer Mode and IDE tools.
-12. WebGPU Overlay Engine.
-13. Rust/WASM Analyzer.
-14. Automation, assistant workflows, packaging, testing, and product hardening.
-
-## Recommended next module
-
-Next: **Phase 6A — HTML5 Element Library and safe insertion command foundation**.
-
-Do not jump directly into broad visual editing. The next increment should make the first source-writing feature possible without violating the safety model. It should land in small, validated slices:
-
-1. Add a read-only Element Library panel grouped by intent.
-2. Add insertion target eligibility derived from the current matched Preview/DOM Snapshot selection.
-3. Add command contracts for insertion without writing files yet.
-4. Add source patch preview and validation for one or two safe primitives.
-5. Add one actual persisted insertion command only after the command boundary, preview refresh, graph refresh, and undo model are present.
-
-Recommended first coding branch:
-
-```txt
-feature/html-element-library-command-foundation
-```
-
-Recommended first PR scope:
-
-- Element Library UI skeleton in Design mode.
-- Read-only grouped catalog for common HTML5 elements.
-- Selection-aware target state: no selection, missing snapshot, ambiguous/mismatched, matched target.
-- Insertion command type definitions and validators.
-- No source writes yet.
-- Non-visual validator: `validate:html-element-library`.
-
-This keeps the next step useful while preventing Crystal from becoming a fragile editor before command, undo, patch, and refresh boundaries are reliable.
+4. ~~HTML5 Element Library and safe insertion command foundation.~~ Implemented as read-only Phase 6A foundation.
+5. ~~Source Patch Preview and Command Bus Foundation.~~ Implemented as read-only Phase 6B foundation.
+6. History/Undo transaction skeleton and refresh boundary planning.
+7. Design Editing MVP with commands and undo/redo.
+8. Editable Inspector MVP.
+9. Style Engine and CSS/Sass Inspector.
+10. Responsive Design and Layout Tools.
+11. Components, snippets, and reusable blocks.
+12. Assets, fonts, SVG, and media management.
+13. Developer Mode and IDE tools.
+14. WebGPU Overlay Engine.
+15. Rust/WASM Analyzer.
+16. Automation, assistant workflows, packaging, testing, and product hardening.
 
 ## Required validation before PR merge
 
@@ -343,6 +369,7 @@ npm run dev
 Feature-specific scripts should be added as phases land, for example:
 
 - `validate:html-element-library`.
+- `validate:source-patch-preview`.
 - `validate:design-editing`.
 - `validate:style-engine`.
 - `validate:webgpu-overlay`.

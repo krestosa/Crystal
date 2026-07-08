@@ -13,6 +13,7 @@ export function getHtmlElementLibraryPanelElements(root: HTMLElement): HtmlEleme
     selectedDescription: query("[data-html-element-library-selected-description]", HTMLElement),
     selectedDetails: query("[data-html-element-library-selected-details]", HTMLElement),
     targetSummary: query("[data-html-element-library-target-summary]", HTMLElement),
+    insertionModePicker: query("[data-html-element-library-insertion-mode-picker]", HTMLElement),
     patchPreview: query("[data-html-element-library-patch-preview]", HTMLElement),
     futureAction: query("[data-html-element-library-future-action]", HTMLButtonElement)
   };

@@ -1,4 +1,4 @@
-import type { HtmlElementLibraryCategory, HtmlElementLibraryItem, HtmlInsertionTargetEligibility } from "../../../../../../packages/core/project/html-element-library";
+import type { HtmlElementInsertionMode, HtmlElementLibraryCategory, HtmlElementLibraryItem, HtmlInsertionTargetEligibility } from "../../../../../../packages/core/project/html-element-library";
 
 export interface HtmlElementLibraryPanelElements {
   readonly root: HTMLElement;
@@ -11,6 +11,7 @@ export interface HtmlElementLibraryPanelElements {
   readonly selectedDescription: HTMLElement;
   readonly selectedDetails: HTMLElement;
   readonly targetSummary: HTMLElement;
+  readonly insertionModePicker: HTMLElement;
   readonly patchPreview: HTMLElement;
   readonly futureAction: HTMLButtonElement;
 }
@@ -19,4 +20,5 @@ export interface HtmlElementLibraryPanelState {
   readonly activeCategory: HtmlElementLibraryCategory;
   readonly selectedItem: HtmlElementLibraryItem | null;
   readonly targetEligibility: HtmlInsertionTargetEligibility;
+  readonly insertionMode: HtmlElementInsertionMode;
 }
