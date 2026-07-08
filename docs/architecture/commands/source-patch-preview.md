@@ -4,11 +4,13 @@
 
 ## Purpose
 
-This document describes Source Patch Preview: a dry-run source text model for explaining what a future command would change.
+Source Patch Preview is a verifiable description of a possible source change. It is useful because it gives the user and validators something concrete to inspect before Crystal has permission to modify files. It is not a write operation.
 
 ## Current implementation
 
-Source Patch Preview models source file path, insertion anchors, inserted text preview, status, errors, and human summaries. It uses DOM Snapshot source locations to plan where insertion could happen. It does not apply patches.
+The preview model records target file path, source anchor, inserted text preview, status, errors, and a human summary. HTML insertion preview planning uses DOM Snapshot source locations to identify where a future insert might happen. If location data is missing or unsafe, the preview blocks instead of inventing a patch.
+
+The diagram shows the source of trust: a mapped snapshot node with source location can produce an anchor; the anchor can produce preview text; preview text cannot write.
 
 ```mermaid
 flowchart TD
@@ -23,6 +25,8 @@ flowchart TD
 
 ## Key files
 
+Read the anchor selectors with the planner. The renderer only displays the resulting preview and must not apply it.
+
 - `packages/core/source-patch/html-source-anchor.types.ts`
 - `packages/core/source-patch/html-source-anchor.selectors.ts`
 - `packages/core/source-patch/source-patch-preview.types.ts`
@@ -33,11 +37,11 @@ flowchart TD
 
 ## Data flow
 
-A matched selection provides a DOM Snapshot node. Source anchor selectors derive before/after/inside positions when source location is available. The HTML insertion planner builds an inserted text preview and summary. The renderer shows the result without applying it.
+A matched selection yields a DOM Snapshot node. Source anchor selectors derive before, after, or inside positions when source location data is present. The planner formats a small inserted-text preview and summary. Renderer displays the result as a dry-run explanation.
 
 ## Boundaries
 
-Source Patch Preview must not write, save, patch, mutate, or call IPC write channels. Missing `sourceLocation` is a valid blocked state. Preview text is explanatory, not an authoritative persisted diff.
+Source Patch Preview must not write, save, patch, mutate, or call IPC write channels. It should remain safe to compute even when the project is open read-only. Missing `sourceLocation`, stale snapshots, ambiguous mappings, or unsupported targets are technical reasons to block rather than guess.
 
 ## Validation
 
@@ -51,4 +55,4 @@ Source Patch Preview must not write, save, patch, mutate, or call IPC write chan
 
 ## Future work
 
-Future patch application needs atomic file IO, conflict detection, source freshness checks, undo records, dirty-state UI, and refresh planning before it can be enabled.
+Patch application will need atomic file IO, source freshness checks, conflict detection, formatting policy, undo records, dirty-state UI, and refresh planning. Until those exist, preview text stays descriptive only.

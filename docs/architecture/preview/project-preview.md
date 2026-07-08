@@ -4,11 +4,13 @@
 
 ## Purpose
 
-This document explains the current real Preview pipeline: target selection, safe URL generation, protocol serving, reload planning, and diagnostics.
+Project Preview is the bridge between the scanned project model and Chromium's rendering engine. It answers one narrow question: given an active project and a selected HTML page, what can Crystal safely serve to an isolated iframe?
 
 ## Current implementation
 
-Electron main owns Preview load state and the `crystal-preview://current/<relative-project-path>` protocol. Core owns target, issue, state, path, and reload models. Renderer displays the Preview panel and sends explicit load/reload/target requests through preload.
+Electron main owns Preview load state and the `crystal-preview://current/<relative-project-path>` protocol. Core defines target, state, issue, path, and reload models. Renderer displays controls and status but asks preload/main to resolve targets and state.
+
+The diagram follows a page load from renderer intent to protocol serving. Diagnostics are produced by main, not by renderer guessing filesystem state.
 
 ```mermaid
 flowchart TD
@@ -25,6 +27,8 @@ flowchart TD
 
 ## Key files
 
+Start with the core model files to understand the state shape, then read the main service/protocol files for the privileged path, and finally the renderer panel for presentation.
+
 - `packages/core/project/preview/project-preview.types.ts`
 - `packages/core/project/preview/project-preview-state.ts`
 - `packages/core/project/preview/project-preview-target.ts`
@@ -37,23 +41,23 @@ flowchart TD
 
 ## Data flow
 
-Renderer requests a target or reload. Main validates that the target exists in the active graph and stays inside the active root. Main returns a safe custom protocol URL. The iframe requests project resources through the protocol handler. The handler resolves each request under the active root, serves supported content, and records sanitized issues.
+The renderer requests load, reload, or target change. Main checks the target against the active Project Graph and root. The protocol handler resolves iframe resource requests under that root, serves supported content, and records bounded issues for missing, blocked, unreadable, or fallback-served resources.
 
 ## Boundaries
 
-Renderer does not construct absolute paths. Preview resource requests outside the active root are blocked. Traversal is blocked. Unsupported MIME fallback is informational and bounded. The Preview panel does not execute source writes or inspect the live iframe document.
+Renderer does not construct absolute paths, read project files, or decide whether a resource is safe. The protocol rejects traversal and outside-root requests. Preview is rendering and diagnostics only; it is not a browser console, source editor, or write service.
 
 ## Validation
 
-`validate:preview` checks target resolution, protocol constraints, diagnostics, and forbidden behavior.
+`validate:preview` checks target resolution, protocol constraints, diagnostics, issue coalescing, and forbidden behavior.
 
 ## Related docs
 
 - [Preview safety](./preview-safety.md)
 - [DOM Snapshot](./dom-snapshot.md)
-- [Preview pipeline diagram](../diagrams/system-context.md)
 - [Project open flow](../flows/project-open-flow.md)
+- [Security model](../security-model.md)
 
 ## Future work
 
-Phase 6C should add refresh-boundary planning contracts for future source writes. Current reload planning remains conservative and downstream from Project Graph refresh.
+A future write runtime will need to tell Preview when to reload and when to invalidate derived state. Phase 6C should model that refresh boundary without applying source changes.

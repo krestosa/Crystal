@@ -4,11 +4,13 @@
 
 ## Purpose
 
-This document explains the local validation gates that keep Crystal's architecture conservative while features are added.
+Crystal has several features whose safest behavior is the absence of a shortcut: no renderer filesystem access, no live iframe DOM reads, no write IPC, no patch application, no real undo/redo. The validation system exists to make those negative guarantees visible while the codebase changes.
 
 ## Current implementation
 
-Validation is script-based and dependency-light. The root `package.json` defines build, typecheck, feature validators, full local validation, quick validation groups, watcher validation, and Electron diagnostics. Validators are intentionally static or non-visual where possible.
+Validation is script-based and uses the existing Node toolchain. The root scripts cover build, typecheck, structure, Project Graph, watcher behavior, Preview, DOM Snapshot, Preview Selection, Preview Inspector, Design Canvas, Visual Selection Overlay, HTML Element Library, Source Patch Preview, UI flow, Electron diagnostics, and the architecture docs.
+
+The diagram separates the full local gate from the quicker installed-workspace path. The docs validator is intentionally small: it checks documentation shape and safety claims, not runtime behavior.
 
 ```mermaid
 flowchart TD
@@ -22,13 +24,16 @@ flowchart TD
   UI --> Watch[watch validation]
   Watch --> Doctor[Electron doctor]
 
-  Quick[validate:local:quick] --> Build
+  Quick[validate:local:quick] --> Docs[validate:architecture-docs]
+  Docs --> Build
   Quick --> CoreQuick[quick:core]
   Quick --> PreviewQuick[quick:preview]
   Quick --> UIQuick[quick:ui]
 ```
 
 ## Key files
+
+Read `package.json` first to see the command graph. The scripts below are the feature gates most relevant to architecture boundaries.
 
 - `package.json`
 - `scripts/validate-local.mjs`
@@ -48,11 +53,11 @@ flowchart TD
 
 ## Data flow
 
-Build validators check generated outputs indirectly through the build pipeline. Feature validators inspect source files, models, fixtures, or pure module behavior. Documentation validation checks that the new architecture docs exist, link back to the root docs index, include required sections, and include Mermaid diagrams.
+Validators read source files, fixtures, and documentation, then fail with explicit messages when a required structure or boundary is missing. They do not patch files. Feature validators protect runtime assumptions; the docs validator protects onboarding structure, cross-links, Mermaid coverage, roadmap references, and explicit blocked-write language.
 
 ## Boundaries
 
-Validators must not add runtime behavior. They must not patch source files. They must fail with explicit messages when architecture boundaries drift. Documentation validation must not require new dependencies, binary assets, or external services.
+A passing documentation validator does not prove a feature works. It only proves that the docs set still carries the required map and safety language. A passing feature validator does not grant permission to claim future behavior as implemented. Documentation and runtime validation have different jobs.
 
 ## Validation
 
@@ -63,7 +68,7 @@ npm run validate:architecture-docs
 npm run validate:local:quick
 ```
 
-`validate:architecture-docs` is documentation-only and does not replace build/typecheck or feature validation.
+Use `validate:local` when the full install-backed path is needed.
 
 ## Related docs
 
@@ -74,4 +79,4 @@ npm run validate:local:quick
 
 ## Future work
 
-Future validators should cover import boundaries, docs-to-source reference drift, worker boundaries, WASM build outputs, WebGPU fallback paths, and write-command safety once those features exist.
+The next validation improvements should check import boundaries and docs-to-source path drift. Write-capable phases will need additional gates for command execution, patch application, transaction records, refresh invalidation, and undo/redo reversibility.

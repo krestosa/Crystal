@@ -4,11 +4,13 @@
 
 ## Purpose
 
-This document explains the read-only Preview Selection bridge and its conservative mapping to DOM Snapshot state.
+Preview Selection is the bridge between what the user clicks in the rendered page and what Crystal can safely reason about in the source model. It does not edit the page, inspect iframe internals from the renderer, or assume that a visual node is automatically writable. Its job is narrower: capture a bounded selection event, normalize it, and let mapping decide whether the target relates to the DOM Snapshot.
 
 ## Current implementation
 
-Preview Selection uses an injected HTML response script that is inactive by default. Renderer toggles selection mode with namespaced `postMessage` commands. The Preview iframe sends bounded selected-node messages back to renderer. Renderer and main validate payloads. Core maps selected live-preview identity to static DOM Snapshot only when safe.
+Selection uses an injected script for HTML responses served through the Preview protocol. The script is inactive by default. Renderer toggles it with namespaced `postMessage` commands. The iframe sends a small selected-node summary back to renderer; renderer validates it and passes it to main, where it is validated again and mapped in core.
+
+The sequence shows why selection is two-step: a visual click comes first, but trusted source identity is only available after mapping against snapshot state.
 
 ```mermaid
 sequenceDiagram
@@ -30,6 +32,8 @@ sequenceDiagram
 
 ## Key files
 
+These files separate message transport, state validation, and mapping. Review all three layers before changing selection behavior.
+
 - `packages/core/project/preview-selection/project-preview-selection.types.ts`
 - `packages/core/project/preview-selection/project-preview-selection-state.ts`
 - `packages/core/project/preview-selection/project-preview-selection-validators.ts`
@@ -41,11 +45,11 @@ sequenceDiagram
 
 ## Data flow
 
-Selection mode toggles are sent into the iframe. Selected-node summaries move out through `postMessage`, then into main through IPC. Main stores sanitized selection state and emits state changes. Mapping consumes DOM Snapshot state and returns `matched`, `missing-snapshot`, `stale`, `mismatched`, or `ambiguous`.
+The iframe emits tag, structural, attribute, text, and selector preview data within limits. Main stores a sanitized `PreviewSelectionState`. Core mapping compares the selected path and tag to the current DOM Snapshot. The output is either a trusted match or a defensive state such as missing snapshot, stale snapshot, mismatch, or ambiguity.
 
 ## Boundaries
 
-Selection is not editing. It cannot mutate attributes, text, DOM nodes, or files. Renderer does not rely on `event.origin` because the iframe can have an opaque origin; the source window and message type are the important guards. Renderer must not read `iframe.contentDocument` or `iframe.contentWindow.document`.
+Selection is not editing. It cannot mutate attributes, text, DOM nodes, or files. Renderer does not depend on `event.origin` because the sandboxed iframe may have an opaque origin; it checks the source window and message type instead. Renderer must not read `iframe.contentDocument` or `iframe.contentWindow.document`.
 
 ## Validation
 
@@ -60,4 +64,4 @@ Selection is not editing. It cannot mutate attributes, text, DOM nodes, or files
 
 ## Future work
 
-Future selection may support hover, multi-select, breadcrumbs, or scroll-to-node, but those must remain separate from source mutation until command execution and history boundaries exist.
+Hover selection, multi-selection, breadcrumbs, and scroll-to-node can be added later as separate states. They still should not imply source mutation until command execution and history boundaries exist.

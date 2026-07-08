@@ -4,11 +4,13 @@
 
 ## Purpose
 
-This document explains the Element Library as the current UI entry point for future HTML insertion commands.
+The Element Library is where user intent for future HTML insertion begins. Today it is not an editor. It lets a user choose an element, see whether the current selection is a plausible target, choose an insertion mode, and preview the source text that a later write runtime might produce.
 
 ## Current implementation
 
-The Element Library is a compact renderer panel grouped by intent: structure, text, media, forms, lists/tables, interaction, semantic/accessibility, and presets. It shows item details, target eligibility, insertion mode choices, and a read-only command preview.
+The panel groups HTML elements by intent: structure, text, media, forms, lists/tables, interaction, semantic/accessibility, and presets. It shows item details, target eligibility, insertion modes, and a read-only command preview.
+
+The diagram shows that the library depends on several state domains before it can preview anything. A selected element alone is not enough; Crystal also needs a safe target.
 
 ```mermaid
 flowchart TD
@@ -23,6 +25,8 @@ flowchart TD
 
 ## Key files
 
+The catalog files define what can be offered. The insertion-target files decide whether the current selection can receive a preview. The renderer files display intent and result.
+
 - `packages/core/project/html-element-library/html-element-library.catalog.ts`
 - `packages/core/project/html-element-library/html-element-library.constants.ts`
 - `packages/core/project/html-element-library/html-element-library.selectors.ts`
@@ -34,11 +38,11 @@ flowchart TD
 
 ## Data flow
 
-The panel selects a catalog item and insertion mode. Target eligibility combines Project Graph, Preview, DOM Snapshot, and Preview Selection mapping. When eligible enough for dry-run, the panel creates an `AddHtmlElementCommand` preview object and passes it to core preview planning.
+The user selects a catalog item and insertion mode. Eligibility combines Project Graph, Preview target, DOM Snapshot, and Preview Selection mapping. If the target is safe enough for dry-run planning, the panel creates an `AddHtmlElementCommand` preview object and passes it to the command preview path.
 
 ## Boundaries
 
-The library does not insert HTML. It does not mutate DOM Snapshot, Project Graph, Preview iframe, or source files. It does not enable the disabled future Apply action. It is a command preview UI only.
+The library does not insert HTML. It does not mutate DOM Snapshot, Project Graph, Preview iframe, or source files. The disabled future action is not a hidden apply path. This prevents a UI catalog click from bypassing mapping, patch, history, and refresh requirements.
 
 ## Validation
 
@@ -52,4 +56,4 @@ The library does not insert HTML. It does not mutate DOM Snapshot, Project Graph
 
 ## Future work
 
-Future work may add more elements, presets, and semantic hints. Execution still requires Phase 6C+ history and write boundaries before any insertion is real.
+More elements and presets can be added safely while the panel remains an intent producer. Active editing still requires a later execution runtime with history and write validation.

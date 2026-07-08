@@ -4,11 +4,13 @@
 
 ## Purpose
 
-This document describes the current Visual Selection Overlay MVP and its relationship to Preview Selection and Design Canvas.
+The Visual Selection Overlay makes a read-only selection visible without inserting Crystal UI into the user's document. That distinction matters: overlay graphics belong to Crystal's workspace, not to the project being previewed.
 
 ## Current implementation
 
-The overlay is external to the Preview iframe. It projects a read-only highlight for matched Preview selections using existing selection and snapshot-derived data. It does not inject persistent overlay nodes into the user's document and does not implement editing handles.
+The overlay sits outside the Preview iframe and projects highlight geometry for a matched selection. It is driven by Preview Selection, DOM Snapshot mapping, Preview frame geometry, and Design Canvas viewport state. It does not provide editing handles or persistent project DOM nodes.
+
+The diagram should be read as a projection pipeline. The overlay is a view over existing state; it is not an input source for writes.
 
 ```mermaid
 flowchart TD
@@ -22,6 +24,8 @@ flowchart TD
 
 ## Key files
 
+The current overlay types live in core; renderer integration is inside the Design Canvas and Preview panel surfaces.
+
 - `packages/core/project/design-canvas/selection-overlay/project-design-canvas-selection-overlay.types.ts`
 - `apps/desktop/electron/renderer/components/design-canvas/**`
 - `apps/desktop/electron/renderer/components/project-preview-panel/**`
@@ -29,15 +33,15 @@ flowchart TD
 
 ## Data flow
 
-Overlay state is derived from Preview Selection, mapping status, DOM Snapshot availability, Preview frame geometry, and Design Canvas viewport transforms. It renders outside the iframe, so it can remain controlled by Crystal UI without contaminating the user's project DOM.
+When selection and mapping state are usable, renderer computes how the selected target should appear over the transformed Preview frame. If snapshot, mapping, or geometry data is missing, the overlay renders a defensive state or stays unavailable.
 
 ## Boundaries
 
-The overlay is read-only. It does not select by itself, edit by itself, write source, compute styles, inspect live layout internals, create draggable resize handles, or inject nodes into the user document. Defensive states are expected when snapshot or geometry data is missing.
+The overlay is read-only. It does not select by itself, edit source, compute styles, inspect live layout internals, create resize handles, or inject nodes into the user's DOM. Keeping the overlay external avoids contaminating the project and avoids a future cleanup problem when the Preview reloads.
 
 ## Validation
 
-`validate:visual-selection-overlay` checks overlay lifecycle, defensive states, and no user-DOM mutation assumptions.
+`validate:visual-selection-overlay` checks lifecycle, defensive states, and no user-DOM mutation assumptions.
 
 ## Related docs
 
@@ -48,4 +52,4 @@ The overlay is read-only. It does not select by itself, edit by itself, write so
 
 ## Future work
 
-Future overlay hardening should handle iframe scroll, resize, reflow, hover highlights, layout badges, measurements, rulers, and guides. Editing handles remain Future until command execution and undo/redo are implemented.
+Overlay hardening should address iframe scroll, resize, reflow, hover, layout badges, measurements, rulers, and guides. Editing handles remain future work until command execution and undo/redo are real.

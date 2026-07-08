@@ -4,11 +4,13 @@
 
 ## Purpose
 
-This document describes Crystal at product and system level. It explains what the current application does, what architectural surfaces exist, and which future capabilities are deliberately not implemented yet.
+Crystal is being built as a desktop workbench for real HTML projects, not as a closed visual-builder format. The system overview exists to keep that product shape visible while the codebase grows: the renderer presents tools, main owns privileged access, core models the project, and current command work stops at preview rather than mutation.
 
 ## Current implementation
 
-Crystal is an Electron desktop application for real HTML projects. The current system is a read-only analysis and preview foundation with dry-run command planning. Implemented subsystems include Project Graph scanning, Project Preview serving, DOM Snapshot building, Preview Selection, Preview Inspector, Design Canvas navigation, Visual Selection Overlay, Element Library catalog and eligibility, Source Patch Preview, Command Preview Bus, and validation scripts.
+The implemented surface is a read-only project analysis and preview pipeline plus dry-run command planning. A user can open a project, inspect the Project Graph, load a page through the custom Preview protocol, build a static DOM Snapshot, select a node in the rendered page, inspect the mapped structure, view an external selection overlay, and ask the Element Library to describe a possible insertion.
+
+The graph below shows the current product loop. The important edge is the last one: Element Library intent reaches a dry-run preview, not a writer.
 
 ```mermaid
 flowchart TD
@@ -26,6 +28,8 @@ flowchart TD
 
 ## Key files
 
+These files are the best starting points for following the system from boot to feature panels. They are not the only files involved; each subsystem has deeper docs linked below.
+
 - `README.md`
 - `docs/roadmap-implementation.md`
 - `apps/desktop/electron/main/main.ts`
@@ -36,17 +40,15 @@ flowchart TD
 
 ## Data flow
 
-At runtime, the user opens a project folder or an HTML file. Electron main scans the selected root through Project Graph services and adapters. The renderer receives sanitized graph state through preload. The user can load a Preview target. Main resolves it to the active project root and serves it through `crystal-preview://current/<relative-path>`. DOM Snapshot reads the static HTML source of the resolved target. Preview Selection reports bounded selected-node metadata. Preview Inspector derives a read-only view from Preview, Selection, and DOM Snapshot state. Element Library generates dry-run command previews only when a target is safely matched.
+Opening a folder or HTML file gives main an active project root. Core scanning builds Project Graph state from that root. Preview target selection then narrows the graph to one HTML page and main serves it through `crystal-preview://current/...`. DOM Snapshot reads the static source for that target. Preview Selection reports a bounded visual click. Mapping decides whether that click is trustworthy enough to relate back to the static source model. Element Library preview planning uses that mapped state only to describe a possible insertion.
 
 ## Boundaries
 
-Implemented means the code path exists and is validated by current scripts. Future means the concept is planned but not executable. Blocked means the behavior is intentionally prevented for security or correctness. In this branch, documentation must not convert Future or Blocked features into implemented claims.
-
-Blocked current capabilities include real insertion, real source mutation, source patch application, write IPC, undo/redo execution, attribute editing, text editing, live iframe DOM inspection, direct filesystem access from renderer, and Electron security relaxation.
+The current system does not edit project files. That is not an omission in the UI copy; it is an architectural boundary. Source writes require more than a snippet preview: Crystal still needs command execution policy, source freshness checks, patch application, undo transaction records, dirty-state tracking, and refresh invalidation before a write path is safe.
 
 ## Validation
 
-The current source validation entrypoints are declared in `package.json`: `build`, `typecheck`, feature validators, `validate:local`, and `validate:local:quick`. Documentation validation is handled by `scripts/validate-architecture-docs.mjs` on this branch.
+Runtime behavior is guarded by the existing feature validators. This documentation set is guarded by `scripts/validate-architecture-docs.mjs`, which checks that the architecture docs stay linked, diagrammed, and explicit about blocked write behavior.
 
 ## Related docs
 
@@ -58,4 +60,4 @@ The current source validation entrypoints are declared in `package.json`: `build
 
 ## Future work
 
-The next safe architectural step is Phase 6C: add transaction and refresh-boundary planning contracts while keeping source mutation unavailable. Later phases may add real writing only after command execution, patch application, persistence, undo/redo, dirty-state workflow, refresh invalidation, and validation gates exist.
+Phase 6C should add the contracts that make a later write runtime possible: transaction skeletons and refresh-boundary planning. It should still leave actual file writes, patch application, write IPC, DOM mutation, and real undo/redo unavailable.

@@ -4,11 +4,13 @@
 
 ## Purpose
 
-This document collects the safety rules for loading, observing, selecting, and inspecting project HTML inside Crystal.
+Preview safety collects the rules that let Crystal show a real web page without trusting it. A loaded page can run its own scripts, recover malformed HTML differently than the static parser, and request local or external assets. Crystal must observe those behaviors without granting them desktop authority.
 
 ## Current implementation
 
-Preview safety is built from multiple layers: Electron security preferences, custom protocol path checks, sanitized Preview issues, bounded DOM Snapshot parsing, inactive-by-default selection injection, iframe message validation, and renderer avoidance of live iframe DOM reads.
+Safety is layered. BrowserWindow preferences keep renderer privileges low. The custom Preview protocol constrains file serving to the active project root. Preview issues are sanitized before they reach renderer. DOM Snapshot reads static source instead of iframe internals. The selection script is inactive by default and emits bounded messages only.
+
+The diagram shows the request gate: a resource is served only after normalization and root containment checks. Selection data uses a separate bounded path back to renderer.
 
 ```mermaid
 flowchart TD
@@ -23,6 +25,8 @@ flowchart TD
 
 ## Key files
 
+Read these files when changing Preview serving, sandboxing, snapshot source reads, or selection messaging.
+
 - `apps/desktop/electron/main/security/web-preferences.ts`
 - `apps/desktop/electron/main/preview/project-preview-protocol.ts`
 - `packages/core/project/preview/project-preview-issues.ts`
@@ -32,11 +36,11 @@ flowchart TD
 
 ## Data flow
 
-Project HTML is served only through the active preview protocol. Resource failures produce sanitized issues. DOM Snapshot reads source from the active target, not from iframe runtime. Selection messages carry bounded metadata and pass renderer/main validation.
+Iframe resource requests enter the protocol handler and become either served bytes or sanitized issues. DOM Snapshot source reads happen through main using the active target. Selection events return to renderer as bounded summaries and are validated before they affect application state.
 
 ## Boundaries
 
-Do not add `allow-same-origin` to simplify selection. Do not read `iframe.contentDocument`. Do not call `iframe.contentWindow.document`. Do not use `insertAdjacentHTML`, `contenteditable`, or `execCommand` for feature shortcuts. Do not expose raw project paths to renderer UI.
+Do not add `allow-same-origin` to make iframe access easier. Do not read `iframe.contentDocument` or `iframe.contentWindow.document`. Do not use `insertAdjacentHTML`, `contenteditable`, or `execCommand` as editing shortcuts. Do not expose absolute project paths in renderer diagnostics. Each rule prevents a specific class of bug: privilege escalation, DOM contamination, source drift, or path disclosure.
 
 ## Validation
 
@@ -51,4 +55,4 @@ Preview safety is covered by `validate:preview`, `validate:dom-snapshot`, `valid
 
 ## Future work
 
-Future write features must add more safety layers, not remove existing ones. Safe writes require source patch validation, command execution policy, undo/redo transactions, refresh planning, and explicit save/apply workflow.
+Write-capable features must add source validation, command policy, undo/redo transactions, refresh planning, and explicit save/apply behavior. They should not remove existing Preview isolation to gain convenience.

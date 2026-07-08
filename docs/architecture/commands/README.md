@@ -4,11 +4,13 @@
 
 ## Purpose
 
-This document explains Crystal's current command foundations and the deliberate gap between command preview and command execution.
+Commands are the future path from user intent to source change. The current architecture deliberately stops before execution: it defines command intent, validates whether a target is previewable, and renders a source patch preview. That gives the project a place to reason about edits without writing files prematurely.
 
 ## Current implementation
 
-Phase 6A and 6B introduced command contracts, Element Library target eligibility, Source Patch Preview, HTML insertion preview planning, and Command Preview Bus dry-run results. No command applies patches or writes files yet.
+Phase 6A and 6B added command contracts, Element Library target eligibility, Source Patch Preview, HTML insertion preview planning, and a Command Preview Bus for dry-run results. No command applies patches or writes files yet.
+
+The diagram shows the current end of the line. `Source Patch Preview` is output for the UI, not input to a writer.
 
 ```mermaid
 flowchart TD
@@ -23,6 +25,8 @@ flowchart TD
 
 ## Key files
 
+These paths are split by intent source, command shape, dry-run planning, and UI rendering.
+
 - `packages/core/commands/html-insertion/**`
 - `packages/core/commands/command-preview-bus/**`
 - `packages/core/source-patch/**`
@@ -33,15 +37,15 @@ flowchart TD
 
 ## Data flow
 
-Renderer creates a preview command from selected library item, target eligibility, and insertion mode. Core validators and planners create a dry-run preview. The UI renders the human summary and inserted-text preview if available. The Apply action remains disabled/unavailable.
+Renderer turns a selected catalog item and insertion mode into an `AddHtmlElementCommand` preview object. Core validates the command, checks context, resolves a source anchor if possible, and returns a `CommandPreviewResult`. Renderer displays the result and keeps Apply unavailable.
 
 ## Boundaries
 
-Command preview is not command execution. A `preview-ready` result means the planner can describe a patch, not that the patch was applied. Source patch application, write IPC, save/apply workflow, and undo/redo history are blocked.
+Command preview is not command execution. A `preview-ready` result means the system can describe a possible patch; it does not mean a patch is safe to apply. The existing legacy `packages/core/commands/command-bus.ts` is not replaced by the dry-run Command Preview Bus. The preview bus is a separate Phase 6B foundation under `packages/core/commands/command-preview-bus/`.
 
 ## Validation
 
-`validate:html-element-library` and `validate:source-patch-preview` guard command boundaries and forbidden write paths.
+`validate:html-element-library` and `validate:source-patch-preview` guard command preview boundaries, disabled apply behavior, and forbidden write paths.
 
 ## Related docs
 
@@ -52,4 +56,4 @@ Command preview is not command execution. A `preview-ready` result means the pla
 
 ## Future work
 
-Phase 6C should define transaction skeletons and refresh-boundary planning without enabling real command execution.
+Phase 6C should introduce transaction and refresh-boundary contracts. Actual execution should remain future until writes are reversible, refreshes are planned, and validators can prove that mutation is explicit rather than accidental.

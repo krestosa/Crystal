@@ -4,11 +4,13 @@
 
 ## Purpose
 
-This document defines how Crystal modules should depend on each other. The goal is high interconnection without direct coupling between unrelated layers.
+Crystal is intentionally modular, but modularity is only useful if dependencies point in predictable directions. This page explains which layers may know about each other and which shortcuts would make the system harder to secure, validate, or evolve.
 
 ## Current implementation
 
-Current modules are split by runtime and domain. Renderer components compose UI. Core packages define models, selectors, validators, planners, state, and commands. Adapters isolate Node or external-tool effects. Shared packages hold cross-runtime contracts.
+Renderer components compose UI and hold only local interaction state. Core packages define portable models, validators, selectors, and planners. Main process modules coordinate Electron, filesystem, watcher, Preview protocol, and service state. Adapters isolate Node or external-tool effects. Shared packages carry contracts that must be used on both sides of a runtime boundary.
+
+The diagram shows the intended dependency chain. UI may request work, but it should not import the effect that performs it.
 
 ```mermaid
 flowchart TD
@@ -24,6 +26,8 @@ flowchart TD
 
 ## Key files
 
+This list gives representative entry points for each layer. When changing a feature, follow the nearest path downward instead of reaching sideways into another runtime.
+
 - `apps/desktop/electron/renderer/components/**`
 - `apps/desktop/electron/renderer/views/design/design.html`
 - `apps/desktop/electron/main/ipc/register-project-ipc.ts`
@@ -36,15 +40,15 @@ flowchart TD
 
 ## Data flow
 
-A renderer module may import UI helpers, renderer-local state, and core types/selectors when they are safe for browser runtime. Privileged operations cross through preload and IPC. Main coordinates adapters and stores authoritative project runtime state. Core functions should remain testable without Electron.
+A renderer panel can import browser-safe types and pure selectors, then call preload for privileged work. Main receives the request and delegates to core or adapters. Core returns model state or dry-run planning results. Renderer turns that state into UI. The path is longer than a direct import, but it keeps responsibility visible.
 
 ## Boundaries
 
-A UI panel must not directly import filesystem adapters, watcher adapters, protocol handlers, or Electron main services. Main process code must not depend on renderer DOM implementation. Core command preview modules must not import renderer components. Source patch preview modules must not write files.
+A UI panel must not import filesystem adapters, watcher adapters, protocol handlers, or Electron main services. Core command preview modules must not import renderer components. Source patch modules must not write files. These boundaries reduce circular dependencies and make it possible to validate that preview code does not quietly become execution code.
 
 ## Validation
 
-Structure and feature validators enforce the highest-risk boundaries. The documentation validator ensures boundary docs stay present and cross-linked, but source-level import enforcement should be expanded in a later validation phase.
+Current validators focus on the highest-risk feature boundaries. Import-boundary validation is still future work, so reviewers should treat this document as an architectural rule even where tooling is not yet exhaustive.
 
 ## Related docs
 
@@ -55,4 +59,4 @@ Structure and feature validators enforce the highest-risk boundaries. The docume
 
 ## Future work
 
-Add import-boundary validation for renderer-to-main, core-to-renderer, adapter leakage, and future worker/WASM/WebGPU modules. This should happen before write-capable features become normal user flows.
+Add explicit import-boundary checks for renderer-to-main imports, core-to-renderer leakage, adapter usage, and future worker/WASM/WebGPU modules before write-capable flows become normal UI.

@@ -4,11 +4,13 @@
 
 ## Purpose
 
-This document explains the Command Preview Bus dry-run boundary introduced before any command execution runtime.
+The Command Preview Bus gives command-like user intent a safe dry-run path. It is deliberately narrower than an execution bus: it normalizes preview outcomes so the UI can explain what would happen, what is blocked, or what is unsupported.
 
 ## Current implementation
 
-The Command Preview Bus accepts supported command preview inputs and returns a `CommandPreviewResult`. Current statuses distinguish preview-ready, blocked, and unsupported states. The bus is used by the Element Library to preview `AddHtmlElementCommand` output.
+The bus accepts supported command preview inputs and returns a `CommandPreviewResult` with statuses such as preview-ready, blocked, or unsupported. The current user-facing path is Element Library preview for `AddHtmlElementCommand`.
+
+The sequence shows validation before planning. A blocked result is a valid outcome, not an error to bypass.
 
 ```mermaid
 sequenceDiagram
@@ -33,6 +35,8 @@ sequenceDiagram
 
 ## Key files
 
+The `command-preview-bus` folder is the dry-run bus. It should not be confused with the existing `packages/core/commands/command-bus.ts`, which is a different legacy module boundary.
+
 - `packages/core/commands/command-preview-bus/command-preview-bus.types.ts`
 - `packages/core/commands/command-preview-bus/command-preview-bus.preview.ts`
 - `packages/core/commands/html-insertion/html-insertion-command.types.ts`
@@ -43,15 +47,15 @@ sequenceDiagram
 
 ## Data flow
 
-Renderer creates a preview command and context. Core validates command shape, selected target, graph state, snapshot state, selection mapping, insertion mode, and anchor support. The bus returns a result object for display only.
+Renderer provides command intent and context. Core validates target, graph, snapshot, selection mapping, selected catalog item, insertion mode, and source-anchor availability. The bus returns displayable state only; it does not update Project Graph, DOM Snapshot, Preview, or source files.
 
 ## Boundaries
 
-The Command Preview Bus is not a command execution bus. It must not write files, mutate DOM, call Electron IPC, refresh Preview, or register undo/redo. It is safe to show `preview-ready` only as a planning result.
+The Command Preview Bus is not a replacement for `packages/core/commands/command-bus.ts` and not an execution bus. It must not write files, mutate DOM, call Electron IPC, refresh Preview, or register undo/redo. A future execution bus should be a separate layer with explicit side-effect contracts.
 
 ## Validation
 
-`validate:source-patch-preview` checks bus exports, statuses, blocked reasons, renderer preview rendering, and no write implementation.
+`validate:source-patch-preview` checks bus exports, statuses, blocked reasons, renderer preview rendering, and absence of write behavior.
 
 ## Related docs
 
@@ -62,4 +66,4 @@ The Command Preview Bus is not a command execution bus. It must not write files,
 
 ## Future work
 
-A future execution bus must be a separate layer with stronger contracts, transactional history, patch application, persistence, and refresh invalidation. It should not reuse dry-run naming for write behavior.
+A write-capable command runtime should add transaction creation, patch application, persistence, refresh invalidation, and undo/redo descriptors without overloading this dry-run bus.

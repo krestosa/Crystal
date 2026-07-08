@@ -4,11 +4,13 @@
 
 ## Purpose
 
-This document defines the security boundaries that must remain intact while Crystal evolves from read-only preview toward future editing.
+Crystal must display arbitrary project HTML while also managing local files. The security model exists to keep those two facts from colliding. A page loaded in Preview may contain scripts, broken markup, remote references, or hostile code; it must never inherit Crystal's desktop privileges.
 
 ## Current implementation
 
-Electron main creates the BrowserWindow with hardened preferences: `contextIsolation: true`, `nodeIntegration: false`, `sandbox: true`, and `webSecurity: true`. Preload exposes only the `window.crystal` API. The Preview iframe is served through a custom `crystal-preview://current/<relative-project-path>` protocol resolved against the active Project Graph root. Preview selection uses a bounded message bridge and does not require reading the iframe DOM from renderer.
+Main creates the BrowserWindow with `contextIsolation: true`, `nodeIntegration: false`, `sandbox: true`, and `webSecurity: true`. Preload exposes only the typed `window.crystal` surface. Project files for Preview are served through `crystal-preview://current/<relative-project-path>` after main resolves each request against the active project root. Selection data crosses from the iframe to renderer as bounded `postMessage` payloads and is validated again in main.
+
+The diagram highlights the allowed bridge and the blocked shortcuts. The dotted edges are risks the architecture explicitly avoids.
 
 ```mermaid
 flowchart TD
@@ -26,6 +28,8 @@ flowchart TD
 
 ## Key files
 
+These files are the security entry points. Read them before changing BrowserWindow options, preload shape, Preview serving, or selection messages.
+
 - `apps/desktop/electron/main/security/web-preferences.ts`
 - `apps/desktop/electron/main/windows/create-main-window.ts`
 - `apps/desktop/electron/preload/bridges/crystal-api.bridge.ts`
@@ -37,15 +41,15 @@ flowchart TD
 
 ## Data flow
 
-Main controls privileged operations. Preload validates and invokes only known channels. Renderer renders sanitized state and sends bounded requests. Preview protocol requests are resolved to safe project-relative paths and rejected when traversal, outside-root access, read failure, unsupported request shape, or stale target state is detected.
+A renderer request crosses preload, reaches a named IPC handler, and is resolved by main. Preview resource requests are normalized, checked for active-root containment, and served or rejected with sanitized issues. Selection messages leave the iframe only as small summaries; they are not treated as trusted source identities until core mapping confirms them against the DOM Snapshot.
 
 ## Boundaries
 
-The renderer must not use `fs`, `path`-based project reads, write APIs, raw IPC, `iframe.contentDocument`, `iframe.contentWindow.document`, `.contentDocument`, `.contentWindow.document`, `insertAdjacentHTML`, `contenteditable`, or `execCommand`. Security cannot be relaxed to simplify UI features. If a future feature needs more data, it must receive sanitized data through main/core services.
+`nodeIntegration: false` prevents renderer scripts from importing Node. `contextIsolation: true` prevents the page context from mutating the preload environment. `sandbox: true` limits renderer process privileges. `webSecurity: true` preserves browser security checks. Avoiding `iframe.contentDocument` and `iframe.contentWindow.document` prevents renderer code from depending on same-origin access to project HTML. Rejecting traversal and outside-root paths prevents Preview URLs from becoming arbitrary file reads.
 
 ## Validation
 
-Security boundaries are checked by source validators that look for forbidden iframe access, write channels, DOM mutation patterns, and execution shortcuts. `validate:source-patch-preview` specifically guards the Phase 6B dry-run boundary.
+Security-sensitive validators look for forbidden iframe access, write-channel shortcuts, and DOM mutation patterns. `validate:source-patch-preview` is especially important because it guards the line between previewing a possible source edit and applying one.
 
 ## Related docs
 
@@ -56,4 +60,4 @@ Security boundaries are checked by source validators that look for forbidden ifr
 
 ## Future work
 
-Future write-capable features must still preserve Electron isolation. Write execution belongs behind command validation, source patch application, undo/redo transaction state, dirty-state workflow, and main/core persistence services. No future phase should make the Preview document a trusted privileged context.
+Future write-capable flows must add validation and transaction layers without weakening these protections. A write runtime may need more information, but it should get that information through main/core services, not by trusting the Preview iframe or giving renderer raw filesystem access.

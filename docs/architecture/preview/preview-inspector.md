@@ -4,11 +4,13 @@
 
 ## Purpose
 
-This document describes the current Preview Inspector as a derived, read-only structural panel.
+Preview Inspector explains the selected target without pretending that Crystal can edit it yet. It is the place where Selection, Preview, and DOM Snapshot state are reconciled into a human-readable structural view.
 
 ## Current implementation
 
-Preview Inspector consumes Preview state, Preview Selection state, and DOM Snapshot state. Core resolves an Inspector view model. Renderer renders structural selected-node and matched snapshot details. It does not expose editable attributes, computed styles, box model, CSS rules, or source mutation.
+The Inspector is derived state. Core receives Preview state, Preview Selection state, and DOM Snapshot state, then returns either trusted structural details for a matched node or a defensive explanation. Renderer turns that model into a compact read-only panel.
+
+The diagram separates inputs from output. There is no independent Inspector authority that can override mapping results.
 
 ```mermaid
 flowchart TD
@@ -23,6 +25,8 @@ flowchart TD
 
 ## Key files
 
+Start in the selector to understand the decision model, then read the renderer for presentation details.
+
 - `packages/core/project/preview-inspector/project-preview-inspector.types.ts`
 - `packages/core/project/preview-inspector/project-preview-inspector-selector.ts`
 - `apps/desktop/electron/renderer/components/project-preview-panel/inspector/project-preview-inspector-renderer.ts`
@@ -31,11 +35,11 @@ flowchart TD
 
 ## Data flow
 
-When selection or snapshot state changes, renderer re-derives the Inspector model. A trusted `matched` mapping yields snapshot node details. Missing, stale, mismatched, ambiguous, or internally inconsistent states render defensive messages without fabricating source truth.
+A matched mapping allows the Inspector to show snapshot node data such as tag, path, depth, attributes, text preview, source location, child count, and truncation state. Missing snapshot, stale snapshot, mismatch, ambiguity, or internal inconsistency produces a defensive state so the UI does not invent source truth.
 
 ## Boundaries
 
-Preview Inspector is not the future editable Inspector MVP. It cannot edit attributes, text, classes, CSS, computed style, layout, box model, or source files. It cannot scroll the DOM Tree or query the live iframe document.
+The current Inspector is not the future editable Inspector. It cannot edit attributes, text, classes, CSS, computed styles, layout, box model, or source files. It cannot scroll the DOM Tree or query the live iframe document.
 
 ## Validation
 
@@ -50,4 +54,4 @@ Preview Inspector is not the future editable Inspector MVP. It cannot edit attri
 
 ## Future work
 
-Editable Inspector work remains Future. It needs command-backed mutations, CSS/Sass source ownership, class management, undo/redo, and write validation before controls become active.
+Editable Inspector work needs command-backed mutations, class and CSS/Sass source ownership, undo/redo records, dirty-state tracking, and write validation before controls can become active.

@@ -4,17 +4,15 @@
 
 ## Purpose
 
-This document defines the current runtime contexts and the allowed communication paths between them.
+Crystal runs trusted desktop code next to untrusted project HTML. Runtime boundaries define where authority lives so that a renderer panel, a loaded Preview page, or a future editing affordance cannot accidentally become a filesystem-capable process.
 
 ## Current implementation
 
-Crystal runs with three implemented Electron contexts:
+There are three implemented Electron runtimes. Main owns lifecycle, windows, IPC handlers, filesystem-backed project services, watcher lifecycle, DOM Snapshot source reads, and the Preview protocol. Preload exposes a narrow `window.crystal` API. Renderer owns browser UI composition and local interaction state.
 
-- Electron main process: application lifecycle, windows, IPC handlers, filesystem adapters, Project Graph service wiring, Preview protocol, DOM Snapshot source service, watcher lifecycle.
-- Preload: controlled `window.crystal` API exposed through `contextBridge`.
-- Renderer: HTML/CSS/TypeScript UI shell and read-only project panels.
+Future workers, WASM modules, and WebGPU engines are part of the product direction, but they are not runtime authority today.
 
-Future contexts such as workers, Rust/WASM, and WebGPU engines are planned but not implemented as runtime engines yet.
+The diagram should be read left to right: renderer intent goes through preload, main coordinates privileged work, core remains portable, and effects stay behind adapters.
 
 ```mermaid
 flowchart LR
@@ -47,6 +45,8 @@ flowchart LR
 
 ## Key files
 
+Use these files to trace the boundary from window creation to renderer API calls. The shared IPC files explain which messages may cross the bridge.
+
 - `apps/desktop/electron/main/main.ts`
 - `apps/desktop/electron/main/windows/create-main-window.ts`
 - `apps/desktop/electron/main/security/web-preferences.ts`
@@ -58,15 +58,15 @@ flowchart LR
 
 ## Data flow
 
-Renderer code calls `window.crystal.project.*` or `window.crystal.app.*`. Preload routes only known channels and provides subscription teardown functions. Electron main handles the actual operation, updates in-memory state, and emits typed update events back through IPC. Renderer panels subscribe and re-render from sanitized state.
+Renderer code calls `window.crystal.project.*` or `window.crystal.app.*`. Preload validates channel names and hides raw `ipcRenderer`. Main handles the request, reads or updates its in-memory service state, calls core models or adapters, and emits typed state updates back to the renderer.
 
 ## Boundaries
 
-Renderer must not import Node built-ins for project IO. Main must not expose arbitrary filesystem primitives to renderer. Preload must not expose raw `ipcRenderer`. Preview iframe must not be treated as trusted renderer UI. Core packages must not depend on Electron runtime APIs.
+Renderer must not import Node filesystem primitives or main services. Main must not leak arbitrary filesystem methods through preload. Preload must not expose raw IPC. Core packages should not depend on Electron runtime APIs. These rules prevent a UI component or a loaded project page from escalating into project-wide write access.
 
 ## Validation
 
-Runtime boundary assumptions are guarded by `scripts/validate-structure.mjs`, feature validators, and security-specific checks embedded in Preview, Selection, Inspector, Design Canvas, Element Library, and Source Patch Preview validators.
+`validate:structure` checks the broad source layout. Feature validators add narrower guardrails around Preview, Selection, Inspector, Design Canvas, Element Library, and Source Patch Preview behavior.
 
 ## Related docs
 
@@ -77,4 +77,4 @@ Runtime boundary assumptions are guarded by `scripts/validate-structure.mjs`, fe
 
 ## Future work
 
-Future workers, WASM, and WebGPU contexts must be introduced behind typed ports and adapters. They must not bypass main/preload security rules or give renderer direct write authority.
+Workers, WASM, and WebGPU should be introduced as explicit runtimes with typed ports. They should not become a side channel around preload/main security, and they should not give renderer direct write authority.
