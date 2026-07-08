@@ -277,7 +277,7 @@ function parsePackageJson(sourceText) {
 }
 
 function readItemIds(sourceText) {
-  const itemPattern = new RegExp(`item\\(${quote}([^${quote}]+)${quote}\\)`, 'g');
+  const itemPattern = new RegExp(`item\\(${quote}([^${quote}]+)${quote}`, 'g');
   return [...sourceText.matchAll(itemPattern)].map((match) => match[1]);
 }
 
