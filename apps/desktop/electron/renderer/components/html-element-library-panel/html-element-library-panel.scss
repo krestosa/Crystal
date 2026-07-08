@@ -1,0 +1,228 @@
+.crystal-html-element-library-panel {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-width: 0;
+  min-height: 220px;
+  overflow: hidden;
+  border: 1px solid var(--crystal-color-panel-border);
+  background: var(--crystal-color-panel-bg);
+  color: var(--crystal-color-text);
+}
+
+.crystal-html-element-library-panel__header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: var(--crystal-space-2);
+  min-width: 0;
+  padding: var(--crystal-space-2);
+  border-bottom: 1px solid var(--crystal-color-border-soft);
+  background: var(--crystal-color-surface-strong);
+}
+
+.crystal-html-element-library-panel__header h2,
+.crystal-html-element-library-panel__section-header h3 {
+  overflow: hidden;
+  margin: 0;
+  color: var(--crystal-color-text-muted);
+  font-size: var(--crystal-font-size-label);
+  letter-spacing: var(--crystal-letter-spacing-label);
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.crystal-html-element-library-panel__header p,
+.crystal-html-element-library-panel__section-header span,
+.crystal-html-element-library-panel__badge {
+  margin: 0;
+  color: var(--crystal-color-text-faint);
+  font-size: var(--crystal-font-size-caption);
+  letter-spacing: 0.1em;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.crystal-html-element-library-panel__badge {
+  flex: 0 0 auto;
+  padding: 2px 5px;
+  border: 1px solid var(--crystal-color-border-soft);
+  background: var(--crystal-color-panel-muted-bg);
+}
+
+.crystal-html-element-library-panel__body {
+  display: grid;
+  align-content: start;
+  gap: var(--crystal-space-2);
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: var(--crystal-space-2);
+  scrollbar-gutter: stable;
+}
+
+.crystal-html-element-library-panel__section {
+  display: grid;
+  gap: var(--crystal-space-1);
+  min-width: 0;
+  overflow: hidden;
+  padding: var(--crystal-space-1);
+  border: 1px solid var(--crystal-color-border-soft);
+  background: var(--crystal-color-panel-muted-bg);
+}
+
+.crystal-html-element-library-panel__section-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: var(--crystal-space-2);
+  min-width: 0;
+  padding-bottom: var(--crystal-space-1);
+  border-bottom: 1px solid var(--crystal-color-border-soft);
+}
+
+.crystal-html-element-library-panel__categories,
+.crystal-html-element-library-panel__category,
+.crystal-html-element-library-panel__items {
+  display: grid;
+  min-width: 0;
+}
+
+.crystal-html-element-library-panel__categories {
+  gap: var(--crystal-space-1);
+}
+
+.crystal-html-element-library-panel__category {
+  gap: 2px;
+}
+
+.crystal-html-element-library-panel__category-title {
+  overflow: hidden;
+  color: var(--crystal-color-text-faint);
+  font-size: var(--crystal-font-size-caption);
+  letter-spacing: 0.1em;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.crystal-html-element-library-panel__items {
+  gap: 2px;
+}
+
+.crystal-html-element-library-panel__item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--crystal-space-1) var(--crystal-space-2);
+  min-width: 0;
+  padding: 5px 6px;
+  border: 1px solid var(--crystal-control-border);
+  border-radius: var(--crystal-control-radius);
+  background: var(--crystal-control-bg);
+  color: var(--crystal-control-text);
+  font: inherit;
+  text-align: left;
+  cursor: default;
+}
+
+.crystal-html-element-library-panel__item:hover {
+  border-color: var(--crystal-control-hover-border);
+  background: var(--crystal-control-hover-bg);
+  color: var(--crystal-control-hover-text);
+}
+
+.crystal-html-element-library-panel__item:focus-visible {
+  border-color: var(--crystal-control-active-border);
+  color: var(--crystal-color-text);
+  outline: 2px solid var(--crystal-focus-ring);
+  outline-offset: 1px;
+}
+
+.crystal-html-element-library-panel__item[aria-pressed="true"] {
+  border-color: var(--crystal-control-active-border);
+  background: var(--crystal-control-active-bg);
+}
+
+.crystal-html-element-library-panel__item-label,
+.crystal-html-element-library-panel__item-description,
+.crystal-html-element-library-panel__item-kind {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crystal-html-element-library-panel__item-label {
+  color: var(--crystal-color-text);
+  font-size: var(--crystal-font-size-caption);
+  line-height: 1.2;
+}
+
+.crystal-html-element-library-panel__item-kind {
+  color: var(--crystal-color-text-faint);
+  font-size: var(--crystal-font-size-caption);
+  line-height: 1.2;
+}
+
+.crystal-html-element-library-panel__item-description {
+  grid-column: 1 / -1;
+  color: var(--crystal-color-text-dim);
+  font-size: var(--crystal-font-size-caption);
+  line-height: 1.2;
+}
+
+.crystal-html-element-library-panel__details {
+  display: grid;
+  gap: 3px;
+  margin: 0;
+  color: var(--crystal-color-text-dim);
+  font-size: var(--crystal-font-size-caption);
+  line-height: 1.25;
+}
+
+.crystal-html-element-library-panel__details div {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: var(--crystal-space-2);
+  min-width: 0;
+}
+
+.crystal-html-element-library-panel__details dt,
+.crystal-html-element-library-panel__details dd {
+  margin: 0;
+  min-width: 0;
+}
+
+.crystal-html-element-library-panel__details dt {
+  color: var(--crystal-color-text-faint);
+}
+
+.crystal-html-element-library-panel__details dd,
+.crystal-html-element-library-panel__placeholder {
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+.crystal-html-element-library-panel__placeholder {
+  margin: 0;
+  color: var(--crystal-color-text-subtle);
+  font-size: var(--crystal-font-size-caption);
+  line-height: 1.25;
+}
+
+.crystal-html-element-library-panel__future-action {
+  justify-self: start;
+  height: var(--crystal-control-height-compact);
+  padding: 0 var(--crystal-control-padding-x);
+  border: 1px solid var(--crystal-control-border);
+  border-radius: var(--crystal-control-radius);
+  background: var(--crystal-control-bg);
+  color: var(--crystal-color-text-faint);
+  font: inherit;
+  font-size: var(--crystal-font-size-caption);
+  cursor: not-allowed;
+  opacity: 0.72;
+}
