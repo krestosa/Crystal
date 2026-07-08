@@ -292,3 +292,67 @@ The following roadmap items remain intentionally pending:
 - Developer Mode / IDE tools
 - separate system terminal and Preview Browser Console
 - browser console integration
+- Project Graph target expansion for DOM, classes, selectors, applied styles, unused files, unused assets, inferred components, and workspace status
+- worker-backed parser/analyzer/asset/css/html/ts/preview-sync/wasm processing
+- fallbacks for WebGPU, WASM, Preview, malformed HTML, failed CSS/assets, blocking scripts, and terminal failure
+- explicit build pipeline for source validation, HTML assembly, SCSS compilation, TypeScript bundling, Rust/WASM compilation, assets, manifest, and dist validation
+- full event bus and domain event expansion
+- state domains for workspace, graph, selection, preview, inspector, developer, files, build, history, and UI
+- WebGPU overlay implementation
+- Rust/WASM analyzer implementation
+- framework alias resolution
+- TypeScript semantic analysis
+- Electron UI automation framework
+- screenshot testing
+- pending decisions for bundler, code editor, terminal, parser, UI strategy, plugins, testing, theming, visual/code source maps, Sass editing, external frameworks, and Preview sandbox policy
+
+## Full roadmap summary
+
+The complete roadmap is documented in [`docs/full-product-roadmap.md`](./full-product-roadmap.md). The high-level sequence now is:
+
+1. ~~Read-only Preview Inspector.~~ Implemented.
+2. ~~Design Canvas Navigation MVP.~~ Implemented foundation.
+3. ~~Visual Selection and Overlay MVP.~~ Implemented MVP; hardening remains.
+4. ~~HTML5 Element Library and safe insertion command foundation.~~ Implemented as read-only Phase 6A foundation.
+5. Source Patch Preview and Command Bus Foundation.
+6. Design Editing MVP with commands and undo/redo.
+7. Editable Inspector MVP.
+8. Style Engine and CSS/Sass Inspector.
+9. Responsive Design and Layout Tools.
+10. Components, snippets, and reusable blocks.
+11. Assets, fonts, SVG, and media management.
+12. Developer Mode and IDE tools.
+13. WebGPU Overlay Engine.
+14. Rust/WASM Analyzer.
+15. Automation, assistant workflows, packaging, testing, and product hardening.
+
+## Required validation before PR merge
+
+For a full install-backed local gate, run:
+
+```bash
+npm run validate:local
+```
+
+For iterative validation after dependencies are already installed, run:
+
+```bash
+npm run validate:local:quick
+```
+
+For Electron launch checks, run manually:
+
+```bash
+npm run dev
+```
+
+Feature-specific scripts should be added as phases land, for example:
+
+- `validate:html-element-library`.
+- `validate:source-patch-preview`.
+- `validate:design-editing`.
+- `validate:style-engine`.
+- `validate:webgpu-overlay`.
+- `validate:wasm-analyzer`.
+
+The validation runner is mandatory before requesting PR merge. It must be updated whenever a phase adds new required validation. Manual UI verification remains required where automation is not yet sufficient.
