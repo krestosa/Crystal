@@ -1,4 +1,4 @@
-import type { CommandBusValidationResult, CommandEnvelope } from "./command-bus.types";
+import type { CommandBusValidationResult, CommandEnvelope } from "./command-preview-bus.types";
 
 export function validateCommandEnvelope(envelope: CommandEnvelope): CommandBusValidationResult {
   const errors: string[] = [];
@@ -8,7 +8,7 @@ export function validateCommandEnvelope(envelope: CommandEnvelope): CommandBusVa
   if (!envelope.commandKind.trim()) errors.push("commandKind is required.");
   if (!envelope.source.trim()) errors.push("source is required.");
   if (!Number.isFinite(envelope.createdAt) || envelope.createdAt <= 0) errors.push("createdAt must be a positive timestamp.");
-  if (envelope.dryRun !== true) errors.push("Command Bus foundation accepts dryRun=true envelopes only.");
+  if (envelope.dryRun !== true) errors.push("Command Preview Bus foundation accepts dryRun=true envelopes only.");
   if (envelope.payload === null || envelope.payload === undefined) warnings.push("payload is empty.");
 
   return {

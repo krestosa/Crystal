@@ -3,9 +3,9 @@ import {
   COMMAND_PREVIEW_BLOCKED_STATUS,
   COMMAND_PREVIEW_INVALID_STATUS,
   COMMAND_PREVIEW_UNSUPPORTED_STATUS
-} from "./command-bus.constants";
-import type { CommandEnvelope, CommandExecutionBlocker, CommandPreviewPlanner, CommandPreviewResult } from "./command-bus.types";
-import { validateCommandEnvelope } from "./command-bus.validators";
+} from "./command-preview-bus.constants";
+import type { CommandEnvelope, CommandExecutionBlocker, CommandPreviewPlanner, CommandPreviewResult } from "./command-preview-bus.types";
+import { validateCommandEnvelope } from "./command-preview-bus.validators";
 
 export function previewCommandEnvelope<TPayload, TContext>(
   envelope: CommandEnvelope<TPayload>,

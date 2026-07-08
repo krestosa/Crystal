@@ -1,4 +1,4 @@
-import type { CommandPreviewResult } from "../../../../../../../packages/core/commands/command-bus";
+import type { CommandPreviewResult } from "../../../../../../../packages/core/commands/command-preview-bus";
 import type { HtmlElementLibraryItem, HtmlInsertionTargetEligibility } from "../../../../../../../packages/core/project/html-element-library";
 import type { HtmlElementLibraryPanelElements } from "../html-element-library-panel.types";
 

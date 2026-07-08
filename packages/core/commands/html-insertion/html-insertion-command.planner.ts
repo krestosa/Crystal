@@ -4,7 +4,7 @@ import {
   COMMAND_PREVIEW_READY_STATUS,
   COMMAND_PREVIEW_UNSUPPORTED_STATUS,
   type CommandPreviewResult
-} from "../command-bus";
+} from "../command-preview-bus";
 import type { ProjectDomSnapshotState } from "../../project/dom/project-dom-snapshot.types";
 import type { ProjectGraph } from "../../project/graph/project-graph.types";
 import type { ProjectPreviewState } from "../../project/preview/project-preview.types";
