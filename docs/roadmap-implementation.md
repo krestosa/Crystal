@@ -14,7 +14,7 @@ Covered:
 - `/apps` and `/packages` root structure
 - Electron app source split into main, preload, and renderer
 - modular renderer folders for layout, views, components, styles, and app bootstrap
-- command, event, and state folders in core
+- command, event, state, history, refresh-boundary, source-patch, and planning folders in core
 - adapter folders for build-facing external tools
 - documentation of source modularity and runtime outputs
 
@@ -37,7 +37,7 @@ Covered:
   - `validate:local:quick:preview`
   - `validate:local:quick:ui`
 - Electron diagnostic script
-- optional manual DevTools opening through the status bar button only; DevTools no longer auto-opens from `npm run dev`
+- optional manual DevTools opening through the status bar button only
 
 Still future hardening:
 
@@ -53,24 +53,20 @@ Still future hardening:
 
 Covered:
 
-- opening a project folder through Electron dialog IPC
-- opening an HTML file through Electron dialog IPC and scanning its containing folder
+- opening a project folder or an HTML file through Electron dialog IPC
 - recursive file scanning with ignored directories and initial limits
-- file classification for HTML, CSS, Sass/SCSS, JS, TS, images, SVG, fonts, video, audio, other assets, and unknown files
-- HTML page detection including `index.html` and subfolder pages
-- direct HTML dependency detection for stylesheets, scripts, images, media, iframes, SVG references, and `srcset`
+- file classification for HTML, CSS, Sass/SCSS, JS, TS, images, SVG, fonts, media, assets, and unknown files
+- HTML page detection
+- direct HTML dependency detection
 - CSS/SCSS dependency detection for `@import` and `url(...)`
-- basic JS/TS dependency detection for static imports, side-effect imports, dynamic imports, and `require(...)`
+- basic JS/TS dependency detection
 - local, external, resolved, and missing route classification
 - Project Graph state integration
-- project events and command type definitions
-- renderer Project panel for files, pages, issues, file counts, watcher state, refresh state, and cache state
+- renderer Project panel
 - sample fixture project and validation scripts
 - filesystem watcher adapter
-- Project Graph watch event normalization
 - batched watch events
 - in-memory Project Graph cache foundation
-- file metadata for cache/invalidation
 - conservative semi-incremental refresh planning with full-rescan fallback
 - typed IPC for watcher/cache control
 - automated local watcher filesystem validation over a temporary project
@@ -94,45 +90,31 @@ Still future hardening:
 
 Covered:
 
-- Preview state model, target model, issue model, and reload reason model
-- Preview event and command type definitions
-- Project Graph page target selection
-- secure project-relative Preview path resolver
-- custom `crystal-preview://current/<relative-project-path>` protocol
-- basic MIME serving for HTML, CSS, JavaScript, SVG, images, fonts, media, and safe unsupported-MIME fallback reporting
-- missing Preview resource reporting
-- blocked path traversal and outside-root request reporting
-- coalesced Preview issues with bounded recent history
-- active Preview load correlation for stale issue prevention
-- typed IPC and preload Preview API
-- renderer Preview panel in the Design view
-- visible Preview issues section in the Preview panel and floating Diagnostics panel
-- manual Load Preview and Reload Preview
-- target change reload from Project Graph pages
-- controlled Preview reload after relevant watcher-driven Project Graph refreshes
-- non-visual `validate:preview` script
-- read-only DOM snapshot state model
-- static HTML DOM snapshot builder
-- hardened DOM snapshot parser for common malformed and edge-case HTML patterns
-- stable DOM snapshot `snapshotPath`, path-based `id`, and `siblingIndex`
-- bounded DOM snapshot issues and limits
-- typed IPC and preload DOM snapshot API
-- read-only DOM Tree panel in the Design view
-- non-visual `validate:dom-snapshot` script
-- injected inactive-by-default Preview selection script for HTML responses
-- sandbox-preserving renderer `postMessage` bridge for Preview selection
-- minimal `previewSelection` state and selected-node summary
-- conservative read-only mapping between selected Preview nodes and DOM Snapshot paths
-- `matched`, `mismatched`, `ambiguous`, `stale`, and `missing-snapshot` mapping states
-- non-visual `validate:preview-selection` script
+- secure real Preview protocol and renderer Preview panel
+- safe Preview target selection and reload controls
+- bounded Preview diagnostics
+- read-only DOM Snapshot model and parser
+- read-only DOM Tree panel
+- inactive-by-default Preview selection script
+- sandbox-preserving renderer message bridge
+- conservative read-only mapping between Preview selection and DOM Snapshot paths
+- non-visual Preview, DOM Snapshot, Preview Selection, and Preview Inspector validators
+
+Still out of scope:
+
+- source writes
+- patch apply
+- write IPC
+- DOM mutation
+- editable Inspector behavior
 
 ### Phase 3 — Preview Inspector read-only
 
 Covered:
 
 - minimal read-only Preview Inspector model and selector
-- mapped DOM Snapshot node details for trusted `matched` selections
-- defensive Inspector states for missing snapshot, stale snapshot, mismatched mapping, ambiguous mapping, and matched path missing from the current snapshot
+- mapped DOM Snapshot node details for trusted selections
+- defensive Inspector states for missing, stale, mismatched, ambiguous, and missing-path cases
 - compact read-only Preview Inspector panel
 - target/page selector styling integrated with the carbon shell
 - non-visual `validate:preview-inspector` script
@@ -152,36 +134,12 @@ Still out of scope:
 Covered:
 
 - pure Design Canvas viewport model under `packages/core/project/design-canvas/`
-- wide safe zoom state with 2% minimum, 6400% maximum, and 100% default
-- wheel and trackpad delta normalization for pixel, line, and page delta modes
-- explicit wheel/trackpad/pinch classification for zoom, free pan, iframe scroll passthrough, and safe ignore
-- explicit pointer classification for canvas pan, zoom-drag, and safe ignore
-- explicit navigation modes: `idle`, `panning`, `zooming-wheel`, and `zooming-drag`
-- pan state with transient panning marker and last interaction timestamp
-- fit, center, reset, focal zoom, panning, pan clamp, and finite-number viewport helpers
-- pan recovery margin so the frame cannot be lost completely
+- safe zoom, pan, fit, center, reset, focal zoom, and finite-number helpers
+- wheel, trackpad, pinch, keyboard, pointer, and zoom-drag navigation classification
 - renderer Design Canvas component around the Preview frame
-- toolbar controls outside the transformed stage
-- Preview visual frame inside the transformed stage only
-- simple desktop page frame at 1280 × 720
-- no scrollbars, straight vertical scroll, or straight horizontal scroll as the primary Design Canvas navigation model
-- overflow-hidden and overscroll-contained Design Canvas surface
-- free pan vector handling so diagonal canvas gestures move diagonally instead of mapping to page scroll
-- Space + drag panning
-- middle mouse panning where the event reaches the canvas
-- empty-background drag and wheel/trackpad panning without blocking the iframe
-- Ctrl/Cmd + wheel or Chromium-emulated pinch canvas zooming while normal wheel and two-finger trackpad scroll remain available to Preview
-- double tap/click plus upward or downward movement for focal zoom-drag when Chromium/Electron exposes a detectable pointer sequence
-- safe zoom-drag cancellation on pointer release, pointer cancel, blur, or Escape
-- focused-canvas keyboard zoom, reset, fit, center, and arrow-key pan
-- Fit, Center, and Reset recovery controls
-- visible zoom percentage
-- temporary Space/Ctrl/Cmd/pan/wheel-zoom/zoom-drag capture states so Preview returns to normal interaction outside canvas gestures
 - external capture layer that defaults to `pointer-events: none`
 - in-memory viewport state persistence for the current renderer session
-- non-visual `validate:design-canvas` script
-- `validate:design-canvas` wired into local validation
-- documentation of read-only Design Canvas limits
+- non-visual `validate:design-canvas` script wired into local validation
 
 Still out of scope:
 
@@ -208,7 +166,7 @@ Partially covered / still future:
 - read-only selection handles beyond basic selection visualization
 - multi-frame awareness for multiple preview viewports
 - visual breadcrumbs foundation
-- layout type badges for `block`, `flex`, `grid`, `absolute`, `fixed`, and `sticky`
+- layout type badges
 - overlay desync hardening after iframe scroll/resize/reflow
 - ruler/guide/measurement overlay integration
 
@@ -216,11 +174,10 @@ Partially covered / still future:
 
 Covered:
 
-- compact modular Element Library panel grouped by intent: structure, text, media, forms, lists/tables, interaction, semantic/accessibility, and presets
-- read-only HTML element catalog with explicit future insertion modes, required attributes, recommended attributes, child hints, and accessibility notes
+- compact modular Element Library panel grouped by intent
+- read-only HTML element catalog
 - `AddHtmlElementCommand` contracts, constants, validator, and execution blocker
 - target eligibility selector based on Project Graph, Preview target, DOM Snapshot, and Preview Selection mapping state
-- defensive UI states for no project, no preview target, missing snapshot, stale snapshot, mismatched selection, ambiguous selection, unsupported target, and matched target
 - compact Element Library integration with shell UI primitives and disabled future command action
 - non-visual `validate:html-element-library` script wired into quick UI validation
 
@@ -253,6 +210,33 @@ Still out of scope:
 - undo/redo real history
 - DOM mutation
 
+### Phase 6C — History/Undo transaction skeleton and refresh boundary planning
+
+Covered:
+
+- `HistoryTransactionPreview` contracts under `packages/core/history/`
+- undo/redo strategy descriptors without real undo/redo behavior
+- deterministic history transaction preview factory that accepts an optional timestamp marker instead of calling the clock directly
+- `RefreshBoundaryPlan` contracts under `packages/core/refresh-boundary/`
+- invalidation targets for Project Graph, DOM Snapshot, Preview render, selection state, Inspector state, Visual Overlay, and diagnostics
+- `CommandTransactionPlanPreview` contracts under `packages/core/commands/transaction-planning/`
+- preview-only linkage from Command Preview Result to Source Patch Preview, HistoryTransactionPreview, and RefreshBoundaryPlan
+- validation guarding that Phase 6C remains dry-run/planning only
+- `validate:history-foundation` wired into `validate:local:quick:core`
+
+Still out of scope:
+
+- real source writes
+- patch apply
+- IPC write
+- save/apply workflow
+- real undo/redo execution
+- history persistence
+- dirty-state mutation
+- refresh execution
+- DOM mutation
+- Apply enablement
+
 ### Cross-cutting shell, Diagnostics, and UI system polish
 
 Covered:
@@ -260,7 +244,7 @@ Covered:
 - carbon shell theme with compact density
 - resizable left and right shell panels
 - integrated status bar with runtime badge, Diagnostics button, and manual DevTools button
-- floating Diagnostics panel with open/close, pin/unpin, drag, viewport recovery, and eight-direction resize
+- floating Diagnostics panel with open/close, pin/unpin, drag, viewport recovery, and resize
 - Diagnostics scroll containment and responsive grid for Graph, Preview, DOM, and Events
 - dark Preview fixture styling
 - dark Inspector select styling
@@ -277,17 +261,18 @@ Still out of scope:
 
 ## Recommended next module
 
-### Phase 6C — History/Undo transaction skeleton and refresh boundary planning
+### Design Editing MVP preflight
 
 Recommended scope:
 
-- command history transaction skeleton without applying project mutations
-- undo/redo contract shapes without real undo/redo behavior
-- patch preview to refresh-boundary planning contracts
-- preview refresh boundary model for future source writes
-- validation that real source writes, patch apply, IPC write, save/apply, and DOM mutation remain blocked
+- keep Apply unavailable until a real write runtime is explicitly introduced
+- define dirty-state models before persistence
+- define conflict detection before source mutation
+- define a write-capable command execution runtime behind main/core boundaries
+- connect refresh-boundary execution only after writes are real and validated
+- connect real undo/redo only after durable transaction records exist
 
-Phase 6C must still avoid real source writes and must not claim actual insertion. It should prepare history and refresh boundaries before any future write-capable command lands.
+Phase 6C prepared history and refresh boundaries but did not make any write-capable command land.
 
 ## Not implemented yet
 
@@ -304,7 +289,7 @@ The following roadmap items remain intentionally pending:
 - class management and Class Composer
 - CSS cascade or specificity analysis
 - Style Engine and CSS/Sass Inspector
-- visual style editor categories: layout, spacing, size, position, typography, color, background, border, effects, transform, flex, grid, responsive, custom properties, and states
+- visual style editor categories
 - responsive breakpoint tooling
 - component/snippet library
 - asset/font/SVG/media management UI
@@ -334,8 +319,8 @@ The complete roadmap is documented in [`docs/full-product-roadmap.md`](./full-pr
 3. ~~Visual Selection and Overlay MVP.~~ Implemented MVP; hardening remains.
 4. ~~HTML5 Element Library and safe insertion command foundation.~~ Implemented as read-only Phase 6A foundation.
 5. ~~Source Patch Preview and Command Bus Foundation.~~ Implemented as read-only Phase 6B foundation.
-6. History/Undo transaction skeleton and refresh boundary planning.
-7. Design Editing MVP with commands and undo/redo.
+6. ~~History/Undo transaction skeleton and refresh boundary planning.~~ Implemented as Phase 6C planning foundation.
+7. Design Editing MVP preflight with write-runtime and dirty-state contracts.
 8. Editable Inspector MVP.
 9. Style Engine and CSS/Sass Inspector.
 10. Responsive Design and Layout Tools.
@@ -360,6 +345,12 @@ For iterative validation after dependencies are already installed, run:
 npm run validate:local:quick
 ```
 
+For Phase 6C-specific validation, run:
+
+```bash
+npm run validate:history-foundation
+```
+
 For Electron launch checks, run manually:
 
 ```bash
@@ -370,6 +361,7 @@ Feature-specific scripts should be added as phases land, for example:
 
 - `validate:html-element-library`.
 - `validate:source-patch-preview`.
+- `validate:history-foundation`.
 - `validate:design-editing`.
 - `validate:style-engine`.
 - `validate:webgpu-overlay`.
