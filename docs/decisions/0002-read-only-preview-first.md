@@ -8,15 +8,15 @@ Accepted.
 
 ## Context
 
-Crystal must eventually edit real HTML projects, but early editing without trustworthy Preview, DOM Snapshot, selection mapping, and diagnostics would create unsafe source mutation.
+Crystal eventually needs to edit source, but a visual editor without reliable Preview, snapshot, selection, and diagnostics would be unsafe. The browser can recover malformed HTML differently than the static parser, and scripts can change the live DOM after load.
 
 ## Decision
 
-Build read-only Preview, DOM Snapshot, Preview Selection, Visual Selection Overlay, and Preview Inspector before enabling writes. Treat mismatched, stale, ambiguous, or missing snapshot states as defensive states.
+Build read-only Preview, DOM Snapshot, Preview Selection, Visual Selection Overlay, and Preview Inspector before enabling writes. Treat missing, stale, mismatched, or ambiguous mapping as defensive state.
 
 ## Consequences
 
-The current product surface can inspect and preview but cannot edit. This keeps security and source correctness ahead of feature velocity.
+The current product can inspect and preview possible changes, but it cannot edit project files. This keeps source correctness and security ahead of visible editing speed.
 
 ## Current implementation
 

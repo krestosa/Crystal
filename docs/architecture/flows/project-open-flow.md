@@ -4,11 +4,13 @@
 
 ## Purpose
 
-This document describes how Crystal opens a project folder or standalone HTML file and turns it into Project Graph state.
+Project open is the first point where Crystal turns a user-selected filesystem location into application state. It matters because every later feature, including Preview and Source Patch Preview, depends on the active root and graph being resolved by main rather than guessed by renderer.
 
 ## Current implementation
 
-The renderer calls the preload project API. Electron main owns dialogs, root resolution, scan orchestration, watcher/cache state, and sanitized result updates. Core scanner and graph builder classify files and dependencies through filesystem abstractions.
+The renderer requests Open Folder or Open HTML through preload. Electron main owns dialogs and root resolution. Core scans the selected root through filesystem abstractions and returns Project Graph state. Main stores and emits that sanitized state.
+
+The sequence shows where authority moves: user intent starts in renderer, but filesystem decisions happen in main and core.
 
 ```mermaid
 sequenceDiagram
@@ -31,6 +33,8 @@ sequenceDiagram
 
 ## Key files
 
+Read these files from main orchestration down to core scanning.
+
 - `apps/desktop/electron/main/ipc/register-project-ipc.ts`
 - `apps/desktop/electron/main/ipc/project-scan-service.ts`
 - `apps/desktop/electron/main/ipc/project-services.ts`
@@ -42,11 +46,11 @@ sequenceDiagram
 
 ## Data flow
 
-The selected folder or HTML file defines the active project root. Core scanning detects pages, dependencies, assets, missing routes, file kinds, and issues. Main stores the current graph and emits updates. Renderer never receives raw filesystem authority.
+The selected folder or HTML file defines the active project root. Core detects pages, dependencies, assets, missing routes, file kinds, watcher metadata, and issues. That graph becomes the source for Preview target selection and later eligibility checks.
 
 ## Boundaries
 
-Opening a project does not imply editing authority. The graph is a read model. Framework alias resolution, TypeScript semantic analysis, CSS cascade, and unused asset analysis are Future.
+Opening a project grants read and analysis capability through main services, not renderer write authority. Framework alias resolution, TypeScript semantics, CSS cascade, and unused asset analysis are not part of the current graph.
 
 ## Validation
 
@@ -60,4 +64,4 @@ Opening a project does not imply editing authority. The graph is a read model. F
 
 ## Future work
 
-Future graph expansion should add parsed DOM, class/selector ownership, health signals, workers, and Rust/WASM acceleration behind typed boundaries.
+Project Graph can expand into parsed DOM, class/selector ownership, health signals, worker-backed scanning, and Rust/WASM acceleration. Those additions should keep the same root ownership boundary.

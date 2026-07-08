@@ -2,7 +2,7 @@
 
 [Docs index](../README.md)
 
-This directory records durable architecture decisions for Crystal. Each decision distinguishes current implementation from future work.
+This directory records decisions that should not have to be rediscovered in every feature branch. ADRs are intentionally short: they identify the constraint, the decision, and the consequence for current and future work.
 
 ## Decisions
 

@@ -4,11 +4,13 @@
 
 ## Purpose
 
-This document defines the intended future write path and marks it as blocked. It exists so Phase 6C can prepare contracts without accidentally implementing writes.
+Future write flow documents the path Crystal should eventually take to modify source files. It is written now because the current UI already produces command intent and patch previews, and those previews must not be mistaken for writes.
 
 ## Current implementation
 
-There is no implemented write flow. Current Element Library and Source Patch Preview flows stop at dry-run preview. No file is modified, no DOM node is inserted, no patch is applied, no write IPC exists, and undo/redo is not real.
+There is no implemented write flow. No file is modified. No DOM node is inserted. No patch is applied. No write IPC exists. No undo/redo transaction is recorded. Current Element Library and Source Patch Preview flows stop at dry-run preview.
+
+The diagram marks the boundary explicitly. Everything after `Blocked write boundary` is future planning, not current behavior.
 
 ```mermaid
 flowchart TD
@@ -27,7 +29,7 @@ flowchart TD
 
 ## Key files
 
-Current dry-run files only:
+These are current dry-run files only. Do not use them as evidence of write support.
 
 - `packages/core/commands/command-preview-bus/**`
 - `packages/core/commands/html-insertion/**`
@@ -39,7 +41,7 @@ Future write execution files do not exist yet.
 
 ## Data flow
 
-A future write flow would start from a validated command, produce a reversible patch, open a transaction, apply the patch through main/core services, update dirty state, refresh Project Graph, invalidate DOM Snapshot, reload Preview where required, and register undo/redo descriptors. None of that is implemented now.
+A future write flow would start from a validated command, generate a reversible patch, create a transaction record, apply through main/core services, update dirty state, refresh Project Graph, invalidate DOM Snapshot, reload Preview where required, and register undo/redo descriptors. None of that is available now.
 
 ## Boundaries
 

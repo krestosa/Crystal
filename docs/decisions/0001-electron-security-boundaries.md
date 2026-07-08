@@ -8,15 +8,15 @@ Accepted.
 
 ## Context
 
-Crystal loads real user HTML projects and also runs privileged desktop code. Without strict boundaries, a project preview or renderer bug could access filesystem capabilities that belong only to Electron main.
+Crystal loads real user HTML next to privileged desktop code. Without strict boundaries, a project page, renderer bug, or convenience shortcut could reach filesystem capabilities that belong only to Electron main.
 
 ## Decision
 
-Keep Electron renderer unprivileged. Use `contextIsolation: true`, `nodeIntegration: false`, `sandbox: true`, and `webSecurity: true`. Expose only a controlled preload API. Keep filesystem access in main/adapters. Keep Preview iframe isolated and avoid live iframe DOM reads.
+Keep renderer unprivileged. Use `contextIsolation: true`, `nodeIntegration: false`, `sandbox: true`, and `webSecurity: true`. Expose only a controlled preload API. Keep filesystem access in main/adapters. Keep Preview iframe isolation and avoid live iframe DOM reads from renderer.
 
 ## Consequences
 
-Renderer features must request data through typed preload/main paths. Some UI features are slower to implement because shortcuts such as direct iframe DOM reads, raw IPC, or relaxed sandboxing are not allowed. This is intentional.
+Feature work must cross explicit APIs even when a shortcut would be faster. Direct iframe access, raw IPC, and relaxed sandboxing are not acceptable ways to implement inspection or editing.
 
 ## Current implementation
 

@@ -4,9 +4,11 @@
 
 ## Purpose
 
-This diagram shows the current Electron and Preview security boundaries.
+This diagram shows the security edges that protect Crystal while it loads real project HTML.
 
 ## Current implementation
+
+Only the preload bridge may connect renderer UI to main. Preview is served through a constrained protocol. The iframe can send bounded selection messages, but it cannot access Crystal privileges.
 
 ```mermaid
 flowchart TD
@@ -27,6 +29,8 @@ flowchart TD
 ```
 
 ## Key files
+
+These files implement the security boundaries shown above.
 
 - `apps/desktop/electron/main/security/web-preferences.ts`
 - `apps/desktop/electron/preload/bridges/crystal-api.bridge.ts`

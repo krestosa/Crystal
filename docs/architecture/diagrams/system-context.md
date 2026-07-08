@@ -4,9 +4,11 @@
 
 ## Purpose
 
-This diagram shows the current Crystal system context around user actions, renderer UI, main services, core packages, adapters, and project files.
+This diagram gives a one-screen view of Crystal's current system shape. Use it to see which runtime owns which kind of responsibility before reading a specific feature page.
 
 ## Current implementation
+
+Renderer presents UI. Preload narrows the bridge. Main owns privileged effects. Core packages model state and dry-run planning. Adapters touch filesystem and watcher effects. The dashed file edge is the important boundary: command preview does not write.
 
 ```mermaid
 flowchart TD
@@ -27,6 +29,8 @@ flowchart TD
 
 ## Key files
 
+These are entry points for the diagram boxes.
+
 - `apps/desktop/electron/main/main.ts`
 - `apps/desktop/electron/preload/bridges/crystal-api.bridge.ts`
 - `apps/desktop/electron/renderer/app/bootstrap/bootstrap.ts`
@@ -36,7 +40,7 @@ flowchart TD
 
 ## Data flow
 
-Renderer actions cross the preload bridge before they reach main. Main uses core and adapters. Preview is served through a custom protocol. Command preview remains dry-run.
+User actions begin in renderer and move toward main only through preload. Main delegates logic to core and effects to adapters. Preview rendering is isolated from command preview.
 
 ## Boundaries
 

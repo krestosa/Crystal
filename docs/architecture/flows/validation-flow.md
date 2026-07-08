@@ -4,11 +4,13 @@
 
 ## Purpose
 
-This document describes how local validation gates source changes and documentation changes.
+Validation flow explains how a change is checked before it is trusted. It matters in Crystal because many architectural guarantees are negative guarantees: a feature must not write, must not read iframe internals, and must not relax Electron security.
 
 ## Current implementation
 
-The root scripts run build, typecheck, structure checks, Project Graph checks, Preview checks, DOM Snapshot checks, Selection checks, Inspector checks, Design Canvas checks, Visual Selection Overlay checks, Element Library checks, Source Patch Preview checks, UI flow checks, watcher checks, and Electron diagnostics.
+The root scripts run build, typecheck, structure checks, feature validators, watcher checks, Electron diagnostics, and architecture documentation checks. Validators are source readers, not source modifiers.
+
+The diagram shows documentation validation beside runtime validation. They complement each other but do not prove the same things.
 
 ```mermaid
 flowchart TD
@@ -22,6 +24,8 @@ flowchart TD
 
 ## Key files
 
+Read `package.json` for the command graph, then the specific validator for the feature being changed.
+
 - `package.json`
 - `scripts/validate-local.mjs`
 - `scripts/validate-structure.mjs`
@@ -31,15 +35,15 @@ flowchart TD
 
 ## Data flow
 
-Validation scripts read source and docs, fail fast with explicit messages, and do not mutate runtime source. The docs validator is an additional static gate for architecture documentation integrity.
+Validation scripts inspect source, docs, fixtures, and expected strings. They fail with explicit messages and exit non-zero. The docs validator checks navigability and safety language; feature validators check runtime assumptions.
 
 ## Boundaries
 
-Validation must not hide implementation gaps. Passing docs validation does not mean runtime behavior is implemented. It only means the docs set is present and internally navigable.
+Passing docs validation does not mean a future feature exists. Passing runtime validation does not allow docs to claim a blocked feature is implemented. Both checks should keep current scope honest.
 
 ## Validation
 
-Run `npm run validate:architecture-docs` for docs and `npm run validate:local:quick` for current installed local source validation.
+Run `npm run validate:architecture-docs` for docs and `npm run validate:local:quick` for installed local source validation.
 
 ## Related docs
 
@@ -49,4 +53,4 @@ Run `npm run validate:architecture-docs` for docs and `npm run validate:local:qu
 
 ## Future work
 
-Add import boundary validation and docs-to-source path validation after the documentation surface stabilizes.
+Add import-boundary validation and docs path drift checks after the documentation surface stabilizes.

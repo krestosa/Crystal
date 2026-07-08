@@ -4,13 +4,16 @@
 
 ## Purpose
 
-This diagram shows the current validation sequence and the added documentation validation gate.
+This diagram shows how documentation and runtime checks fit into the local validation path.
 
 ## Current implementation
 
+The docs validator runs before the quick build/typecheck gate. It does not prove runtime behavior; it keeps the architecture map and safety language intact.
+
 ```mermaid
 flowchart TD
-  Source[Source/docs change] --> Build[build]
+  Source[Source/docs change] --> Docs[validate:architecture-docs]
+  Docs --> Build[build]
   Build --> Typecheck[typecheck]
   Typecheck --> Structure[validate:structure]
   Structure --> Core[validate:local:quick:core]
@@ -18,11 +21,12 @@ flowchart TD
   Preview --> UI[validate:local:quick:ui]
   UI --> Watch[validate:local:watch]
   Watch --> Doctor[doctor:electron]
-  Source --> Docs[validate:architecture-docs]
   Docs --> Review[Documentation review]
 ```
 
 ## Key files
+
+These files define the validation command graph and docs-specific checks.
 
 - `package.json`
 - `scripts/validate-local.mjs`
@@ -32,7 +36,7 @@ flowchart TD
 
 ## Data flow
 
-Code validation and docs validation are separate static gates. The docs gate checks navigation, sections, and Mermaid coverage.
+Code validation and docs validation are separate static gates. The docs gate checks navigation, sections, Mermaid coverage, roadmap links, and blocked write claims.
 
 ## Boundaries
 

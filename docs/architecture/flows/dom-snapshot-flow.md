@@ -4,11 +4,13 @@
 
 ## Purpose
 
-This document explains how Crystal builds a static DOM Snapshot from the active Preview target.
+DOM Snapshot flow explains how Crystal builds a structural model from source instead of from the iframe. It is the flow that lets the rest of the system reason about source-adjacent structure without relaxing Preview isolation.
 
 ## Current implementation
 
-DOM Snapshot is requested from renderer, resolved in main against the current Preview target, built in core from static HTML source, then emitted back to renderer as bounded state.
+Renderer asks main to build a snapshot for the active Preview target. Main reads the static HTML source. Core parses the source into a bounded tree and returns a sanitized `ProjectDomSnapshotState`.
+
+The sequence shows one important constraint: the iframe is not involved in snapshot construction.
 
 ```mermaid
 sequenceDiagram
@@ -28,6 +30,8 @@ sequenceDiagram
 
 ## Key files
 
+These files show the source read, parser, state model, and renderer consumer.
+
 - `apps/desktop/electron/main/dom/project-dom-snapshot-service.ts`
 - `packages/core/project/dom/project-dom-snapshot-builder.ts`
 - `packages/core/project/dom/project-dom-snapshot-parser.ts`
@@ -36,11 +40,11 @@ sequenceDiagram
 
 ## Data flow
 
-The active Preview target determines the source file. Snapshot builder serializes a document root and child nodes with paths, text previews, attributes, source locations, truncation flags, and parser issues. Renderer panels consume the resulting state.
+The active Preview target chooses the source file. The builder serializes a document root and child nodes with paths, text previews, attributes, source locations, truncation flags, and parser issues. Renderer panels consume the emitted state.
 
 ## Boundaries
 
-The flow reads source, not iframe runtime DOM. It does not execute scripts or compute layout. Parser recovery is intentionally limited and issue-driven.
+The flow reads source, not runtime DOM. It does not execute scripts or compute layout. Parser recovery is intentionally limited so incorrect confidence does not leak into source planning.
 
 ## Validation
 
@@ -54,4 +58,4 @@ The flow reads source, not iframe runtime DOM. It does not execute scripts or co
 
 ## Future work
 
-Source mapping should become more accurate before source writes are enabled. Worker or WASM acceleration remains Future.
+More precise source mapping should come before source writes. Worker or WASM acceleration remains future and should preserve the same output contract.

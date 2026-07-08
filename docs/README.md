@@ -1,6 +1,8 @@
 # Crystal Documentation Index
 
-This is the root index for Crystal documentation. Crystal is a desktop Electron/Node application for opening, previewing, inspecting, and eventually modifying real HTML projects. The current implementation remains conservative: it includes Project Graph, read-only Preview, DOM Snapshot, Preview Selection, Visual Selection Overlay, Preview Inspector, Design Canvas navigation, Element Library command foundations, Source Patch Preview, and Command Preview Bus dry-run foundations. Real source writes are still intentionally blocked.
+Crystal is a desktop Electron/Node application for opening, previewing, inspecting, and eventually modifying real HTML projects. The current system is intentionally conservative: it can reason about project structure and preview possible edits, but it does not write source files yet.
+
+Use this page as the starting point for architecture navigation. The docs are organized by runtime boundary, feature area, flow, diagram, and decision record so a new contributor can move from product context to implementation details without guessing where a responsibility lives.
 
 ## Primary maps
 
@@ -81,4 +83,4 @@ This is the root index for Crystal documentation. Crystal is a desktop Electron/
 
 ## Documentation rules
 
-Documentation must distinguish implemented behavior from future behavior. If a module is only planned, label it as `Future`. If a capability is intentionally blocked, state the boundary and the reason. Do not claim real insertion, real source mutation, undo/redo execution, write IPC, live iframe DOM reads, or relaxed Electron security unless those features are implemented and validated.
+Treat implemented, blocked, and future behavior as separate states. If a feature only previews a possible edit, call it a preview. If a path is intentionally blocked, explain the technical reason. Do not claim real insertion, source mutation, patch application, undo/redo execution, write IPC, live iframe DOM reads, or relaxed Electron security unless the code and validators support that claim.

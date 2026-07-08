@@ -8,15 +8,15 @@ Accepted.
 
 ## Context
 
-Crystal's shell grew multiple read-only panels: Project Graph, Preview, DOM Tree, Inspector, Diagnostics, Element Library, and Design Canvas controls. Without shared primitives, each panel would drift visually and structurally.
+Crystal's renderer shell has several panels with similar chrome: Project Graph, Preview, DOM Tree, Inspector, Diagnostics, Element Library, and Design Canvas controls. Without shared primitives, each panel would drift visually and structurally.
 
 ## Decision
 
-Use small shell UI primitives for panel headers, sections, scroll regions, sidebar stacks, metadata rows, empty states, status badges, and compact controls. Keep primitives presentational and avoid hiding feature logic inside them.
+Use small shell UI primitives for panel headers, sections, scroll regions, sidebar stacks, metadata rows, empty states, status badges, and compact controls. Keep primitives presentational. Feature logic should stay in feature modules.
 
 ## Consequences
 
-Feature modules share a consistent carbon-shell grammar while preserving modular ownership. Primitive modules must not call preload, mutate project state, or implement feature commands.
+Panels share a consistent carbon-shell grammar while preserving modular ownership. Primitive modules must not call preload, mutate project state, or implement feature commands.
 
 ## Current implementation
 

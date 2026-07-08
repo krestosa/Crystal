@@ -4,11 +4,15 @@
 
 ## Active project root
 
-The filesystem root selected by the user through Open Folder or inferred from Open HTML. Main uses it to resolve Project Graph and Preview requests.
+The filesystem root selected through Open Folder or inferred from Open HTML. Main uses it to resolve Project Graph scans, Preview targets, DOM Snapshot source reads, and safe project-relative paths.
+
+## Blocked
+
+A deliberate non-feature. A blocked path is not missing because of UI polish; it is unavailable because the system lacks the safety or correctness contracts required to enable it.
 
 ## Command Preview Bus
 
-A dry-run bus that returns `CommandPreviewResult` states. It is not a command execution runtime.
+The dry-run bus under `packages/core/commands/command-preview-bus/`. It returns preview-ready, blocked, or unsupported results for command previews. It does not replace `packages/core/commands/command-bus.ts` and does not execute writes.
 
 ## Design Canvas
 
@@ -20,7 +24,7 @@ A bounded static structural tree built from the active Preview target source. It
 
 ## Future
 
-A planned capability that is not implemented. Documentation must not describe Future items as working.
+A planned capability that is not implemented. Future items should not be described as available behavior.
 
 ## Preview iframe
 
@@ -40,7 +44,7 @@ The core model describing scanned project files, pages, dependencies, assets, mi
 
 ## Source Patch Preview
 
-A dry-run source-text preview of a potential future change. It does not apply a patch or persist data.
+A dry-run, verifiable description of a possible source change. It does not apply a patch or persist data.
 
 ## Visual Selection Overlay
 

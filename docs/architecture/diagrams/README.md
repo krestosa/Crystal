@@ -4,11 +4,11 @@
 
 ## Purpose
 
-This directory collects Mermaid diagrams for the major Crystal subsystems and safety boundaries.
+The diagrams give quick orientation before reading the longer pages. They are not separate specifications; each one should be read with its linked architecture or flow document.
 
 ## Current implementation
 
-The diagrams represent the current read-only and dry-run implementation after PR #21, plus explicitly marked future/blocked flows.
+The diagrams represent the current read-only and dry-run implementation after PR #21, plus explicitly marked future/blocked flows. Dotted or dashed arrows usually mean a blocked edge or future-only relationship.
 
 ```mermaid
 flowchart TD
@@ -23,6 +23,8 @@ flowchart TD
 
 ## Key files
 
+Each file is intentionally small and points back to the deeper page for details.
+
 - `docs/architecture/diagrams/system-context.md`
 - `docs/architecture/diagrams/runtime-boundaries.md`
 - `docs/architecture/diagrams/preview-selection-sequence.md`
@@ -33,7 +35,7 @@ flowchart TD
 
 ## Data flow
 
-Each diagram references the source docs that define the actual behavior. The diagrams are explanatory, not separate specifications.
+The diagrams show direction of state and authority. They should make it clear where renderer intent stops, where main owns privileged effects, and where dry-run planning stops before writes.
 
 ## Boundaries
 

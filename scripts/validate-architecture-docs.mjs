@@ -67,6 +67,25 @@ const requiredArchitectureSections = [
   "## Future work"
 ];
 
+const requiredSecurityPhrases = [
+  "contextIsolation: true",
+  "nodeIntegration: false",
+  "sandbox: true",
+  "webSecurity: true",
+  "iframe.contentDocument",
+  "iframe.contentWindow.document"
+];
+
+const forbiddenPositiveWriteClaims = [
+  "real source writes are implemented",
+  "source patch application is implemented",
+  "write IPC exists",
+  "undo/redo execution is implemented",
+  "DOM mutation is implemented",
+  "Element Library inserts HTML",
+  "Command Preview Bus executes commands"
+];
+
 const errors = [];
 let mermaidDiagramCount = 0;
 
@@ -77,6 +96,13 @@ function readDoc(relativePath) {
     return "";
   }
   return fs.readFileSync(absolutePath, "utf8");
+}
+
+function requireIncludes(relativePath, phrases) {
+  const content = readDoc(relativePath);
+  for (const phrase of phrases) {
+    if (!content.includes(phrase)) errors.push(`${relativePath} must include: ${phrase}`);
+  }
 }
 
 for (const docPath of expectedDocs) {
@@ -91,31 +117,48 @@ for (const docPath of expectedDocs) {
 
   if (docPath.startsWith("docs/architecture/") && docPath.endsWith(".md")) {
     for (const section of requiredArchitectureSections) {
-      if (!content.includes(section)) {
-        errors.push(`${docPath} is missing required section: ${section}`);
-      }
+      if (!content.includes(section)) errors.push(`${docPath} is missing required section: ${section}`);
     }
+  }
+
+  for (const claim of forbiddenPositiveWriteClaims) {
+    if (content.includes(claim)) errors.push(`${docPath} contains forbidden positive write claim: ${claim}`);
   }
 }
 
-if (mermaidDiagramCount < 11) {
-  errors.push(`Expected at least 11 Mermaid diagrams, found ${mermaidDiagramCount}.`);
-}
+if (mermaidDiagramCount < 11) errors.push(`Expected at least 11 Mermaid diagrams, found ${mermaidDiagramCount}.`);
 
 const rootIndex = readDoc("docs/README.md");
 for (const docPath of expectedDocs.filter((entry) => entry !== "docs/README.md")) {
   const relativeFromDocsRoot = `./${docPath.replace(/^docs\//, "")}`;
-  if (!rootIndex.includes(relativeFromDocsRoot)) {
-    errors.push(`docs/README.md does not link ${relativeFromDocsRoot}.`);
-  }
+  if (!rootIndex.includes(relativeFromDocsRoot)) errors.push(`docs/README.md does not link ${relativeFromDocsRoot}.`);
 }
 
-const futureWriteFlow = readDoc("docs/architecture/flows/future-write-flow.md");
-for (const requiredPhrase of ["blocked", "No file is modified", "No DOM node is inserted", "No patch is applied", "No write IPC exists"]) {
-  if (!futureWriteFlow.includes(requiredPhrase)) {
-    errors.push(`future-write-flow.md must explicitly state: ${requiredPhrase}`);
-  }
-}
+requireIncludes("docs/architecture/security-model.md", requiredSecurityPhrases);
+requireIncludes("docs/architecture/preview/preview-safety.md", [
+  "allow-same-origin",
+  "iframe.contentDocument",
+  "iframe.contentWindow.document",
+  "insertAdjacentHTML",
+  "contenteditable",
+  "execCommand"
+]);
+requireIncludes("docs/architecture/commands/command-preview-bus.md", [
+  "not a replacement for `packages/core/commands/command-bus.ts`",
+  "not an execution bus"
+]);
+requireIncludes("docs/architecture/commands/source-patch-preview.md", [
+  "not a write operation",
+  "must not write"
+]);
+requireIncludes("docs/architecture/flows/future-write-flow.md", [
+  "No file is modified",
+  "No DOM node is inserted",
+  "No patch is applied",
+  "No write IPC exists",
+  "must not write files"
+]);
+requireIncludes("docs/README.md", ["./roadmap-implementation.md", "./full-product-roadmap.md"]);
 
 if (errors.length > 0) {
   console.error("Architecture documentation validation failed:");

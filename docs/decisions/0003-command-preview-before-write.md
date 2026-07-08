@@ -8,15 +8,15 @@ Accepted.
 
 ## Context
 
-HTML insertion and later visual editing need trustworthy source planning before any file mutation is allowed. Applying patches before preview, validation, history, and refresh planning would make the editor unsafe.
+HTML insertion and later visual editing need trustworthy source planning. Applying patches before preview, validation, history, and refresh planning would make source mutation fragile.
 
 ## Decision
 
-Introduce command contracts, Source Patch Preview, HTML insertion preview planning, and Command Preview Bus dry-run results before implementing command execution. Keep real writes, apply, write IPC, undo/redo, and save/apply workflow blocked.
+Introduce command contracts, Source Patch Preview, HTML insertion preview planning, and Command Preview Bus dry-run results before implementing command execution. Keep real writes, patch apply, write IPC, undo/redo, and save/apply workflow blocked.
 
 ## Consequences
 
-The Element Library can show what a future insertion may look like, but it cannot insert. `preview-ready` means previewable only; it is not an applied state.
+The Element Library can show what a future insertion may look like, but it cannot insert. `preview-ready` means previewable only; it is not an applied state and not permission to write.
 
 ## Current implementation
 

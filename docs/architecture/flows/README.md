@@ -4,11 +4,13 @@
 
 ## Purpose
 
-This hub links the implemented and future Crystal flows that developers should understand before Phase 6C.
+Flows explain how state crosses module and runtime boundaries. They are useful when a feature touches more than one package, because the correct implementation is usually about the handoff: what enters a subsystem, what decision is made, and what state leaves.
 
 ## Current implementation
 
-Implemented flows are read-only or dry-run: project open, Preview load, DOM Snapshot, Preview Selection, Element Library preview, Source Patch Preview, and validation. The future write flow is documented as blocked.
+The implemented flows are read-only or dry-run: project open, Preview load, DOM Snapshot, Preview Selection, Element Library preview, Source Patch Preview, and validation. The future write flow is documented as blocked so the current dry-run paths are not mistaken for execution.
+
+The overview diagram shows the normal path from project open to preview planning. The dashed write edge is intentionally unavailable.
 
 ```mermaid
 flowchart LR
@@ -24,6 +26,8 @@ flowchart LR
 
 ## Key files
 
+Use the flow files to find the relevant implementation entry points. The files below are common crossing points for main, core, and renderer state.
+
 - `apps/desktop/electron/main/ipc/register-project-ipc.ts`
 - `apps/desktop/electron/main/ipc/project-scan-service.ts`
 - `apps/desktop/electron/main/preview/project-preview-service.ts`
@@ -33,11 +37,11 @@ flowchart LR
 
 ## Data flow
 
-Each flow starts from a user action or validation command, crosses explicit boundaries, and ends in sanitized state, read-only UI, or a blocked Future state.
+Each flow starts with a user action or validation command. Main or core makes the privileged or semantic decision. Renderer receives sanitized state, a defensive state, or a dry-run preview. No current flow ends in project file mutation.
 
 ## Boundaries
 
-Flow documentation must not imply real write behavior. Current command flows end at previews.
+Flow documentation should never hide the boundary between preview and write. A Source Patch Preview may look like a patch, but it is still display data until a future execution runtime exists.
 
 ## Validation
 
@@ -52,4 +56,4 @@ Use this directory with [Validation system](../validation-system.md) and [Valida
 
 ## Future work
 
-Add new flow docs when a subsystem adds new cross-runtime behavior.
+Add flow docs when a new feature creates a new cross-runtime path. Do not add flow pages only to increase document count.

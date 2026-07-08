@@ -4,9 +4,11 @@
 
 ## Purpose
 
-This diagram shows which runtime is allowed to own which responsibility.
+This diagram shows runtime ownership. It is meant to prevent a common mistake: solving a renderer feature by importing main-process authority directly into the browser runtime.
 
 ## Current implementation
+
+The allowed path is renderer → preload → main → core/adapters. Core is portable; adapters own effects. Renderer UI does not touch filesystem or watcher effects directly.
 
 ```mermaid
 flowchart LR
@@ -46,6 +48,8 @@ flowchart LR
 
 ## Key files
 
+Read these directories by runtime, not by feature.
+
 - `apps/desktop/electron/main/**`
 - `apps/desktop/electron/preload/**`
 - `apps/desktop/electron/renderer/**`
@@ -54,7 +58,7 @@ flowchart LR
 
 ## Data flow
 
-Renderer uses preload; preload invokes main; main uses core and adapters. Core stays portable.
+Renderer expresses intent; preload exposes a constrained API; main performs privileged work; core calculates model results; adapters perform effects.
 
 ## Boundaries
 

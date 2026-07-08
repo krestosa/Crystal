@@ -4,9 +4,11 @@
 
 ## Purpose
 
-This diagram shows the dry-run command preview bus as distinct from future command execution.
+This sequence shows the dry-run bus as a classification and planning path, not as execution.
 
 ## Current implementation
+
+The bus receives command intent, validates context, and returns unsupported, blocked, or preview-ready state. It does not replace `packages/core/commands/command-bus.ts` and does not call a writer.
 
 ```mermaid
 sequenceDiagram
@@ -33,6 +35,8 @@ sequenceDiagram
 ```
 
 ## Key files
+
+These files define the dry-run bus and its current HTML insertion preview path.
 
 - `packages/core/commands/command-preview-bus/command-preview-bus.types.ts`
 - `packages/core/commands/command-preview-bus/command-preview-bus.preview.ts`

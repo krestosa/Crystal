@@ -4,11 +4,13 @@
 
 ## Purpose
 
-This document describes how a selected Element Library item becomes a read-only command preview.
+Element Library preview flow shows how UI intent becomes a dry-run command preview. This is the closest current flow to editing, so it is also where the blocked write boundary must be most explicit.
 
 ## Current implementation
 
-The flow starts in renderer and ends at a dry-run `CommandPreviewResult`. It requires a selected catalog item, insertion mode, active Project Graph, loaded Preview target, DOM Snapshot state, and a matched Preview Selection target.
+The flow needs a selected catalog item, insertion mode, active Project Graph, loaded Preview target, DOM Snapshot state, and a matched Preview Selection target. If those inputs are not trustworthy, the result is defensive or blocked.
+
+The sequence shows that eligibility is checked before the command preview bus receives intent.
 
 ```mermaid
 sequenceDiagram
@@ -28,6 +30,8 @@ sequenceDiagram
 
 ## Key files
 
+These files cover UI intent, target eligibility, command preview, and rendering.
+
 - `apps/desktop/electron/renderer/components/html-element-library-panel/html-element-library-panel.ts`
 - `apps/desktop/electron/renderer/components/html-element-library-panel/renderers/insertion-mode-picker.renderer.ts`
 - `apps/desktop/electron/renderer/components/html-element-library-panel/renderers/command-preview.renderer.ts`
@@ -37,15 +41,15 @@ sequenceDiagram
 
 ## Data flow
 
-The UI normalizes insertion mode against current target eligibility. It creates a preview command only for display. Core returns blocked, unsupported, or preview-ready states. The renderer shows a status badge, human summary, and short inserted text preview when available.
+The UI normalizes insertion mode against target eligibility, creates an `AddHtmlElementCommand` preview object, and sends it to core preview planning. Core returns blocked, unsupported, or preview-ready state. Renderer displays that state without storing it as a project mutation.
 
 ## Boundaries
 
-The flow does not write HTML. The Apply button remains unavailable. The renderer does not call any source write IPC. The preview result is not stored as project state.
+This flow does not write HTML. The Apply action remains unavailable. No source write IPC is called. A preview result is explanatory state, not project state.
 
 ## Validation
 
-`validate:html-element-library` and `validate:source-patch-preview` cover the flow.
+`validate:html-element-library` and `validate:source-patch-preview` cover this flow.
 
 ## Related docs
 
@@ -55,4 +59,4 @@ The flow does not write HTML. The Apply button remains unavailable. The renderer
 
 ## Future work
 
-Phase 6C should connect this flow to transaction skeleton and refresh planning contracts, still without applying patches.
+Phase 6C should connect this flow to transaction and refresh-boundary contracts while still keeping patch application blocked.

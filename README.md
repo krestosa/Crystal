@@ -1,12 +1,12 @@
 # Crystal
 
-Crystal is a new desktop application for creating, previewing, inspecting, and eventually modifying real HTML projects and their related assets.
+Crystal is a desktop application for creating a safe visual/code workbench around real HTML projects and their related assets.
 
-The current implementation is intentionally conservative. It includes the Project Graph foundation, secure read-only Project Preview, static DOM Snapshot, read-only Preview Selection, Preview Inspector, Design Canvas navigation, Visual Selection Overlay MVP, HTML Element Library command foundation, Source Patch Preview, and Command Preview Bus dry-run foundation. Real source writes, patch application, write IPC, undo/redo execution, DOM mutation, and editable Inspector behavior are still intentionally blocked.
+The current implementation is a foundation, not a full editor. It can scan a project, load a secure read-only Preview, build a static DOM Snapshot, map read-only Preview selection back to snapshot structure, render a Preview Inspector, navigate a Design Canvas, project a Visual Selection Overlay, and produce dry-run command previews for future HTML insertion. Real source writes, patch application, write IPC, real undo/redo, DOM mutation, and editable Inspector behavior remain intentionally blocked.
 
 ## Documentation
 
-Start here:
+Start with the documentation index when entering the codebase for the first time:
 
 - [Documentation index](docs/README.md)
 - [Architecture documentation](docs/architecture/README.md)
@@ -61,7 +61,7 @@ For the full local validation runner before asking for a PR merge:
 npm run validate:local
 ```
 
-For documentation-only validation on architecture docs:
+For architecture documentation only:
 
 ```bash
 npm run validate:architecture-docs
@@ -130,4 +130,4 @@ Intentionally out of scope:
 
 ## Architecture rule
 
-Crystal favors highly modular source code and compact runtime outputs. Renderer UI must remain modular. Main owns privileged effects. Preload exposes only controlled APIs. Core owns portable models, selectors, validators, planners, and state contracts. Future write-capable behavior must go through validated commands, reversible source patches, transaction history, refresh planning, and main/core persistence services.
+Crystal favors highly modular source code and compact runtime outputs. Renderer UI presents state and intent. Main owns privileged effects. Preload exposes only controlled APIs. Core owns portable models, selectors, validators, planners, and state contracts. Future write-capable behavior must go through validated commands, reversible source patches, transaction history, refresh planning, and main/core persistence services.

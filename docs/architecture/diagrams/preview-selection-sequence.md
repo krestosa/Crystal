@@ -4,9 +4,11 @@
 
 ## Purpose
 
-This diagram details the read-only Preview Selection path.
+This sequence shows how Crystal turns a click in rendered HTML into a validated read-only selection state without reading iframe internals from renderer.
 
 ## Current implementation
+
+The click is not trusted by itself. Renderer checks the message source and shape, main validates the payload again, and core maps it to the DOM Snapshot before Inspector or Overlay consumes it.
 
 ```mermaid
 sequenceDiagram
@@ -31,6 +33,8 @@ sequenceDiagram
 ```
 
 ## Key files
+
+These files implement the steps in the sequence.
 
 - `apps/desktop/electron/renderer/components/project-preview-panel/selection/project-preview-selection-message-bridge.ts`
 - `apps/desktop/electron/main/preview-selection/project-preview-selection-service.ts`

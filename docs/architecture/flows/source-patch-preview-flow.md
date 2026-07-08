@@ -4,11 +4,13 @@
 
 ## Purpose
 
-This document traces how a dry-run command produces a source patch preview without applying it.
+Source Patch Preview flow turns a validated dry-run command into a visible source-change description. The flow exists so Crystal can be specific about a possible edit before it has any permission to make that edit.
 
 ## Current implementation
 
-Source Patch Preview depends on a supported command, matched target, available DOM Snapshot source location, and selected insertion mode. It returns explanatory source text only.
+The flow depends on a supported command, matched target, available DOM Snapshot source location, and selected insertion mode. If those inputs are safe, it returns preview text. If they are not, it returns a blocked result.
+
+The diagram shows where the write boundary sits. Preview text is the output; file write is not a next step in this phase.
 
 ```mermaid
 flowchart TD
@@ -23,6 +25,8 @@ flowchart TD
 
 ## Key files
 
+These files resolve source anchors and format the dry-run preview.
+
 - `packages/core/source-patch/html-source-anchor.selectors.ts`
 - `packages/core/source-patch/html-source-anchor.types.ts`
 - `packages/core/commands/html-insertion/html-insertion-command.planner.ts`
@@ -31,7 +35,7 @@ flowchart TD
 
 ## Data flow
 
-The planner resolves an anchor around the static source location. It generates a small preview snippet. The Command Preview Bus wraps the planner result into a status and summary. Renderer displays it.
+The planner resolves an anchor around the static source location, generates a small preview snippet, and wraps the result through the Command Preview Bus. Renderer displays the snippet and status.
 
 ## Boundaries
 
@@ -49,4 +53,4 @@ No source file is changed. Missing source locations, stale snapshots, ambiguous 
 
 ## Future work
 
-Future patch application must include conflict detection, formatting, transactional history, and refresh invalidation. This flow remains dry-run until then.
+Future patch application must add conflict detection, formatting, transaction history, dirty-state handling, and refresh invalidation. This flow remains dry-run until then.
