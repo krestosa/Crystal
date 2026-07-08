@@ -27,11 +27,13 @@
 .crystal-status-bar__runtime {
   justify-content: flex-end;
   gap: var(--crystal-space-2);
+  overflow: hidden;
 }
 
 .crystal-status-bar__controls {
   flex: 0 0 auto;
   gap: var(--crystal-space-1);
+  margin-left: auto;
 }
 
 .crystal-status-bar__product,
@@ -46,6 +48,7 @@
 }
 
 .crystal-status-bar__badge {
+  min-width: 0;
   max-width: min(34vw, 160px);
   padding: 1px var(--crystal-space-2);
   border: 1px solid var(--crystal-color-border-soft);
