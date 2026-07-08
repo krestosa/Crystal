@@ -264,6 +264,34 @@ Still out of scope:
 - DOM mutation
 - Apply enablement
 
+### Phase 7A — Editable Inspector draft/intent foundation
+
+Covered:
+
+- `InspectorEditableFieldPreview` contracts under `packages/core/inspector-editing/`
+- `InspectorEditDraftPreview` contracts for selected-node draft state without persistence
+- `InspectorEditIntentPreview` contracts for text and attribute edit intent without source mutation
+- `InspectorEditingReadinessPreview` contracts linking Inspector draft/intent state to DesignEditingReadinessPreview
+- preview-only reference to `CommandTransactionPlanPreview` as planning context, not execution
+- validation guarding that Phase 7A remains draft/intent-only and Apply-blocked
+- `validate:inspector-editing-foundation` wired into `validate:local:quick:core`
+
+Phase 7A boundary: Editable Inspector draft/intent foundation only. No source files are written. No patch apply is available. No write IPC exists. Apply remains unavailable. No contenteditable is used. No undo/redo execution runs. Dirty-state is not persisted. No refresh execution runs. No Preview DOM mutation occurs.
+
+Still out of scope:
+
+- applied Inspector editing
+- real source writes
+- patch apply
+- IPC write
+- save/apply workflow
+- real undo/redo execution
+- dirty-state persistence
+- refresh execution
+- DOM mutation
+- Apply enablement
+- renderer editable controls beyond disabled/read-only affordances
+
 ### Cross-cutting shell, Diagnostics, and UI system polish
 
 Covered:
@@ -288,16 +316,16 @@ Still out of scope:
 
 ## Recommended next module
 
-### Editable Inspector MVP
+### Editable Inspector MVP continuation
 
 Recommended scope:
 
 - keep Apply unavailable until a real write runtime is explicitly introduced
-- use Phase 6D readiness output as a blocking preflight signal
+- use Phase 7A draft/intent output as a typed Inspector editing preflight signal
 - keep source mutation, patch apply, write IPC, dirty-state persistence, refresh execution, and undo/redo execution future-only
-- avoid renderer filesystem authority and iframe DOM reads
+- avoid renderer filesystem authority, iframe DOM reads, and contenteditable
 
-Phase 6D prepared editing readiness contracts but did not make any write-capable command land.
+Phase 7A prepared Inspector draft/intent contracts but did not make any write-capable command land.
 
 ## Not implemented yet
 
@@ -309,7 +337,7 @@ The following roadmap items remain intentionally pending:
 - undo/redo transaction log
 - save/apply dirty-state workflow
 - Webflow/Pinegrow-like structural editing commands
-- editable attributes or text editing
+- editable attributes or text editing with Apply
 - moving/reordering DOM nodes
 - class management and Class Composer
 - CSS cascade or specificity analysis
@@ -346,7 +374,7 @@ The complete roadmap is documented in [`docs/full-product-roadmap.md`](./full-pr
 5. ~~Source Patch Preview and Command Bus Foundation.~~ Implemented as read-only Phase 6B foundation.
 6. ~~History/Undo transaction skeleton and refresh boundary planning.~~ Implemented as Phase 6C planning foundation.
 7. ~~Design Editing MVP preflight with write-runtime and dirty-state contracts.~~ Implemented as Phase 6D preflight foundation.
-8. Editable Inspector MVP.
+8. ~~Editable Inspector draft/intent foundation.~~ Implemented as Phase 7A draft/intent foundation.
 9. Style Engine and CSS/Sass Inspector.
 10. Responsive Design and Layout Tools.
 11. Components, snippets, and reusable blocks.
@@ -370,6 +398,12 @@ For iterative validation after dependencies are already installed, run:
 npm run validate:local:quick
 ```
 
+For Phase 7A-specific validation, run:
+
+```bash
+npm run validate:inspector-editing-foundation
+```
+
 For Phase 6D-specific validation, run:
 
 ```bash
@@ -388,6 +422,7 @@ Feature-specific scripts should be added as phases land, for example:
 - `validate:source-patch-preview`.
 - `validate:history-foundation`.
 - `validate:design-editing-preflight`.
+- `validate:inspector-editing-foundation`.
 - `validate:style-engine`.
 - `validate:webgpu-overlay`.
 - `validate:wasm-analyzer`.

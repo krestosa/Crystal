@@ -11,17 +11,18 @@
 | Runtime owner | Future main/core write services. |
 | Phase 6C status | Planning contracts only. |
 | Phase 6D status | Design editing preflight/readiness contracts only. |
-| Safety risk controlled | Prevents dry-run preview, transaction planning, and editing readiness from being mistaken for mutation. |
+| Phase 7A status | Editable Inspector draft/intent foundation only. |
+| Safety risk controlled | Prevents dry-run preview, transaction planning, editing readiness, and Inspector edit intent from being mistaken for mutation. |
 
 > **Future-only:** Everything after the blocked write boundary is planning language, not available behavior.
 
 ## Purpose
 
-Future write flow documents the path Crystal should eventually take to modify source files. Phase 6C adds planning models that make the missing write boundary explicit: a command preview may be associated with a transaction preview and a refresh-boundary plan, but that association is still descriptive only. Phase 6D adds preflight/readiness models for a future Design Editing MVP without crossing into persistence, patch application, write IPC, or Apply enablement.
+Future write flow documents the path Crystal should eventually take to modify source files. Phase 6C adds planning models that make the missing write boundary explicit: a command preview may be associated with a transaction preview and a refresh-boundary plan, but that association is still descriptive only. Phase 6D adds preflight/readiness models for a future Design Editing MVP without crossing into persistence, patch application, write IPC, or Apply enablement. Phase 7A adds Editable Inspector draft/intent foundation models for text and attribute edits, still without writing or mutating anything.
 
 ## Why this exists
 
-A future editor needs a reversible write path. The current application has Source Patch Preview and dry-run command previews, so the codebase now needs planning contracts that describe history and refresh consequences without crossing into persistence.
+A future editor needs a reversible write path. The current application has Source Patch Preview and dry-run command previews, so the codebase now needs planning contracts that describe history, refresh, design readiness, and Inspector edit intent without crossing into persistence.
 
 ## How to read this page
 
@@ -30,13 +31,16 @@ A future editor needs a reversible write path. The current application has Sourc
 | Current truth | Current implementation and boundaries. |
 | Phase 6C addition | Planning-only models. |
 | Phase 6D addition | Preflight/readiness-only models. |
+| Phase 7A addition | Inspector draft/intent-only models. |
 | Future writing | Future write runtime and future work. |
 
 ## Current implementation
 
-There is no implemented write flow. No file is modified. No DOM node is inserted. No patch is applied. No write IPC exists. No undo/redo transaction is executed. Current Element Library, Source Patch Preview, Command Preview Bus, Phase 6C transaction planning, and Phase 6D design editing preflight flows stop at dry-run preview and planning.
+There is no implemented write flow. No file is modified. No DOM node is inserted. No patch is applied. No write IPC exists. No undo/redo transaction is executed. Current Element Library, Source Patch Preview, Command Preview Bus, Phase 6C transaction planning, Phase 6D design editing preflight, and Phase 7A Editable Inspector draft/intent foundation flows stop at dry-run preview, planning, readiness, or intent descriptors.
 
 Phase 6D boundary: No source files are written. No patch apply is available. No write IPC exists. Apply remains unavailable. No undo/redo execution runs. Dirty-state is not persisted. No refresh execution runs. No Preview DOM mutation occurs.
+
+Phase 7A boundary: Editable Inspector draft/intent foundation only. No source files are written. No patch apply is available. No write IPC exists. Apply remains unavailable. No contenteditable is used. No undo/redo execution runs. Dirty-state is not persisted. No refresh execution runs. No Preview DOM mutation occurs.
 
 | Implemented | Blocked | Future |
 | --- | --- | --- |
@@ -45,11 +49,12 @@ Phase 6D boundary: No source files are written. No patch apply is available. No 
 | History transaction preview model. | Real undo/redo. | Durable history log. |
 | Refresh boundary planning model. | Refresh execution after writes. | Dirty-state/save workflow. |
 | Design editing readiness preview. | Apply enablement. | Gated Apply/Save flow. |
+| Inspector edit draft/intent previews. | Applied Inspector edits. | Gated Inspector Apply flow. |
 | Disabled Apply affordance. | Write IPC. | Gated Apply/Save flow. |
 
 ## Key files
 
-These are current dry-run and planning files only. Do not use them as evidence of write support.
+These are current dry-run, planning, readiness, and draft/intent files only. Do not use them as evidence of write support.
 
 ## Key files and responsibilities
 
@@ -64,6 +69,7 @@ These are current dry-run and planning files only. Do not use them as evidence o
 | `packages/core/source-conflict/**` | Models source freshness preconditions. | Version metadata only. | Read or hash files. |
 | `packages/core/write-runtime/**` | States that write capability is absent. | Missing capability list. | Create a write runtime. |
 | `packages/core/design-editing/**` | Summarizes readiness and blocked Apply state. | Preview-only contracts. | Enable Apply. |
+| `packages/core/inspector-editing/**` | Models future Inspector fields, drafts, intents, and readiness. | Selection path and source-location availability. | Mutate DOM or write source. |
 | `html-element-library-panel/**` | Displays intent and preview. | Preview result. | Enable active Apply. |
 
 Future write execution files do not exist yet.
@@ -78,7 +84,8 @@ Future write execution files do not exist yet.
 | 4 | Phase 6C | Affected files | `RefreshBoundaryPlan`. |
 | 5 | Phase 6C | Command + patch + history + refresh descriptors | `CommandTransactionPlanPreview`. |
 | 6 | Phase 6D | Transaction plan plus preflight inputs | `DesignEditingReadinessPreview` with `applyAvailable: false`. |
-| 7 | Future | Validated transaction | Write, refresh, dirty-state, and real history execution. |
+| 7 | Phase 7A | Preview Inspector selection, draft field values, and edit intents | `InspectorEditingReadinessPreview` with `applyAvailable: false`. |
+| 8 | Future | Validated transaction | Write, refresh, dirty-state, and real history execution. |
 
 ```mermaid
 flowchart TD
@@ -86,6 +93,7 @@ flowchart TD
     CommandPreview[Command Preview Result]
     PatchPreview[Source Patch Preview]
     ApplyDisabled[Apply disabled]
+    InspectorSelection[Read-only Inspector selection]
   end
 
   subgraph Phase6C[Phase 6C planning only]
@@ -99,6 +107,13 @@ flowchart TD
     Conflict[SourceConflictPreview]
     Runtime[WriteRuntimeCapabilityPreview]
     Readiness[DesignEditingReadinessPreview]
+  end
+
+  subgraph Phase7A[Phase 7A Editable Inspector draft/intent foundation]
+    Field[InspectorEditableFieldPreview]
+    Draft[InspectorEditDraftPreview]
+    Intent[InspectorEditIntentPreview]
+    InspectorReady[InspectorEditingReadinessPreview]
   end
 
   subgraph Future[Future write runtime]
@@ -117,7 +132,10 @@ flowchart TD
   Runtime --> Readiness
   Dirty --> Readiness
   Conflict --> Readiness
-  Readiness -. blocked boundary .-> WriteRuntime
+  InspectorSelection --> Field --> Draft --> Intent
+  TransactionPlan -. planning only .-> InspectorReady
+  Readiness -. Apply-blocked .-> InspectorReady
+  InspectorReady -. blocked boundary .-> WriteRuntime
   WriteRuntime --> DirtyState --> RealHistory
 ```
 
@@ -127,7 +145,9 @@ Phase 6C models are planning-only. They must not write files, apply patches, add
 
 Phase 6D models are preflight-only. They must not write files, apply patches, add IPC write channels, enable Apply, mutate iframe DOM, reload Preview, clear actual selection state, persist dirty state, or claim actual insertion.
 
-> **Safety boundary:** A transaction preview is not a transaction record, a refresh-boundary plan is not a refresh operation, and a design editing readiness preview is not permission to apply.
+Phase 7A models are draft/intent-only. They must not write files, apply patches, add IPC write channels, enable Apply, use contenteditable, mutate iframe DOM, reload Preview, clear actual selection state, persist dirty state, or claim applied Inspector editing.
+
+> **Safety boundary:** A transaction preview is not a transaction record, a refresh-boundary plan is not a refresh operation, a design editing readiness preview is not permission to apply, and an Inspector edit intent is not a write command.
 
 ## What this does not do
 
@@ -142,14 +162,16 @@ Phase 6D models are preflight-only. They must not write files, apply patches, ad
 | Dirty-state persistence | No dirty-state store exists. |
 | Refresh execution | RefreshBoundaryPlan is descriptive only. |
 | Apply enablement | Write runtime capability is unavailable. |
+| contenteditable editing | Phase 7A does not add editable Preview DOM behavior. |
+| Applied Inspector edits | Drafts and intents are not source changes. |
 
 ## Common misunderstanding
 
-> **Common misunderstanding:** Adding a transaction preview does not mean Crystal can undo a write. Adding design editing readiness does not mean Crystal can apply a write. There is still no write and therefore no executed transaction to undo.
+> **Common misunderstanding:** Adding a transaction preview does not mean Crystal can undo a write. Adding design editing readiness does not mean Crystal can apply a write. Adding Inspector edit intent does not mean Crystal can edit a node. There is still no write and therefore no executed transaction to undo.
 
 ## Validation
 
-Current validation must keep failing if write behavior appears in preview-only, planning-only, or preflight-only modules. `validate:history-foundation` checks the Phase 6C modules, package script wiring, safe statuses, forbidden filesystem writes, forbidden write IPC patterns, forbidden patch application symbols, and forbidden iframe internals. `validate:design-editing-preflight` extends that boundary to dirty-state, source-conflict, write-runtime capability, and design-editing readiness models.
+Current validation must keep failing if write behavior appears in preview-only, planning-only, preflight-only, or draft/intent-only modules. `validate:history-foundation` checks the Phase 6C modules, package script wiring, safe statuses, forbidden filesystem writes, forbidden write IPC patterns, forbidden patch application symbols, and forbidden iframe internals. `validate:design-editing-preflight` extends that boundary to dirty-state, source-conflict, write-runtime capability, and design-editing readiness models. `validate:inspector-editing-foundation` adds Phase 7A checks for Inspector editable fields, drafts, intents, readiness, disabled Apply state, no contenteditable, no write IPC, no patch apply, no refresh execution, and no Preview DOM mutation.
 
 ## Related docs
 
@@ -162,4 +184,4 @@ Current validation must keep failing if write behavior appears in preview-only, 
 
 ## Future work
 
-Later phases can introduce controlled write execution only when persistence, history, dirty state, refresh execution, conflict detection, and validation are designed together.
+Later phases can introduce controlled write execution only when persistence, history, dirty state, refresh execution, conflict detection, Inspector Apply UX, and validation are designed together.
