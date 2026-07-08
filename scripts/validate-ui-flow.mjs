@@ -62,14 +62,15 @@ expect(source.mainWindow.includes("titleBarOverlay"), "Main window does not expo
 expect(source.mainWindow.includes("CRYSTAL_TITLE_BAR_OVERLAY_HEIGHT = 32"), "Native titlebar overlay is not aligned to the compact chrome height.");
 expect(source.mainWindow.includes("height: CRYSTAL_TITLE_BAR_OVERLAY_HEIGHT"), "Native titlebar overlay height is not routed through the chrome constant.");
 expect(source.mainWindow.includes("webPreferences: getSecureWebPreferences()"), "Main window security preferences were not preserved.");
-expect(source.mainWindow.includes('process.env.CRYSTAL_OPEN_DEVTOOLS === CRYSTAL_OPEN_DEVTOOLS'), "Manual Electron DevTools env support was removed.");
-expect(source.mainWindow.includes('openDevTools({ mode: "detach" })'), "Electron DevTools launch mode is not explicit.");
+expect(!source.mainWindow.includes("CRYSTAL_OPEN_DEVTOOLS"), "Main window still supports automatic DevTools launch from environment state.");
+expect(!source.mainWindow.includes("openDevTools"), "Main window must not auto-open DevTools during npm run dev.");
 
 expect(source.ipcConstants.includes('appOpenDevTools: "app:open-devtools"'), "DevTools IPC channel is missing or not narrow.");
 expect(source.ipcTypes.includes('readonly "app:open-devtools": boolean'), "DevTools IPC response type is missing.");
 expect(source.preloadTypes.includes("readonly openDevTools: () => Promise<boolean>"), "Preload API does not expose a narrow DevTools function.");
 expect(source.preloadBridge.includes("openDevTools: () => invokeCrystal(crystalIpcChannels.appOpenDevTools)"), "Preload bridge does not invoke the narrow DevTools channel.");
 expect(source.appIpc.includes("BrowserWindow.fromWebContents(event.sender)") && source.appIpc.includes("crystalIpcChannels.appOpenDevTools"), "Main IPC handler does not target the sender window for DevTools.");
+expect(source.appIpc.includes('openDevTools({ mode: "detach" })'), "Manual DevTools IPC launch mode is not explicit.");
 expect(!source.appIpc.includes("eval") && !source.preloadBridge.includes("eval"), "DevTools bridge introduced eval-like behavior.");
 
 expect(source.appShellHtml.includes("data-crystal-app-chrome"), "App shell does not expose a compact native drag region.");
@@ -238,7 +239,7 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log("UI flow validation passed: final compact shell polish, contained Diagnostics scrollbar hierarchy, status-bar Diagnostics and DevTools controls, secure DevTools IPC bridge, no scripted DevTools auto-launch, compact control tokens, neutral hover states, dark fixtures, and iframe/security boundaries.");
+console.log("UI flow validation passed: final compact shell polish, contained Diagnostics scrollbar hierarchy, status-bar Diagnostics and manual DevTools controls, secure DevTools IPC bridge, no automatic DevTools launch, compact control tokens, neutral hover states, dark fixtures, and iframe/security boundaries.");
 
 async function readText(filePath) {
   return readFile(path.resolve(filePath), "utf8");
