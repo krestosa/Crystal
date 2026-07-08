@@ -1,5 +1,7 @@
 .crystal-app-shell {
-  --crystal-app-chrome-height: 32px;
+  --crystal-native-titlebar-height: 32px;
+  --crystal-app-bar-height: 28px;
+  --crystal-app-chrome-height: calc(var(--crystal-native-titlebar-height) + var(--crystal-app-bar-height));
   --crystal-window-controls-fallback-width: 178px;
   --crystal-window-controls-width: max(
     var(--crystal-window-controls-fallback-width),
@@ -18,20 +20,27 @@
 .crystal-app-shell__chrome {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 8px;
+  grid-template-rows: var(--crystal-native-titlebar-height) var(--crystal-app-bar-height);
   min-width: 0;
   min-height: var(--crystal-app-chrome-height);
-  padding: 0 var(--crystal-window-controls-width) 0 8px;
-  padding-right: calc(var(--crystal-window-controls-width) + 12px);
-  padding-left: 10px;
   background: var(--crystal-color-surface-strong);
   -webkit-app-region: drag;
   user-select: none;
 }
 
-.crystal-app-shell__chrome::before {
+.crystal-app-shell__native-titlebar {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  min-height: var(--crystal-native-titlebar-height);
+  padding: 0 calc(var(--crystal-window-controls-width) + 12px) 0 10px;
+  background: var(--crystal-color-surface-strong);
+}
+
+.crystal-app-shell__native-titlebar::before {
   position: absolute;
   z-index: 0;
   top: 0;
@@ -43,16 +52,17 @@
   pointer-events: none;
 }
 
-.crystal-app-shell__chrome::after {
-  position: absolute;
-  z-index: 0;
-  right: calc(var(--crystal-window-controls-width) + 1px);
-  bottom: 0;
-  left: 0;
-  height: 1px;
-  background: var(--crystal-color-border-soft);
-  content: "";
-  pointer-events: none;
+.crystal-app-shell__app-bar {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  min-height: var(--crystal-app-bar-height);
+  padding: 0 8px 0 10px;
+  border-bottom: 1px solid var(--crystal-color-border-soft);
+  background: var(--crystal-color-surface);
 }
 
 .crystal-app-shell__chrome-identity {
@@ -74,6 +84,8 @@
 }
 
 .crystal-app-shell__chrome-meta {
+  position: relative;
+  z-index: 1;
   overflow: hidden;
   color: rgba(247, 242, 236, 0.34);
   font-size: 9px;
@@ -171,7 +183,7 @@
 .crystal-app-shell__left-resizer:hover::after,
 .crystal-app-shell__left-resizer:focus-visible::after,
 .crystal-app-shell__body--resizing-left .crystal-app-shell__left-resizer::after {
-  background: var(--crystal-color-accent);
+  background: rgba(255, 255, 255, 0.16);
 }
 
 .crystal-app-shell__left-resizer:focus-visible {

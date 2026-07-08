@@ -1,22 +1,26 @@
 <div class="crystal-app-shell" data-crystal-app-shell>
   <header class="crystal-app-shell__chrome" data-crystal-app-chrome>
-    <div class="crystal-app-shell__chrome-identity">
-      <span class="crystal-app-shell__chrome-title">Crystal</span>
-      <span class="crystal-app-shell__chrome-meta">Compact project shell</span>
+    <div class="crystal-app-shell__native-titlebar" data-crystal-native-titlebar>
+      <div class="crystal-app-shell__chrome-identity">
+        <span class="crystal-app-shell__chrome-title">Crystal</span>
+      </div>
+      <div class="crystal-app-shell__chrome-actions">
+        <button class="crystal-app-shell__diagnostics-button" type="button" aria-label="Toggle diagnostics" aria-controls="crystal-design-diagnostics-popover" aria-expanded="false" title="Diagnostics" data-crystal-diagnostics-toggle>
+          <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+            <path d="M5.5 4.5h5" />
+            <path d="M8 2.5v2" />
+            <path d="M4.5 7H2.75" />
+            <path d="M13.25 7H11.5" />
+            <path d="M4.5 10H2.75" />
+            <path d="M13.25 10H11.5" />
+            <path d="M5 6.25c0-1 1-1.75 3-1.75s3 .75 3 1.75v3.25c0 1.75-1.2 3-3 3s-3-1.25-3-3V6.25Z" />
+            <path d="M6.25 8h3.5" />
+          </svg>
+        </button>
+      </div>
     </div>
-    <div class="crystal-app-shell__chrome-actions">
-      <button class="crystal-app-shell__diagnostics-button" type="button" aria-label="Toggle diagnostics" aria-controls="crystal-design-diagnostics-popover" aria-expanded="false" title="Diagnostics" data-crystal-diagnostics-toggle>
-        <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
-          <path d="M5.5 4.5h5" />
-          <path d="M8 2.5v2" />
-          <path d="M4.5 7H2.75" />
-          <path d="M13.25 7H11.5" />
-          <path d="M4.5 10H2.75" />
-          <path d="M13.25 10H11.5" />
-          <path d="M5 6.25c0-1 1-1.75 3-1.75s3 .75 3 1.75v3.25c0 1.75-1.2 3-3 3s-3-1.25-3-3V6.25Z" />
-          <path d="M6.25 8h3.5" />
-        </svg>
-      </button>
+    <div class="crystal-app-shell__app-bar" data-crystal-app-bar>
+      <span class="crystal-app-shell__chrome-meta">Compact project shell</span>
     </div>
   </header>
   <div class="crystal-app-shell__body" data-crystal-app-shell-body>
