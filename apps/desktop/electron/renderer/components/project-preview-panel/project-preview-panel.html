@@ -1,4 +1,4 @@
-<section class="crystal-project-preview-panel" data-project-preview-panel>
+<section class="crystal-project-preview-panel crystal-shell-panel-stack__main" data-project-preview-panel>
   <div class="crystal-project-preview-panel__header">
     <div>
       <h2 class="crystal-project-preview-panel__title">Inspector</h2>
@@ -12,13 +12,13 @@
   </label>
 
   <div class="crystal-project-preview-panel__actions" aria-label="Preview actions">
-    <button class="crystal-project-preview-panel__button crystal-project-preview-panel__button--primary" type="button" data-project-preview-load>Load</button>
-    <button class="crystal-project-preview-panel__button" type="button" data-project-preview-reload>Reload</button>
+    <button class="crystal-project-preview-panel__button crystal-project-preview-panel__button--primary crystal-shell-compact-button crystal-shell-compact-button--primary" type="button" data-project-preview-load>Load</button>
+    <button class="crystal-project-preview-panel__button crystal-shell-compact-button" type="button" data-project-preview-reload>Reload</button>
   </div>
 
   <div class="crystal-project-preview-panel__actions" aria-label="Selection actions">
-    <button class="crystal-project-preview-panel__button" type="button" data-project-preview-select-mode>Select</button>
-    <button class="crystal-project-preview-panel__button" type="button" data-project-preview-clear-selection>Clear</button>
+    <button class="crystal-project-preview-panel__button crystal-shell-compact-button" type="button" data-project-preview-select-mode>Select</button>
+    <button class="crystal-project-preview-panel__button crystal-shell-compact-button" type="button" data-project-preview-clear-selection>Clear</button>
   </div>
 
   <p class="crystal-project-preview-panel__error" data-project-preview-error hidden></p>
@@ -39,14 +39,14 @@
     <div class="crystal-project-preview-panel__inspector-grid">
       <div class="crystal-project-preview-panel__inspector-block">
         <h4 class="crystal-project-preview-panel__inspector-subtitle">Selection identity</h4>
-        <dl class="crystal-project-preview-panel__inspector-details" data-project-preview-inspector-selected-details>
+        <dl class="crystal-project-preview-panel__inspector-details crystal-shell-metadata" data-project-preview-inspector-selected-details>
           <div><dt>Selection</dt><dd>none</dd></div>
         </dl>
       </div>
       <div class="crystal-project-preview-panel__inspector-block">
         <h4 class="crystal-project-preview-panel__inspector-subtitle">DOM Snapshot node</h4>
-        <p class="crystal-project-preview-panel__inspector-empty" data-project-preview-inspector-snapshot-empty>No trusted DOM Snapshot node.</p>
-        <dl class="crystal-project-preview-panel__inspector-details" data-project-preview-inspector-snapshot-details></dl>
+        <p class="crystal-project-preview-panel__inspector-empty crystal-shell-empty-state" data-project-preview-inspector-snapshot-empty>No trusted DOM Snapshot node.</p>
+        <dl class="crystal-project-preview-panel__inspector-details crystal-shell-metadata" data-project-preview-inspector-snapshot-details></dl>
       </div>
     </div>
   </section>
