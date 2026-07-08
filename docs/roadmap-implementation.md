@@ -212,6 +212,27 @@ Partially covered / still future:
 - overlay desync hardening after iframe scroll/resize/reflow
 - ruler/guide/measurement overlay integration
 
+### Phase 6A — HTML Element Library command foundation
+
+Covered:
+
+- compact modular Element Library panel grouped by intent: structure, text, media, forms, lists/tables, interaction, semantic/accessibility, and presets
+- read-only HTML element catalog with explicit future insertion modes, required attributes, recommended attributes, child hints, and accessibility notes
+- `AddHtmlElementCommand` contracts, constants, validator, and execution blocker
+- target eligibility selector based on Project Graph, Preview target, DOM Snapshot, and Preview Selection mapping state
+- defensive UI states for no project, no preview target, missing snapshot, stale snapshot, mismatched selection, ambiguous selection, unsupported target, and matched target
+- compact Element Library integration with shell UI primitives and disabled future command action
+- non-visual `validate:html-element-library` script wired into quick UI validation
+
+Still out of scope:
+
+- source patch preview
+- command bus preview/dry-run routing
+- source writes
+- DOM mutation
+- apply/save workflow
+- undo/redo history
+
 ### Cross-cutting shell, Diagnostics, and UI system polish
 
 Covered:
@@ -234,15 +255,28 @@ Still out of scope:
 - screenshot/UI automation testing
 - full accessibility pass beyond targeted labels/focus states
 
+## Recommended next module
+
+### Phase 6B — Source Patch Preview and Command Bus Foundation
+
+Recommended scope:
+
+- source patch preview model for proposed edits without applying them
+- source insertion anchor model based on DOM Snapshot `sourceLocation`
+- dry-run command bus contracts that route preview planning but block execution
+- `AddHtmlElementCommand` preview planner for safe one-node HTML insertion previews
+- compact Element Library patch preview UI that keeps Apply/Insert disabled
+- validation guarding against file writes, IPC write channels, iframe internals, and unsafe renderer APIs
+
+Phase 6B must still avoid real source writes. The first real write should only come after patch preview, command bus routing, preview refresh boundaries, history/undo skeleton, and validation are present and tested.
+
 ## Not implemented yet
 
 The following roadmap items remain intentionally pending:
 
-- HTML5 element insertion library
-- grouped HTML5 element panel by intent: structure, text, media, forms, lists/tables, interaction, semantic/accessibility
-- command bus and mutation command runtime for source writes
+- real source mutation command runtime
 - source mutation service in main/core, not renderer
-- source patch generation and reversible patch model
+- source patch application and reversible patch persistence
 - undo/redo transaction log
 - save/apply dirty-state workflow
 - Webflow/Pinegrow-like structural editing commands
@@ -258,94 +292,3 @@ The following roadmap items remain intentionally pending:
 - Developer Mode / IDE tools
 - separate system terminal and Preview Browser Console
 - browser console integration
-- Project Graph target expansion for DOM, classes, selectors, applied styles, unused files, unused assets, inferred components, and workspace status
-- worker-backed parser/analyzer/asset/css/html/ts/preview-sync/wasm processing
-- fallbacks for WebGPU, WASM, Preview, malformed HTML, failed CSS/assets, blocking scripts, and terminal failure
-- explicit build pipeline for source validation, HTML assembly, SCSS compilation, TypeScript bundling, Rust/WASM compilation, assets, manifest, and dist validation
-- full event bus and domain event expansion
-- state domains for workspace, graph, selection, preview, inspector, developer, files, build, history, and UI
-- WebGPU overlay implementation
-- Rust/WASM analyzer implementation
-- framework alias resolution
-- TypeScript semantic analysis
-- Electron UI automation framework
-- screenshot testing
-- pending decisions for bundler, code editor, terminal, parser, UI strategy, plugins, testing, theming, visual/code source maps, Sass editing, external frameworks, and Preview sandbox policy
-
-## Full roadmap summary
-
-The complete roadmap is documented in [`docs/full-product-roadmap.md`](./full-product-roadmap.md). The high-level sequence now is:
-
-1. ~~Read-only Preview Inspector.~~ Implemented.
-2. ~~Design Canvas Navigation MVP.~~ Implemented foundation.
-3. ~~Visual Selection and Overlay MVP.~~ Implemented MVP; hardening remains.
-4. HTML5 Element Library and safe insertion command foundation.
-5. Design Editing MVP with commands and undo/redo.
-6. Editable Inspector MVP.
-7. Style Engine and CSS/Sass Inspector.
-8. Responsive Design and Layout Tools.
-9. Components, snippets, and reusable blocks.
-10. Assets, fonts, SVG, and media management.
-11. Developer Mode and IDE tools.
-12. WebGPU Overlay Engine.
-13. Rust/WASM Analyzer.
-14. Automation, assistant workflows, packaging, testing, and product hardening.
-
-## Recommended next module
-
-Next: **Phase 6A — HTML5 Element Library and safe insertion command foundation**.
-
-Do not jump directly into broad visual editing. The next increment should make the first source-writing feature possible without violating the safety model. It should land in small, validated slices:
-
-1. Add a read-only Element Library panel grouped by intent.
-2. Add insertion target eligibility derived from the current matched Preview/DOM Snapshot selection.
-3. Add command contracts for insertion without writing files yet.
-4. Add source patch preview and validation for one or two safe primitives.
-5. Add one actual persisted insertion command only after the command boundary, preview refresh, graph refresh, and undo model are present.
-
-Recommended first coding branch:
-
-```txt
-feature/html-element-library-command-foundation
-```
-
-Recommended first PR scope:
-
-- Element Library UI skeleton in Design mode.
-- Read-only grouped catalog for common HTML5 elements.
-- Selection-aware target state: no selection, missing snapshot, ambiguous/mismatched, matched target.
-- Insertion command type definitions and validators.
-- No source writes yet.
-- Non-visual validator: `validate:html-element-library`.
-
-This keeps the next step useful while preventing Crystal from becoming a fragile editor before command, undo, patch, and refresh boundaries are reliable.
-
-## Required validation before PR merge
-
-For a full install-backed local gate, run:
-
-```bash
-npm run validate:local
-```
-
-For iterative validation after dependencies are already installed, run:
-
-```bash
-npm run validate:local:quick
-```
-
-For Electron launch checks, run manually:
-
-```bash
-npm run dev
-```
-
-Feature-specific scripts should be added as phases land, for example:
-
-- `validate:html-element-library`.
-- `validate:design-editing`.
-- `validate:style-engine`.
-- `validate:webgpu-overlay`.
-- `validate:wasm-analyzer`.
-
-The validation runner is mandatory before requesting PR merge. It must be updated whenever a phase adds new required validation. Manual UI verification remains required where automation is not yet sufficient.
