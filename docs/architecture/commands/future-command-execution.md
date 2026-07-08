@@ -9,18 +9,33 @@
 | Is this implemented? | No. |
 | Can current commands write source files? | No. |
 | Runtime owner | Future main/core execution services. |
+| Phase 6C addition | Command transaction plan preview only. |
 | Phase 6D addition | Design editing readiness preflight only. |
-| Safety risk controlled | Keeps dry-run preview, transaction planning, and readiness summaries separate from side effects. |
+| Safety risk controlled | Keeps dry-run preview, planning, and readiness summaries separate from side effects. |
 
 > **Future-only:** This page describes the shape a future runtime needs. It must not be cited as current write support.
 
 ## Purpose
 
-This page keeps future command execution separate from current preview behavior. Phase 6D adds a planning layer that can answer whether a future Design Editing MVP has enough preconditions to expose Apply. The answer remains no because write runtime capability is unavailable.
+This page keeps future command execution separate from current preview behavior. Phase 6C adds a planning layer that can answer what a future command would affect, whether it appears reversible, and which derived states would need invalidation after a later write. Phase 6D adds a readiness layer that can explain why Apply must remain unavailable before a real write runtime exists.
+
+## Why this exists
+
+The project already has command intent and Source Patch Preview. Without a future execution map, a source preview could be mistaken for permission to write files. The command transaction plan makes the missing requirements explicit instead of hiding them inside UI state.
+
+## How to read this page
+
+| Need | Focus |
+| --- | --- |
+| Current truth | Current implementation and what this does not do. |
+| Phase 6C contracts | Transaction planning preview. |
+| Phase 6D contracts | Design editing preflight/readiness preview. |
+| Future requirements | Data flow and future work. |
+| Safety language | Boundaries. |
 
 ## Current implementation
 
-No real command execution runtime exists. No source patch apply path exists. No write IPC exists. No save/apply workflow exists. No renderer behavior writes project files. Phase 6D adds only readiness models: `DirtyStatePreview`, `SourceConflictPreview`, `WriteRuntimeCapabilityPreview`, and `DesignEditingReadinessPreview`.
+No real command execution runtime exists. No source patch apply path exists. No write IPC exists. No save/apply workflow exists. No renderer behavior writes project files. Phase 6C adds only `CommandTransactionPlanPreview`, which combines existing previews with history and refresh planning descriptors. Phase 6D adds only `DesignEditingReadinessPreview`, which combines the transaction plan with dirty-state, source-conflict, and write-runtime capability previews.
 
 Phase 6D boundary: No source files are written. No patch apply is available. No write IPC exists. Apply remains unavailable. No undo/redo execution runs. Dirty-state is not persisted. No refresh execution runs. No Preview DOM mutation occurs.
 
@@ -31,6 +46,11 @@ Phase 6D boundary: No source files are written. No patch apply is available. No 
 | History transaction preview. | Undo/redo execution. | Durable transaction log. |
 | Refresh boundary plan. | Refresh execution. | Post-write orchestration. |
 | Design editing readiness preview. | Apply enablement. | Dirty-state workflow. |
+| Disabled Apply affordance. | Save/apply workflow. | Dirty-state workflow. |
+
+## Key files
+
+The following files are dry-run, planning, or preflight files only. Do not cite them as an implemented execution runtime.
 
 ## Key files and responsibilities
 
@@ -41,9 +61,14 @@ Phase 6D boundary: No source files are written. No patch apply is available. No 
 | `packages/core/source-patch/**` | Preview anchors and payloads. | DOM Snapshot source location. | Persist files. |
 | `packages/core/history/**` | Future transaction descriptor. | Patch metadata. | Execute undo/redo. |
 | `packages/core/refresh-boundary/**` | Future invalidation descriptor. | Affected files. | Mutate derived state. |
-| `packages/core/commands/transaction-planning/**` | Preview-only bridge across command, source patch, history, and refresh models. | Preview results. | Execute or apply. |
-| `packages/core/design-editing/**` | Preview-only bridge across transaction plan, dirty-state, source-conflict, and write-runtime models. | Preflight contracts. | Enable Apply. |
+| `packages/core/commands/transaction-planning/**` | Preview-only bridge across the above models. | Preview results. | Execute or apply. |
+| `packages/core/dirty-state/**` | Preview-only dirty-state descriptor. | Transaction and patch preview IDs. | Persist dirty state. |
+| `packages/core/source-conflict/**` | Preview-only conflict precondition descriptor. | Version metadata only. | Read or hash files. |
+| `packages/core/write-runtime/**` | Preview-only capability gate. | Missing capability list. | Create write capability. |
+| `packages/core/design-editing/**` | Preview-only readiness summary. | Preflight models. | Enable Apply. |
 | `html-element-library-panel/**` | UI for intent and preview. | Preview result. | Enable working Apply. |
+
+Future execution files do not exist yet.
 
 ## Data flow
 
@@ -51,23 +76,48 @@ Phase 6D boundary: No source files are written. No patch apply is available. No 
 | --- | --- | --- |
 | Command Preview Result | Is it preview-ready? | Plan may continue or block. |
 | Source Patch Preview | Is it ready and does it include affected files? | History/refresh planning or blocked plan. |
-| CommandTransactionPlanPreview | What files and transaction descriptors would be involved? | Readiness preflight input. |
-| DirtyStatePreview | Would unsaved changes be present in a future write? | Preview-only dirty marker. |
-| SourceConflictPreview | Would future writes require source freshness checks? | Recheck requirement. |
-| WriteRuntimeCapabilityPreview | Does write runtime exist? | Blocked. |
+| Patch reversibility flag | Can undo strategy be described? | Reverse-patch or unsupported descriptor. |
+| Affected files | Which derived state would become stale after a future write? | Refresh-boundary plan. |
+| CommandTransactionPlanPreview | What dirty/conflict/write capability checks are needed? | Design editing readiness preview. |
+| Execution request | Does write runtime exist? | Blocked. |
 
 ```mermaid
 flowchart TD
-  Command[Command Preview Result] --> Patch[Source Patch Preview]
-  Patch --> Plan[CommandTransactionPlanPreview]
-  Plan --> Dirty[DirtyStatePreview]
-  Plan --> Conflict[SourceConflictPreview]
-  Runtime[WriteRuntimeCapabilityPreview] --> Readiness[DesignEditingReadinessPreview]
-  Dirty --> Readiness
-  Conflict --> Readiness
-  Readiness --> Apply[Apply unavailable]
-  Apply -. no current edge .-> Write[(File write)]
-  Apply -. no current edge .-> Ipc[(Write IPC)]
+  subgraph Preview[Current preview]
+    Command[Command Preview Result]
+    Patch[Source Patch Preview]
+  end
+
+  subgraph Planning[Phase 6C planning]
+    Plan[CommandTransactionPlanPreview]
+    History[HistoryTransactionPreview]
+    Refresh[RefreshBoundaryPlan]
+  end
+
+  subgraph Preflight[Phase 6D preflight]
+    Dirty[DirtyStatePreview]
+    Conflict[SourceConflictPreview]
+    Runtime[WriteRuntimeCapabilityPreview]
+    Ready[DesignEditingReadinessPreview]
+  end
+
+  subgraph Blocked[Blocked execution]
+    Apply[Apply unavailable]
+    Write[(File write)]
+    Ipc[(Write IPC)]
+  end
+
+  Command --> Patch --> Plan
+  Plan --> History
+  Plan --> Refresh
+  Plan --> Dirty
+  Plan --> Conflict
+  Runtime --> Ready
+  Dirty --> Ready
+  Conflict --> Ready
+  Ready -. preview only .-> Apply
+  Apply -. no current edge .-> Write
+  Apply -. no current edge .-> Ipc
 ```
 
 ## Boundaries
@@ -85,12 +135,17 @@ Do not add hidden apply behavior under preview functions. Do not add renderer fi
 | Undo/redo execution | Future only. |
 | Save/apply workflow | Future only. |
 | Preview reload after write | No write occurs. |
+| Dirty-state mutation | Future only. |
 | Dirty-state persistence | Future only. |
-| Conflict detection against real source | Future only. |
+| Source conflict check against real files | Future only. |
+
+## Common misunderstanding
+
+> **Common misunderstanding:** A command transaction plan is not an execution plan that can be run. A design editing readiness preview is not an Apply permission. Both are preview objects used to keep future requirements visible.
 
 ## Validation
 
-`validate:design-editing-preflight` keeps Phase 6D dry-run by checking module presence, statuses, validators, exports, package script wiring, docs boundary language, and forbidden filesystem, IPC, patch-apply, renderer, and iframe patterns.
+`validate:history-foundation` keeps Phase 6C dry-run by checking module presence, statuses, validators, exports, package script wiring, and forbidden filesystem, IPC, patch-apply, renderer, and iframe patterns. `validate:design-editing-preflight` keeps Phase 6D readiness models blocked and validates that Apply, writes, write IPC, dirty-state persistence, refresh execution, and undo/redo execution remain out of scope.
 
 ## Related docs
 

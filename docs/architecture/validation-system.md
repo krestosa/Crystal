@@ -9,12 +9,29 @@
 | Is this implemented? | Yes, as script-based static and local validators. |
 | Can validators patch files? | No. Validators read and fail; they do not mutate source. |
 | Runtime owner | npm scripts and Node validators. |
+| Phase 6C addition | `validate:history-foundation`. |
 | Phase 6D addition | `validate:design-editing-preflight`. |
 | Safety risk controlled | Prevents forbidden shortcuts and false write claims from entering unnoticed. |
 
 ## Purpose
 
 Crystal has several features whose safest behavior is the absence of a shortcut: no renderer filesystem access, no live iframe DOM reads, no write IPC, no patch application, no real undo/redo, no dirty-state persistence, no refresh execution, and no hidden Apply behavior. The validation system makes those negative guarantees visible while the codebase changes.
+
+## Why this exists
+
+A future visual editor can fail by doing too much too early. Validators keep blocked behavior blocked and keep documentation from overstating implementation status.
+
+## How to read this page
+
+| Need | Command or doc |
+| --- | --- |
+| Docs-only architecture check | `npm run validate:architecture-docs` |
+| Phase 6C planning safety | `npm run validate:history-foundation` |
+| Phase 6D preflight safety | `npm run validate:design-editing-preflight` |
+| Installed quick gate | `npm run validate:local:quick` |
+| Full local gate | `npm run validate:local` |
+| Preview safety | `npm run validate:preview` and related Preview validators. |
+| Command preview safety | `npm run validate:source-patch-preview` |
 
 ## Current implementation
 
@@ -29,6 +46,10 @@ Phase 6D boundary: No source files are written. No patch apply is available. No 
 | Local aggregate runners. | Hidden mutation during validation. | Transaction execution checks. |
 | History foundation validator. | Phase 6C write behavior. | Dirty-state validation. |
 | Design editing preflight validator. | Phase 6D Apply enablement. | Write-runtime validation. |
+
+## Key files
+
+Read `package.json` first to see the command graph. The scripts below are the feature gates most relevant to architecture boundaries.
 
 ## Key files and responsibilities
 
@@ -64,6 +85,7 @@ flowchart TD
     Build[build]
     Typecheck[typecheck]
     Structure[validate:structure]
+    Preview[Preview validators]
     SourcePatch[validate:source-patch-preview]
     History[validate:history-foundation]
     DesignEditing[validate:design-editing-preflight]
@@ -83,6 +105,7 @@ flowchart TD
   DesignEditing --> QuickCore
   Build --> Quick
   Typecheck --> Quick
+  Preview --> Quick
   SourcePatch --> Quick
   UI --> Quick
   Quick --> Full
@@ -103,6 +126,10 @@ A passing documentation validator does not prove a feature works. It only proves
 | Runtime proof for dirty-state persistence | No dirty-state store exists. |
 | Auto-formatting | Validators should not mutate docs. |
 | Complete import graph validation | Future work. |
+
+## Common misunderstanding
+
+> **Common misunderstanding:** Documentation validation, feature validation, and typecheck are complementary. One cannot replace the other.
 
 ## Validation
 
