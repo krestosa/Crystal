@@ -21,6 +21,16 @@ const paths = {
   panelScss: "apps/desktop/electron/renderer/components/html-element-library-panel/html-element-library-panel.scss",
   panelTs: "apps/desktop/electron/renderer/components/html-element-library-panel/html-element-library-panel.ts",
   panelTypes: "apps/desktop/electron/renderer/components/html-element-library-panel/html-element-library-panel.types.ts",
+  panelConstants: "apps/desktop/electron/renderer/components/html-element-library-panel/html-element-library-panel.constants.ts",
+  panelState: "apps/desktop/electron/renderer/components/html-element-library-panel/html-element-library-panel.state.ts",
+  panelDom: "apps/desktop/electron/renderer/components/html-element-library-panel/html-element-library-panel.dom.ts",
+  panelEvents: "apps/desktop/electron/renderer/components/html-element-library-panel/html-element-library-panel.events.ts",
+  rendererControls: "apps/desktop/electron/renderer/components/html-element-library-panel/renderers/html-element-library-control-blocks.renderer.ts",
+  rendererCategoryTabs: "apps/desktop/electron/renderer/components/html-element-library-panel/renderers/html-element-library-category-tabs.renderer.ts",
+  rendererItemList: "apps/desktop/electron/renderer/components/html-element-library-panel/renderers/html-element-library-item-list.renderer.ts",
+  rendererItemDetails: "apps/desktop/electron/renderer/components/html-element-library-panel/renderers/html-element-library-item-details.renderer.ts",
+  rendererTargetStatus: "apps/desktop/electron/renderer/components/html-element-library-panel/renderers/html-element-library-target-status.renderer.ts",
+  rendererCommandPreview: "apps/desktop/electron/renderer/components/html-element-library-panel/renderers/html-element-library-command-preview.renderer.ts",
   designHtml: "apps/desktop/electron/renderer/views/design/design.html",
   mainScss: "apps/desktop/electron/renderer/main.scss",
   bootstrap: "apps/desktop/electron/renderer/app/bootstrap/bootstrap.ts",
@@ -45,8 +55,9 @@ const mandatoryItemIds = [
 const forbiddenRuntimeTokens = ["contenteditable", "insertAdjacentHTML", "iframe.contentDocument", "iframe.contentWindow.document", ".contentDocument", ".contentWindow.document", "localStorage", "execCommand", "allow-same-origin"];
 const coreSource = [source.libraryTypes, source.libraryConstants, source.libraryCatalog, source.librarySelectors, source.libraryValidators, source.insertionTargetTypes, source.insertionTargetSelectors].join("\n");
 const commandSource = [source.commandTypes, source.commandConstants, source.commandValidators, source.commandBlockers].join("\n");
-const runtimeSource = [coreSource, commandSource, source.panelHtml, source.panelScss, source.panelTs, source.panelTypes, source.designHtml, source.mainScss, source.bootstrap, source.mainWindow, source.webPreferences].join("\n");
-const uiPanelSource = [source.panelHtml, source.panelScss, source.panelTs, source.panelTypes].join("\n");
+const panelRendererSource = [source.rendererControls, source.rendererCategoryTabs, source.rendererItemList, source.rendererItemDetails, source.rendererTargetStatus, source.rendererCommandPreview].join("\n");
+const panelSource = [source.panelHtml, source.panelScss, source.panelTs, source.panelTypes, source.panelConstants, source.panelState, source.panelDom, source.panelEvents, panelRendererSource].join("\n");
+const runtimeSource = [coreSource, commandSource, panelSource, source.designHtml, source.mainScss, source.bootstrap, source.mainWindow, source.webPreferences].join("\n");
 
 expect(packageData.scripts?.["validate:html-element-library"] === "node scripts/validate-html-element-library.mjs", "package.json does not expose validate:html-element-library.");
 expect(packageData.scripts?.["validate:local"]?.includes("validate:html-element-library"), "validate:local does not include validate:html-element-library.");
@@ -117,26 +128,49 @@ expect(source.commandValidators.includes("valid: false") && source.commandValida
 expect(!commandSource.includes("fs") && !commandSource.includes("writeFile") && !commandSource.includes("appendFile"), "Command contracts must not write files.");
 
 expect(source.panelHtml.includes("data-html-element-library-panel"), "Element Library panel markup is missing.");
-expect(source.panelHtml.includes("Command foundation only"), "Element Library panel must expose disabled command foundation affordance.");
-expect(source.panelTs.includes("createElement") && source.panelTs.includes("textContent") && source.panelTs.includes("replaceChildren"), "Panel controller must build dynamic catalog UI safely.");
-expect(!source.panelTs.includes("innerHTML"), "Panel controller must not use innerHTML for dynamic content.");
-expect(source.panelTs.includes("selectHtmlInsertionTargetEligibility"), "Panel does not render insertion target eligibility.");
-expect(source.panelTs.includes("Patch preview not implemented"), "Panel does not show read-only patch preview placeholder.");
-expect(source.panelScss.includes("crystal-html-element-library-panel") && source.panelScss.includes(":focus-visible"), "Panel styles or focus-visible state are missing.");
+expect(source.panelHtml.includes("Element Library"), "Element Library title is missing.");
+expect(!source.panelHtml.includes("Grouped by intent") && !source.panelHtml.includes("Metadata only") && !source.panelHtml.includes("Selection eligibility"), "Element Library UI still exposes verbose documentation labels.");
+expect(source.panelHtml.includes("data-html-element-library-category-tabs"), "Compact category controls are missing.");
+expect(source.panelHtml.includes("data-html-element-library-item-list"), "Active category item list is missing.");
+expect(!source.panelHtml.includes("data-html-element-library-categories"), "Panel must not render the full expanded category tree container.");
+expect(source.panelHtml.includes("data-html-element-library-future-action") && source.panelHtml.includes("disabled"), "Future insertion action must remain disabled.");
+expect(!panelSource.includes("innerHTML"), "Element Library panel must not use innerHTML.");
+expect(!panelSource.includes("insertAdjacentHTML"), "Element Library panel must not use insertAdjacentHTML.");
+expect(!panelSource.includes("aria-disabled"), "Selectable Element Library item buttons must not use aria-disabled.");
+expect(source.panelTs.includes("renderHtmlElementLibraryCategoryTabs") && source.panelTs.includes("renderHtmlElementLibraryItemList"), "Panel controller must orchestrate modular renderers.");
+expect(countToken(source.panelTs, "document.createElement") === 0, "Panel controller must not construct all DOM blocks directly.");
+expect(!source.panelTs.includes("createCatalogItemButton") && !source.panelTs.includes("renderCatalog("), "Panel controller still looks monolithic.");
+expect(source.panelState.includes("HtmlElementLibraryPanelRuntimeState") && source.panelState.includes("activeCategory"), "Panel local state is not isolated or typed.");
+expect(source.panelEvents.includes("bindHtmlElementLibraryPanelEvents"), "Panel event binding is not isolated.");
+expect(source.panelDom.includes("getHtmlElementLibraryPanelElements"), "Panel DOM queries are not isolated.");
+expect(source.rendererCategoryTabs.includes("role", "tab") || source.rendererCategoryTabs.includes("tablist"), "Category tabs renderer is missing tab semantics.");
+expect(source.rendererItemList.includes("aria-pressed") && source.rendererItemList.includes("dataset.htmlElementLibraryCommandState"), "Item list renderer must keep selectable read-only item semantics.");
+expect(source.rendererItemDetails.includes("selectedPanel") && source.rendererItemDetails.includes("selectedEmpty"), "Item details renderer must render metadata conditionally.");
+expect(source.rendererTargetStatus.includes("Target:") && source.rendererTargetStatus.includes("renderHtmlElementLibraryModes"), "Target status renderer must be compact.");
+expect(source.rendererCommandPreview.includes("futureAction.disabled = true") && source.rendererCommandPreview.includes("setHtmlElementLibraryHidden"), "Command preview must keep future command disabled and compact.");
+expect(source.rendererControls.includes("document.createElement") && source.rendererControls.includes("textContent"), "Control block renderer must create safe reusable nodes.");
+expect(panelRendererSource.includes("replaceChildren"), "Renderers must replace nodes safely.");
+
+expect(source.panelScss.includes("max-height: clamp"), "Element Library CSS must cap panel height.");
+expect(source.panelScss.includes("grid-template-rows") && source.panelScss.includes("minmax(42px, 1fr)"), "Element Library body must use contained grid rows.");
+expect(source.panelScss.includes("min-height: 0"), "Element Library CSS must preserve min-height containment.");
+expect(source.panelScss.includes("overflow: auto"), "Element Library item list must scroll internally.");
+expect(source.panelScss.includes("crystal-html-element-library-panel__item-list"), "Element Library item list styles are missing.");
+expect(source.panelScss.includes("crystal-design-view__right-sidebar") && source.panelScss.includes("overflow: hidden"), "Right sidebar containment for the Element Library is missing.");
+expect(source.panelScss.includes("crystal-project-preview-panel") && source.panelScss.includes("flex: 1 1 auto"), "Preview Inspector must keep usable flexible space below the Element Library.");
+expect(source.panelScss.includes("crystal-project-dom-tree-panel") && source.panelScss.includes("clamp(86px, 20vh, 180px)"), "DOM tree sidebar containment is missing.");
+expect(source.panelScss.includes(":focus-visible"), "Panel focus-visible states are missing.");
+expect(!source.panelScss.includes("__section-header") && !source.panelScss.includes("__category-title"), "Old nested card/category styles should not remain.");
+expect(countToken(source.panelScss, "border: 1px solid") <= 3, "Element Library SCSS still appears visually over-boxed.");
+
 expect(source.designHtml.includes("html-element-library-panel/html-element-library-panel.html"), "Design mode does not include the Element Library panel.");
 expect(source.mainScss.includes("html-element-library-panel/html-element-library-panel"), "Renderer SCSS does not include the Element Library panel styles.");
 expect(source.bootstrap.includes("initializeHtmlElementLibraryPanel"), "Renderer bootstrap does not initialize the Element Library panel.");
-expect(!source.panelTs.includes("aria-disabled", "true") && !source.panelTs.includes("aria-disabled\", \"true"), "Selectable Element Library item buttons must not use aria-disabled=true.");
-expect(source.panelTs.includes("aria-pressed") && source.panelTs.includes("dataset.htmlElementLibraryCommandState"), "Selectable Element Library items must preserve selection state and command-foundation metadata.");
-expect(source.panelHtml.includes("data-html-element-library-future-action") && source.panelHtml.includes("disabled"), "Future insertion action must remain disabled.");
-expect(source.panelTs.includes("elements.futureAction.disabled = true"), "Panel controller must keep the future insertion action disabled.");
 
 for (const forbiddenToken of forbiddenRuntimeTokens) {
   expect(!runtimeSource.includes(forbiddenToken), `Forbidden runtime token found: ${forbiddenToken}`);
 }
-for (const forbiddenToken of forbiddenRuntimeTokens) {
-  expect(!uiPanelSource.includes(forbiddenToken), `Forbidden UI panel token found: ${forbiddenToken}`);
-}
+expect(!runtimeSource.includes("writeFile") && !runtimeSource.includes("appendFile") && !runtimeSource.includes("mkdir") && !runtimeSource.includes("unlink"), "Runtime source must not add file-writing primitives.");
 
 expect(!source.mainWindow.includes("openDevTools"), "DevTools must not open automatically from the main window.");
 expect(source.mainWindow.includes("webPreferences: getSecureWebPreferences()"), "Main window security preferences must remain centralized.");
