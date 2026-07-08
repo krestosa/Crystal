@@ -226,12 +226,32 @@ Covered:
 
 Still out of scope:
 
-- source patch preview
-- command bus preview/dry-run routing
-- source writes
+- real source writes
+- patch apply
+- IPC write
+- save/apply workflow
+- undo/redo real history
 - DOM mutation
-- apply/save workflow
-- undo/redo history
+
+### Phase 6B — Source Patch Preview and Command Bus Foundation
+
+Covered:
+
+- source patch preview model
+- source insertion anchor model based on DOM Snapshot `sourceLocation`
+- dry-run command bus contracts
+- `AddHtmlElementCommand` preview planner
+- compact Element Library patch preview UI
+- validation guarding against writes, IPC write channels, and iframe internals
+
+Still out of scope:
+
+- real source writes
+- patch apply
+- IPC write
+- save/apply workflow
+- undo/redo real history
+- DOM mutation
 
 ### Cross-cutting shell, Diagnostics, and UI system polish
 
@@ -257,18 +277,17 @@ Still out of scope:
 
 ## Recommended next module
 
-### Phase 6B — Source Patch Preview and Command Bus Foundation
+### Phase 6C — History/Undo transaction skeleton and refresh boundary planning
 
 Recommended scope:
 
-- source patch preview model for proposed edits without applying them
-- source insertion anchor model based on DOM Snapshot `sourceLocation`
-- dry-run command bus contracts that route preview planning but block execution
-- `AddHtmlElementCommand` preview planner for safe one-node HTML insertion previews
-- compact Element Library patch preview UI that keeps Apply/Insert disabled
-- validation guarding against file writes, IPC write channels, iframe internals, and unsafe renderer APIs
+- command history transaction skeleton without applying project mutations
+- undo/redo contract shapes without real undo/redo behavior
+- patch preview to refresh-boundary planning contracts
+- preview refresh boundary model for future source writes
+- validation that real source writes, patch apply, IPC write, save/apply, and DOM mutation remain blocked
 
-Phase 6B must still avoid real source writes. The first real write should only come after patch preview, command bus routing, preview refresh boundaries, history/undo skeleton, and validation are present and tested.
+Phase 6C must still avoid real source writes and must not claim actual insertion. It should prepare history and refresh boundaries before any future write-capable command lands.
 
 ## Not implemented yet
 
@@ -314,17 +333,18 @@ The complete roadmap is documented in [`docs/full-product-roadmap.md`](./full-pr
 2. ~~Design Canvas Navigation MVP.~~ Implemented foundation.
 3. ~~Visual Selection and Overlay MVP.~~ Implemented MVP; hardening remains.
 4. ~~HTML5 Element Library and safe insertion command foundation.~~ Implemented as read-only Phase 6A foundation.
-5. Source Patch Preview and Command Bus Foundation.
-6. Design Editing MVP with commands and undo/redo.
-7. Editable Inspector MVP.
-8. Style Engine and CSS/Sass Inspector.
-9. Responsive Design and Layout Tools.
-10. Components, snippets, and reusable blocks.
-11. Assets, fonts, SVG, and media management.
-12. Developer Mode and IDE tools.
-13. WebGPU Overlay Engine.
-14. Rust/WASM Analyzer.
-15. Automation, assistant workflows, packaging, testing, and product hardening.
+5. ~~Source Patch Preview and Command Bus Foundation.~~ Implemented as read-only Phase 6B foundation.
+6. History/Undo transaction skeleton and refresh boundary planning.
+7. Design Editing MVP with commands and undo/redo.
+8. Editable Inspector MVP.
+9. Style Engine and CSS/Sass Inspector.
+10. Responsive Design and Layout Tools.
+11. Components, snippets, and reusable blocks.
+12. Assets, fonts, SVG, and media management.
+13. Developer Mode and IDE tools.
+14. WebGPU Overlay Engine.
+15. Rust/WASM Analyzer.
+16. Automation, assistant workflows, packaging, testing, and product hardening.
 
 ## Required validation before PR merge
 
