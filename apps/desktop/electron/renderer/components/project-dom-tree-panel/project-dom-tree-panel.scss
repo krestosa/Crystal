@@ -40,19 +40,7 @@
 }
 
 .crystal-project-dom-tree-panel__button {
-  min-height: var(--crystal-control-height-compact);
-  overflow: hidden;
-  padding: 0 var(--crystal-control-padding-x);
-  border: 1px solid var(--crystal-control-border);
-  border-radius: var(--crystal-control-radius);
-  background: var(--crystal-control-bg);
-  color: var(--crystal-control-text);
-  font: inherit;
-  font-size: 10px;
-  text-align: left;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  cursor: pointer;
+  width: 100%;
 }
 
 .crystal-project-dom-tree-panel__button:hover:not(:disabled) {
@@ -63,8 +51,6 @@
 
 .crystal-project-dom-tree-panel__button:focus-visible {
   border-color: var(--crystal-control-active-border);
-  outline: 2px solid var(--crystal-focus-ring);
-  outline-offset: 1px;
 }
 
 .crystal-project-dom-tree-panel__button--primary {
