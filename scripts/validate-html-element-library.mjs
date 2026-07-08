@@ -17,6 +17,22 @@ const paths = {
   commandConstants: "packages/core/commands/html-insertion/html-insertion-command.constants.ts",
   commandValidators: "packages/core/commands/html-insertion/html-insertion-command.validators.ts",
   commandBlockers: "packages/core/commands/html-insertion/html-insertion-command.blockers.ts",
+  shellPanelHeaderHtml: "apps/desktop/electron/renderer/components/shell-ui/panel-header/panel-header.html",
+  shellPanelHeaderScss: "apps/desktop/electron/renderer/components/shell-ui/panel-header/panel-header.scss",
+  shellPanelHeaderTypes: "apps/desktop/electron/renderer/components/shell-ui/panel-header/panel-header.types.ts",
+  shellPanelSectionHtml: "apps/desktop/electron/renderer/components/shell-ui/panel-section/panel-section.html",
+  shellPanelSectionScss: "apps/desktop/electron/renderer/components/shell-ui/panel-section/panel-section.scss",
+  shellPanelSectionTypes: "apps/desktop/electron/renderer/components/shell-ui/panel-section/panel-section.types.ts",
+  shellMetadataRowTs: "apps/desktop/electron/renderer/components/shell-ui/metadata-row/metadata-row.ts",
+  shellMetadataRowTypes: "apps/desktop/electron/renderer/components/shell-ui/metadata-row/metadata-row.types.ts",
+  shellMetadataRowScss: "apps/desktop/electron/renderer/components/shell-ui/metadata-row/metadata-row.scss",
+  shellEmptyStateTs: "apps/desktop/electron/renderer/components/shell-ui/empty-state/empty-state.ts",
+  shellEmptyStateTypes: "apps/desktop/electron/renderer/components/shell-ui/empty-state/empty-state.types.ts",
+  shellEmptyStateScss: "apps/desktop/electron/renderer/components/shell-ui/empty-state/empty-state.scss",
+  shellCompactControlScss: "apps/desktop/electron/renderer/components/shell-ui/compact-control/compact-control.scss",
+  shellStatusBadgeScss: "apps/desktop/electron/renderer/components/shell-ui/status-badge/status-badge.scss",
+  shellScrollRegionScss: "apps/desktop/electron/renderer/components/shell-ui/scroll-region/scroll-region.scss",
+  shellSidebarStackScss: "apps/desktop/electron/renderer/components/shell-ui/sidebar-stack/sidebar-stack.scss",
   panelHtml: "apps/desktop/electron/renderer/components/html-element-library-panel/html-element-library-panel.html",
   panelScss: "apps/desktop/electron/renderer/components/html-element-library-panel/html-element-library-panel.scss",
   panelTs: "apps/desktop/electron/renderer/components/html-element-library-panel/html-element-library-panel.ts",
@@ -25,13 +41,19 @@ const paths = {
   panelState: "apps/desktop/electron/renderer/components/html-element-library-panel/html-element-library-panel.state.ts",
   panelDom: "apps/desktop/electron/renderer/components/html-element-library-panel/html-element-library-panel.dom.ts",
   panelEvents: "apps/desktop/electron/renderer/components/html-element-library-panel/html-element-library-panel.events.ts",
-  rendererControls: "apps/desktop/electron/renderer/components/html-element-library-panel/renderers/html-element-library-control-blocks.renderer.ts",
-  rendererCategoryTabs: "apps/desktop/electron/renderer/components/html-element-library-panel/renderers/html-element-library-category-tabs.renderer.ts",
-  rendererItemList: "apps/desktop/electron/renderer/components/html-element-library-panel/renderers/html-element-library-item-list.renderer.ts",
-  rendererItemDetails: "apps/desktop/electron/renderer/components/html-element-library-panel/renderers/html-element-library-item-details.renderer.ts",
-  rendererTargetStatus: "apps/desktop/electron/renderer/components/html-element-library-panel/renderers/html-element-library-target-status.renderer.ts",
-  rendererCommandPreview: "apps/desktop/electron/renderer/components/html-element-library-panel/renderers/html-element-library-command-preview.renderer.ts",
+  rendererCategoryTabs: "apps/desktop/electron/renderer/components/html-element-library-panel/renderers/category-tabs.renderer.ts",
+  rendererItemList: "apps/desktop/electron/renderer/components/html-element-library-panel/renderers/item-list.renderer.ts",
+  rendererItemDetails: "apps/desktop/electron/renderer/components/html-element-library-panel/renderers/item-details.renderer.ts",
+  rendererTargetStatus: "apps/desktop/electron/renderer/components/html-element-library-panel/renderers/target-status.renderer.ts",
+  rendererCommandPreview: "apps/desktop/electron/renderer/components/html-element-library-panel/renderers/command-preview.renderer.ts",
+  graphHtml: "apps/desktop/electron/renderer/components/project-graph-panel/project-graph-panel.html",
+  graphScss: "apps/desktop/electron/renderer/components/project-graph-panel/project-graph-panel.scss",
+  previewHtml: "apps/desktop/electron/renderer/components/project-preview-panel/project-preview-panel.html",
+  previewScss: "apps/desktop/electron/renderer/components/project-preview-panel/project-preview-panel.scss",
+  domTreeHtml: "apps/desktop/electron/renderer/components/project-dom-tree-panel/project-dom-tree-panel.html",
+  domTreeScss: "apps/desktop/electron/renderer/components/project-dom-tree-panel/project-dom-tree-panel.scss",
   designHtml: "apps/desktop/electron/renderer/views/design/design.html",
+  designScss: "apps/desktop/electron/renderer/views/design/design.scss",
   mainScss: "apps/desktop/electron/renderer/main.scss",
   bootstrap: "apps/desktop/electron/renderer/app/bootstrap/bootstrap.ts",
   mainWindow: "apps/desktop/electron/main/windows/create-main-window.ts",
@@ -55,9 +77,28 @@ const mandatoryItemIds = [
 const forbiddenRuntimeTokens = ["contenteditable", "insertAdjacentHTML", "iframe.contentDocument", "iframe.contentWindow.document", ".contentDocument", ".contentWindow.document", "localStorage", "execCommand", "allow-same-origin"];
 const coreSource = [source.libraryTypes, source.libraryConstants, source.libraryCatalog, source.librarySelectors, source.libraryValidators, source.insertionTargetTypes, source.insertionTargetSelectors].join("\n");
 const commandSource = [source.commandTypes, source.commandConstants, source.commandValidators, source.commandBlockers].join("\n");
-const panelRendererSource = [source.rendererControls, source.rendererCategoryTabs, source.rendererItemList, source.rendererItemDetails, source.rendererTargetStatus, source.rendererCommandPreview].join("\n");
+const shellUiSource = [
+  source.shellPanelHeaderHtml,
+  source.shellPanelHeaderScss,
+  source.shellPanelHeaderTypes,
+  source.shellPanelSectionHtml,
+  source.shellPanelSectionScss,
+  source.shellPanelSectionTypes,
+  source.shellMetadataRowTs,
+  source.shellMetadataRowTypes,
+  source.shellMetadataRowScss,
+  source.shellEmptyStateTs,
+  source.shellEmptyStateTypes,
+  source.shellEmptyStateScss,
+  source.shellCompactControlScss,
+  source.shellStatusBadgeScss,
+  source.shellScrollRegionScss,
+  source.shellSidebarStackScss
+].join("\n");
+const panelRendererSource = [source.rendererCategoryTabs, source.rendererItemList, source.rendererItemDetails, source.rendererTargetStatus, source.rendererCommandPreview].join("\n");
 const panelSource = [source.panelHtml, source.panelScss, source.panelTs, source.panelTypes, source.panelConstants, source.panelState, source.panelDom, source.panelEvents, panelRendererSource].join("\n");
-const runtimeSource = [coreSource, commandSource, panelSource, source.designHtml, source.mainScss, source.bootstrap, source.mainWindow, source.webPreferences].join("\n");
+const shellIntegrationSource = [source.graphHtml, source.graphScss, source.previewHtml, source.previewScss, source.domTreeHtml, source.domTreeScss, source.designHtml, source.designScss, source.mainScss, source.bootstrap].join("\n");
+const runtimeSource = [coreSource, commandSource, shellUiSource, panelSource, shellIntegrationSource, source.mainWindow, source.webPreferences].join("\n");
 
 expect(packageData.scripts?.["validate:html-element-library"] === "node scripts/validate-html-element-library.mjs", "package.json does not expose validate:html-element-library.");
 expect(packageData.scripts?.["validate:local"]?.includes("validate:html-element-library"), "validate:local does not include validate:html-element-library.");
@@ -127,7 +168,24 @@ expect(source.commandBlockers.includes("createHtmlInsertionExecutionBlocker") &&
 expect(source.commandValidators.includes("valid: false") && commandSource.includes("not implemented"), "Command validator must block execution in this phase.");
 expect(!commandSource.includes("fs") && !commandSource.includes("writeFile") && !commandSource.includes("appendFile"), "Command contracts must not write files.");
 
+expect(source.mainScss.includes("components/shell-ui/panel-section/panel-section"), "Shell panel-section primitive is not imported.");
+expect(source.mainScss.includes("components/shell-ui/panel-header/panel-header"), "Shell panel-header primitive is not imported.");
+expect(source.mainScss.includes("components/shell-ui/metadata-row/metadata-row"), "Shell metadata-row primitive is not imported.");
+expect(source.mainScss.includes("components/shell-ui/empty-state/empty-state"), "Shell empty-state primitive is not imported.");
+expect(source.mainScss.includes("components/shell-ui/compact-control/compact-control"), "Shell compact-control primitive is not imported.");
+expect(source.mainScss.includes("components/shell-ui/status-badge/status-badge"), "Shell status-badge primitive is not imported.");
+expect(source.mainScss.includes("components/shell-ui/scroll-region/scroll-region"), "Shell scroll-region primitive is not imported.");
+expect(source.mainScss.includes("components/shell-ui/sidebar-stack/sidebar-stack"), "Shell sidebar-stack primitive is not imported.");
+expect(source.shellPanelHeaderScss.includes("crystal-shell-panel-header") && source.shellPanelSectionScss.includes("crystal-shell-panel-stack"), "Shell panel/header primitives are incomplete.");
+expect(source.shellMetadataRowTs.includes("createShellMetadataRow") && source.shellMetadataRowTs.includes("textContent") && source.shellMetadataRowTs.includes("replaceChildren"), "Shell metadata row helper is missing or unsafe.");
+expect(source.shellEmptyStateTs.includes("createShellEmptyState") && source.shellEmptyStateTs.includes("textContent"), "Shell empty state helper is missing or unsafe.");
+expect(source.shellCompactControlScss.includes("crystal-shell-compact-button") && source.shellCompactControlScss.includes(":focus-visible"), "Shell compact control primitive is incomplete.");
+expect(source.shellStatusBadgeScss.includes("crystal-shell-status-badge"), "Shell status badge primitive is missing.");
+expect(source.shellScrollRegionScss.includes("min-height: 0") && source.shellScrollRegionScss.includes("overflow: auto") && source.shellScrollRegionScss.includes("scrollbar-gutter: stable"), "Shell scroll region primitive must contain scroll safely.");
+expect(source.shellSidebarStackScss.includes("crystal-shell-panel-stack__tool") && source.shellSidebarStackScss.includes("crystal-shell-panel-stack__main") && source.shellSidebarStackScss.includes("crystal-shell-panel-stack__secondary"), "Shell sidebar stack slots are missing.");
+
 expect(source.panelHtml.includes("data-html-element-library-panel"), "Element Library panel markup is missing.");
+expect(source.panelHtml.includes("crystal-shell-panel") && source.panelHtml.includes("crystal-shell-panel-header") && source.panelHtml.includes("crystal-shell-scroll-region"), "Element Library does not use shell UI primitives.");
 expect(source.panelHtml.includes("Element Library"), "Element Library title is missing.");
 expect(!source.panelHtml.includes("Grouped by intent") && !source.panelHtml.includes("Metadata only") && !source.panelHtml.includes("Selection eligibility"), "Element Library UI still exposes verbose documentation labels.");
 expect(source.panelHtml.includes("data-html-element-library-category-tabs"), "Compact category controls are missing.");
@@ -145,23 +203,25 @@ expect(source.panelEvents.includes("bindHtmlElementLibraryPanelEvents"), "Panel 
 expect(source.panelDom.includes("getHtmlElementLibraryPanelElements"), "Panel DOM queries are not isolated.");
 expect(source.rendererCategoryTabs.includes("role") && source.rendererCategoryTabs.includes("tab"), "Category tabs renderer is missing tab semantics.");
 expect(source.rendererItemList.includes("aria-pressed") && source.rendererItemList.includes("dataset.htmlElementLibraryCommandState"), "Item list renderer must keep selectable read-only item semantics.");
-expect(source.rendererItemDetails.includes("selectedPanel") && source.rendererItemDetails.includes("selectedEmpty"), "Item details renderer must render metadata conditionally.");
+expect(source.rendererItemDetails.includes("createShellMetadataRow") && source.rendererItemDetails.includes("selectedPanel") && source.rendererItemDetails.includes("selectedEmpty"), "Item details renderer must use metadata primitive and render metadata conditionally.");
 expect(source.rendererTargetStatus.includes("Target:") && source.rendererTargetStatus.includes("renderHtmlElementLibraryModes"), "Target status renderer must be compact.");
-expect(source.rendererCommandPreview.includes("futureAction.disabled = true") && source.rendererCommandPreview.includes("setHtmlElementLibraryHidden"), "Command preview must keep future command disabled and compact.");
-expect(source.rendererControls.includes("document.createElement") && source.rendererControls.includes("textContent"), "Control block renderer must create safe reusable nodes.");
-expect(panelRendererSource.includes("replaceChildren"), "Renderers must replace nodes safely.");
+expect(source.rendererCommandPreview.includes("futureAction.disabled = true") && source.rendererCommandPreview.includes("futureAction.hidden"), "Command preview must keep future command disabled and compact.");
+expect(!panelSource.includes("html-element-library-control-blocks.renderer"), "Local control-block renderer should be replaced by shell-ui primitives.");
 
 expect(source.panelScss.includes("max-height: clamp"), "Element Library CSS must cap panel height.");
 expect(source.panelScss.includes("grid-template-rows") && source.panelScss.includes("minmax(42px, 1fr)"), "Element Library body must use contained grid rows.");
-expect(source.panelScss.includes("min-height: 0"), "Element Library CSS must preserve min-height containment.");
-expect(source.panelScss.includes("overflow: auto"), "Element Library item list must scroll internally.");
 expect(source.panelScss.includes("crystal-html-element-library-panel__item-list"), "Element Library item list styles are missing.");
-expect(source.panelScss.includes("crystal-design-view__right-sidebar") && source.panelScss.includes("overflow: hidden"), "Right sidebar containment for the Element Library is missing.");
-expect(source.panelScss.includes("crystal-project-preview-panel") && source.panelScss.includes("flex: 1 1 auto"), "Preview Inspector must keep usable flexible space below the Element Library.");
-expect(source.panelScss.includes("crystal-project-dom-tree-panel") && source.panelScss.includes("clamp(86px, 20vh, 180px)"), "DOM tree sidebar containment is missing.");
-expect(source.panelScss.includes(":focus-visible"), "Panel focus-visible states are missing.");
+expect(source.panelScss.includes(":hidden") || source.panelScss.includes("[hidden]"), "Element Library must hide conditional blocks safely.");
 expect(!source.panelScss.includes("__section-header") && !source.panelScss.includes("__category-title"), "Old nested card/category styles should not remain.");
-expect(countToken(source.panelScss, "border: 1px solid") <= 3, "Element Library SCSS still appears visually over-boxed.");
+expect(countToken(source.panelScss, "border: 1px solid") === 0, "Element Library SCSS should not reintroduce boxed nesting; use shell primitives.");
+
+expect(source.previewHtml.includes("crystal-shell-panel-stack__main"), "Preview Inspector panel is not assigned to the sidebar main slot.");
+expect(source.domTreeHtml.includes("crystal-shell-panel-stack__secondary"), "DOM Snapshot panel is not assigned to the sidebar secondary slot.");
+expect(source.graphHtml.includes("crystal-shell-compact-button") && source.domTreeHtml.includes("crystal-shell-compact-button") && source.previewHtml.includes("crystal-shell-compact-button"), "Touched shell controls do not use compact button primitive.");
+expect(source.graphHtml.includes("crystal-shell-section") && source.graphHtml.includes("crystal-shell-scroll-region"), "Project Graph panel does not adopt reusable section/scroll primitives.");
+expect(source.previewHtml.includes("crystal-shell-metadata") && source.domTreeHtml.includes("crystal-shell-panel-stack__secondary"), "Preview/DOM panels do not expose shared metadata/sidebar primitives.");
+expect(source.shellSidebarStackScss.includes("overflow: hidden") && source.shellSidebarStackScss.includes("overflow: auto"), "Right sidebar stack must avoid parent scrolling and preserve child scroll regions.");
+expect(source.shellSidebarStackScss.includes("flex: 1 1 auto") && source.shellSidebarStackScss.includes("clamp(86px, 20vh, 180px)"), "Right sidebar slots must reserve main Inspector space and cap secondary panels.");
 
 expect(source.designHtml.includes("html-element-library-panel/html-element-library-panel.html"), "Design mode does not include the Element Library panel.");
 expect(source.mainScss.includes("html-element-library-panel/html-element-library-panel"), "Renderer SCSS does not include the Element Library panel styles.");
