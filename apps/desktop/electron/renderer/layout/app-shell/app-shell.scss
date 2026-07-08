@@ -1,7 +1,5 @@
 .crystal-app-shell {
   --crystal-native-titlebar-height: 32px;
-  --crystal-app-bar-height: 28px;
-  --crystal-app-chrome-height: calc(var(--crystal-native-titlebar-height) + var(--crystal-app-bar-height));
   --crystal-window-controls-fallback-width: 178px;
   --crystal-window-controls-width: max(
     var(--crystal-window-controls-fallback-width),
@@ -9,7 +7,7 @@
   );
 
   display: grid;
-  grid-template-rows: var(--crystal-app-chrome-height) minmax(0, 1fr) 20px;
+  grid-template-rows: var(--crystal-native-titlebar-height) minmax(0, 1fr) 20px;
   width: 100vw;
   height: 100vh;
   overflow: hidden;
@@ -20,9 +18,9 @@
 .crystal-app-shell__chrome {
   position: relative;
   display: grid;
-  grid-template-rows: var(--crystal-native-titlebar-height) var(--crystal-app-bar-height);
+  grid-template-rows: var(--crystal-native-titlebar-height);
   min-width: 0;
-  min-height: var(--crystal-app-chrome-height);
+  min-height: var(--crystal-native-titlebar-height);
   background: var(--crystal-color-surface-strong);
   -webkit-app-region: drag;
   user-select: none;
@@ -51,19 +49,6 @@
   pointer-events: none;
 }
 
-.crystal-app-shell__app-bar {
-  position: relative;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-  min-height: var(--crystal-app-bar-height);
-  padding: 0 8px 0 10px;
-  border-bottom: 1px solid var(--crystal-color-border-soft);
-  background: var(--crystal-color-surface);
-}
-
 .crystal-app-shell__chrome-identity {
   position: relative;
   z-index: 1;
@@ -74,86 +59,12 @@
 }
 
 .crystal-app-shell__chrome-title {
-  color: rgba(247, 242, 236, 0.82);
+  color: var(--crystal-color-text-muted);
   font-size: 9px;
   font-weight: 650;
   letter-spacing: 0.14em;
   line-height: 1;
   text-transform: uppercase;
-}
-
-.crystal-app-shell__chrome-meta {
-  position: relative;
-  z-index: 1;
-  overflow: hidden;
-  color: rgba(247, 242, 236, 0.34);
-  font-size: 9px;
-  letter-spacing: 0.04em;
-  line-height: 1;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.crystal-app-shell__chrome-actions {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  min-width: 0;
-  -webkit-app-region: no-drag;
-}
-
-.crystal-app-shell__diagnostics-button {
-  position: relative;
-  display: grid;
-  flex: 0 0 auto;
-  place-items: center;
-  width: 22px;
-  height: 22px;
-  padding: 0;
-  border: 1px solid var(--crystal-color-border-soft);
-  background: rgba(255, 255, 255, 0.035);
-  color: rgba(247, 242, 236, 0.68);
-  cursor: pointer;
-}
-
-.crystal-app-shell__diagnostics-button::before {
-  width: 10px;
-  height: 8px;
-  border: 1px solid currentColor;
-  background: transparent;
-  box-shadow: -5px 2px 0 -4px currentColor, 5px 2px 0 -4px currentColor, -5px 6px 0 -4px currentColor, 5px 6px 0 -4px currentColor;
-  content: "";
-}
-
-.crystal-app-shell__diagnostics-button::after {
-  position: absolute;
-  top: 5px;
-  width: 6px;
-  height: 1px;
-  background: currentColor;
-  box-shadow: 0 4px 0 currentColor;
-  content: "";
-}
-
-.crystal-app-shell__diagnostics-button:hover {
-  border-color: rgba(255, 255, 255, 0.16);
-  background: rgba(255, 255, 255, 0.055);
-  color: rgba(247, 242, 236, 0.86);
-}
-
-.crystal-app-shell__diagnostics-button[aria-expanded="true"] {
-  border-color: var(--crystal-color-accent-border);
-  background: var(--crystal-color-accent-soft);
-  color: var(--crystal-color-text);
-}
-
-.crystal-app-shell__diagnostics-button:focus-visible {
-  border-color: var(--crystal-color-accent-border);
-  color: var(--crystal-color-text);
-  outline: 2px solid var(--crystal-focus-ring);
-  outline-offset: 1px;
 }
 
 .crystal-app-shell__body {
@@ -192,7 +103,7 @@
 .crystal-app-shell__left-resizer:hover::after,
 .crystal-app-shell__left-resizer:focus-visible::after,
 .crystal-app-shell__body--resizing-left .crystal-app-shell__left-resizer::after {
-  background: rgba(255, 255, 255, 0.16);
+  background: var(--crystal-color-control-hover-border);
 }
 
 .crystal-app-shell__left-resizer:focus-visible {
@@ -202,10 +113,4 @@
 .crystal-app-shell__body--resizing-left {
   cursor: col-resize;
   user-select: none;
-}
-
-@media (max-width: 720px) {
-  .crystal-app-shell__chrome-meta {
-    display: none;
-  }
 }
