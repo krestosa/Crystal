@@ -58,7 +58,7 @@ for (const token of ["targetFilePath", "startOffset", "endOffset", "beforeTextPr
 }
 expect(source.sourcePatchValidators.includes("validateSourcePatchPreview"), "Source patch validator is missing.");
 expect(source.sourcePatchValidators.includes("hasUnsafeProjectRelativePath"), "Source patch path safety validator is missing.");
-expect(source.sourcePatchValidators.includes("startOffset > range.endOffset"), "Source patch validator does not guard offset order.");
+expect(source.sourcePatchValidators.includes("range.startOffset > range.endOffset"), "Source patch validator does not guard offset order.");
 expect(source.sourcePatchValidators.includes("insertedTextPreview is required"), "Source patch validator does not require inserted text for ready previews.");
 expect(source.sourcePatchPreview.includes("createInsertTextSourcePatchPreview"), "Insert text source patch preview builder is missing.");
 
