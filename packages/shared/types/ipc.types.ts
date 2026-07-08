@@ -23,6 +23,7 @@ export interface CrystalIpcResponseMap {
   readonly [channel: string]: unknown;
   readonly "app:get-version": string;
   readonly "app:get-platform": NodeJS.Platform;
+  readonly "app:open-devtools": boolean;
   readonly "project:open-folder": ProjectScanResult | null;
   readonly "project:open-html-file": ProjectScanResult | null;
   readonly "project:scan": ProjectScanResult;

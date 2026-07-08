@@ -14,7 +14,21 @@ let activeAppShellResizeCleanup: (() => void) | null = null;
 export function initializeAppShell(): void {
   const shell = document.querySelector<HTMLElement>("[data-crystal-app-shell]");
   shell?.setAttribute("data-ready", "true");
+  initializeDevToolsControl();
   if (shell) initializeAppShellResize(shell);
+}
+
+function initializeDevToolsControl(): void {
+  const button = document.querySelector<HTMLButtonElement>("[data-crystal-devtools-toggle]");
+  if (!button) return;
+
+  const handleClick = (): void => {
+    void window.crystal.app.openDevTools().catch((error: unknown) => {
+      console.error("Crystal DevTools launch failed", error);
+    });
+  };
+
+  button.addEventListener("click", handleClick);
 }
 
 function initializeAppShellResize(shell: HTMLElement): void {
