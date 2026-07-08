@@ -9,11 +9,11 @@ import { getHtmlElementLibraryPanelElements } from "./html-element-library-panel
 import { bindHtmlElementLibraryPanelEvents } from "./html-element-library-panel.events";
 import { createHtmlElementLibraryPanelState, type HtmlElementLibraryPanelRuntimeState } from "./html-element-library-panel.state";
 import type { HtmlElementLibraryPanelElements } from "./html-element-library-panel.types";
-import { renderHtmlElementLibraryCategoryTabs } from "./renderers/html-element-library-category-tabs.renderer";
-import { renderHtmlElementLibraryCommandPreview } from "./renderers/html-element-library-command-preview.renderer";
-import { renderHtmlElementLibraryItemDetails } from "./renderers/html-element-library-item-details.renderer";
-import { renderHtmlElementLibraryItemList } from "./renderers/html-element-library-item-list.renderer";
-import { renderHtmlElementLibraryTargetStatus } from "./renderers/html-element-library-target-status.renderer";
+import { renderHtmlElementLibraryCategoryTabs } from "./renderers/category-tabs.renderer";
+import { renderHtmlElementLibraryCommandPreview } from "./renderers/command-preview.renderer";
+import { renderHtmlElementLibraryItemDetails } from "./renderers/item-details.renderer";
+import { renderHtmlElementLibraryItemList } from "./renderers/item-list.renderer";
+import { renderHtmlElementLibraryTargetStatus } from "./renderers/target-status.renderer";
 
 let activeHtmlElementLibraryPanelCleanup: (() => void) | null = null;
 

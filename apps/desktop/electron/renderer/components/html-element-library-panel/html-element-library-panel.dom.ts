@@ -11,10 +11,7 @@ export function getHtmlElementLibraryPanelElements(root: HTMLElement): HtmlEleme
     selectedTitle: query("[data-html-element-library-selected-title]", HTMLElement),
     selectedKind: query("[data-html-element-library-selected-kind]", HTMLElement),
     selectedDescription: query("[data-html-element-library-selected-description]", HTMLElement),
-    selectedAttributesRow: query("[data-html-element-library-selected-attributes-row]", HTMLElement),
-    selectedAttributes: query("[data-html-element-library-selected-attributes]", HTMLElement),
-    selectedAccessibilityRow: query("[data-html-element-library-selected-accessibility-row]", HTMLElement),
-    selectedAccessibility: query("[data-html-element-library-selected-accessibility]", HTMLElement),
+    selectedDetails: query("[data-html-element-library-selected-details]", HTMLElement),
     targetSummary: query("[data-html-element-library-target-summary]", HTMLElement),
     patchPreview: query("[data-html-element-library-patch-preview]", HTMLElement),
     futureAction: query("[data-html-element-library-future-action]", HTMLButtonElement)

@@ -8,7 +8,7 @@ export function renderHtmlElementLibraryTargetStatus(elements: HtmlElementLibrar
 
 function renderTargetSummary(eligibility: HtmlInsertionTargetEligibility): string {
   if (eligibility.state !== "matched-target") return eligibility.label;
-  return `<${eligibility.targetTagName ?? "element"}> · ${renderModes(eligibility)}`;
+  return `<${eligibility.targetTagName ?? "element"}> · ${renderHtmlElementLibraryModes(eligibility)}`;
 }
 
 export function renderHtmlElementLibraryModes(eligibility: HtmlInsertionTargetEligibility): string {
@@ -17,8 +17,4 @@ export function renderHtmlElementLibraryModes(eligibility: HtmlInsertionTargetEl
   if (eligibility.canInsertAfter) modes.push("after");
   if (eligibility.canInsertInside) modes.push("inside");
   return modes.length ? modes.join(" ") : "none";
-}
-
-function renderModes(eligibility: HtmlInsertionTargetEligibility): string {
-  return renderHtmlElementLibraryModes(eligibility);
 }

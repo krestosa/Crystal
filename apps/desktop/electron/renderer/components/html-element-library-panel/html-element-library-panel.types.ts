@@ -9,10 +9,7 @@ export interface HtmlElementLibraryPanelElements {
   readonly selectedTitle: HTMLElement;
   readonly selectedKind: HTMLElement;
   readonly selectedDescription: HTMLElement;
-  readonly selectedAttributesRow: HTMLElement;
-  readonly selectedAttributes: HTMLElement;
-  readonly selectedAccessibilityRow: HTMLElement;
-  readonly selectedAccessibility: HTMLElement;
+  readonly selectedDetails: HTMLElement;
   readonly targetSummary: HTMLElement;
   readonly patchPreview: HTMLElement;
   readonly futureAction: HTMLButtonElement;

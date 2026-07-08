@@ -1,25 +1,29 @@
 import type { HtmlElementLibraryItem } from "../../../../../../../packages/core/project/html-element-library";
+import { createShellMetadataRow } from "../../shell-ui/metadata-row/metadata-row";
 import type { HtmlElementLibraryPanelElements } from "../html-element-library-panel.types";
-import { formatHtmlElementLibraryCompactValue, setHtmlElementLibraryHidden } from "./html-element-library-control-blocks.renderer";
 
 export function renderHtmlElementLibraryItemDetails(elements: HtmlElementLibraryPanelElements, item: HtmlElementLibraryItem | null): void {
-  setHtmlElementLibraryHidden(elements.selectedEmpty, item !== null);
-  setHtmlElementLibraryHidden(elements.selectedPanel, item === null);
+  elements.selectedEmpty.hidden = item !== null;
+  elements.selectedPanel.hidden = item === null;
 
   if (!item) {
     elements.selectedEmpty.textContent = "Select an element";
+    elements.selectedDetails.replaceChildren();
     return;
   }
 
   const attributeText = renderAttributes(item);
-  const accessibilityText = formatHtmlElementLibraryCompactValue(item.accessibilityNotes);
+  const accessibilityText = renderOptionalValue(item.accessibilityNotes);
+  const details = [
+    attributeText === "none" ? null : createShellMetadataRow({ label: "Attrs", value: attributeText }),
+    accessibilityText === "none" ? null : createShellMetadataRow({ label: "A11y", value: accessibilityText })
+  ].filter((row): row is HTMLDivElement => row !== null);
+
   elements.selectedTitle.textContent = item.label;
   elements.selectedKind.textContent = item.tagName ? `<${item.tagName}>` : item.kind;
   elements.selectedDescription.textContent = item.description;
-  elements.selectedAttributes.textContent = attributeText;
-  elements.selectedAccessibility.textContent = accessibilityText;
-  setHtmlElementLibraryHidden(elements.selectedAttributesRow, attributeText === "none");
-  setHtmlElementLibraryHidden(elements.selectedAccessibilityRow, accessibilityText === "none");
+  elements.selectedDetails.hidden = details.length === 0;
+  elements.selectedDetails.replaceChildren(...details);
 }
 
 function renderAttributes(item: HtmlElementLibraryItem): string {
@@ -27,4 +31,9 @@ function renderAttributes(item: HtmlElementLibraryItem): string {
   const recommended = item.recommendedAttributes?.length ? `rec ${item.recommendedAttributes.join(", ")}` : "";
   const children = item.allowedChildrenHint ? `children ${item.allowedChildrenHint}` : "";
   return [required, recommended, children].filter(Boolean).join(" · ") || "none";
+}
+
+function renderOptionalValue(value: string | null | undefined): string {
+  const normalized = value?.trim();
+  return normalized ? normalized : "none";
 }
