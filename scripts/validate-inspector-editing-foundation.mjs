@@ -17,6 +17,11 @@ const requiredFiles = [
 
 const newModuleRoot = "packages/core/inspector-editing";
 
+const approvedPhase7BRendererUsage = [
+  "apps/desktop/electron/renderer/views/inspector/editable-inspector/",
+  "apps/desktop/electron/renderer/components/project-preview-panel/inspector/project-preview-inspector-renderer.ts"
+];
+
 const forbiddenModulePatterns = [
   { label: "node filesystem import", pattern: /from\s+["']node:fs["']|require\(["']node:fs["']\)/ },
   { label: "filesystem write", pattern: new RegExp(`\\b(?:${["write", "File"].join("")}|appendFile|mkdir|unlink)\\b`) },
@@ -70,6 +75,10 @@ function walk(dir) {
     }
   }
   return files;
+}
+
+function isApprovedPhase7BRendererFile(file) {
+  return approvedPhase7BRendererUsage.some((allowedPath) => file === allowedPath || file.startsWith(allowedPath));
 }
 
 for (const file of requiredFiles) read(file);
@@ -158,8 +167,8 @@ for (const file of walk(newModuleRoot).filter((entry) => entry.endsWith(".ts")))
 for (const root of ["apps/desktop/electron/main", "apps/desktop/electron/preload", "apps/desktop/electron/renderer"]) {
   for (const file of walk(root).filter((entry) => /\.(ts|tsx|js|mjs|cjs|html)$/.test(entry))) {
     const content = read(file);
-    if (/inspector-editing|InspectorEditingReadinessPreview|InspectorEditDraftPreview|InspectorEditIntentPreview/.test(content)) {
-      errors.push(`${file} should not wire Phase 7A Inspector editing models into runtime UI.`);
+    if (/inspector-editing|InspectorEditingReadinessPreview|InspectorEditDraftPreview|InspectorEditIntentPreview/.test(content) && !isApprovedPhase7BRendererFile(file)) {
+      errors.push(`${file} should not wire Phase 7A Inspector editing models into runtime UI outside the approved Phase 7B read-only surface.`);
     }
     if (/applyAvailable\s*:\s*true|canApply\s*:\s*true/.test(content)) {
       errors.push(`${file} appears to enable Apply-capable preview state.`);
