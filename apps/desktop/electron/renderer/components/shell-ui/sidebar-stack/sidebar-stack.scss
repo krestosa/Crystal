@@ -1,0 +1,25 @@
+.crystal-design-view__right-sidebar {
+  overflow: hidden;
+  scrollbar-gutter: auto;
+}
+
+.crystal-design-view__right-sidebar > .crystal-shell-panel-stack__tool {
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+.crystal-design-view__right-sidebar > .crystal-shell-panel-stack__main {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  scrollbar-gutter: stable;
+}
+
+.crystal-design-view__right-sidebar > .crystal-shell-panel-stack__secondary {
+  flex: 0 1 clamp(86px, 20vh, 180px);
+  min-width: 0;
+  min-height: 72px;
+  overflow: auto;
+  scrollbar-gutter: stable;
+}

@@ -1,0 +1,19 @@
+.crystal-shell-status-badge {
+  flex: 0 0 auto;
+  min-width: 0;
+  max-width: 120px;
+  overflow: hidden;
+  color: var(--crystal-color-text-faint);
+  font-size: var(--crystal-font-size-caption);
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.crystal-shell-status-badge--boxed {
+  padding: 2px 5px;
+  border: 1px solid var(--crystal-color-border-soft);
+  background: var(--crystal-color-panel-muted-bg);
+}

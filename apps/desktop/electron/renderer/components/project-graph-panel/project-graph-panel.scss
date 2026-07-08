@@ -18,19 +18,6 @@
 
 .crystal-project-graph-panel__button {
   width: 100%;
-  min-height: var(--crystal-control-height-compact);
-  overflow: hidden;
-  padding: 0 var(--crystal-control-padding-x);
-  border: 1px solid var(--crystal-control-border);
-  border-radius: var(--crystal-control-radius);
-  background: var(--crystal-control-bg);
-  color: var(--crystal-control-text);
-  font: inherit;
-  font-size: 10px;
-  text-align: left;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  cursor: pointer;
 }
 
 .crystal-project-graph-panel__button:hover {
@@ -42,8 +29,6 @@
 .crystal-project-graph-panel__button:focus-visible {
   border-color: var(--crystal-control-active-border);
   color: var(--crystal-color-text);
-  outline: 2px solid var(--crystal-focus-ring);
-  outline-offset: 1px;
 }
 
 .crystal-project-graph-panel__button--primary {
@@ -62,17 +47,10 @@
 }
 
 .crystal-project-graph-panel__status {
-  overflow: hidden;
-  padding: var(--crystal-space-2);
-  border: 1px solid var(--crystal-color-border-soft);
-  background: var(--crystal-color-panel-muted-bg);
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  max-width: 100%;
 }
 
 .crystal-project-graph-panel__section {
-  display: grid;
-  gap: var(--crystal-space-1);
   min-width: 0;
 }
 
@@ -89,8 +67,6 @@
   gap: 2px;
   max-height: 116px;
   padding-left: 13px;
-  overflow: auto;
-  scrollbar-gutter: stable both-edges;
 }
 
 .crystal-project-graph-panel__list--pages {

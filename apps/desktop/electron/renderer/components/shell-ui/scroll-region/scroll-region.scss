@@ -1,0 +1,16 @@
+.crystal-shell-scroll-region {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.crystal-shell-scroll-region--x {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.crystal-shell-scroll-region--clip {
+  overflow: hidden;
+}

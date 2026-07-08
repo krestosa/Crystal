@@ -1,18 +1,18 @@
 <section class="crystal-project-graph-panel" data-project-graph-panel>
   <div class="crystal-project-graph-panel__actions" aria-label="Project actions">
-    <button class="crystal-project-graph-panel__button crystal-project-graph-panel__button--primary" type="button" data-project-open-folder>Open Folder</button>
-    <button class="crystal-project-graph-panel__button" type="button" data-project-open-html>Open HTML</button>
+    <button class="crystal-project-graph-panel__button crystal-project-graph-panel__button--primary crystal-shell-compact-button crystal-shell-compact-button--primary" type="button" data-project-open-folder>Open Folder</button>
+    <button class="crystal-project-graph-panel__button crystal-shell-compact-button" type="button" data-project-open-html>Open HTML</button>
   </div>
 
-  <p class="crystal-project-graph-panel__status" data-project-status>No project open</p>
+  <p class="crystal-project-graph-panel__status crystal-shell-empty-state" data-project-status>No project open</p>
 
-  <section class="crystal-project-graph-panel__section">
+  <section class="crystal-project-graph-panel__section crystal-shell-section crystal-shell-section--compact">
     <h3 class="crystal-project-graph-panel__heading">Pages</h3>
-    <ul class="crystal-project-graph-panel__list crystal-project-graph-panel__list--pages" data-project-pages></ul>
+    <ul class="crystal-project-graph-panel__list crystal-project-graph-panel__list--pages crystal-shell-scroll-region" data-project-pages></ul>
   </section>
 
-  <section class="crystal-project-graph-panel__section">
+  <section class="crystal-project-graph-panel__section crystal-shell-section crystal-shell-section--compact">
     <h3 class="crystal-project-graph-panel__heading">File counts</h3>
-    <dl class="crystal-project-graph-panel__counts" data-project-file-counts></dl>
+    <dl class="crystal-project-graph-panel__counts crystal-shell-metadata" data-project-file-counts></dl>
   </section>
 </section>
