@@ -3,7 +3,6 @@ import path from "node:path";
 import { getSecureWebPreferences } from "../security/web-preferences";
 
 const CRYSTAL_TITLE_BAR_OVERLAY_HEIGHT = 32;
-const CRYSTAL_OPEN_DEVTOOLS = "1";
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -35,10 +34,6 @@ export async function createMainWindow(): Promise<BrowserWindow> {
   });
 
   await mainWindow.loadFile(path.resolve(__dirname, "../renderer/index.html"));
-
-  if (process.env.CRYSTAL_OPEN_DEVTOOLS === CRYSTAL_OPEN_DEVTOOLS) {
-    mainWindow.webContents.openDevTools({ mode: "detach" });
-  }
 
   return mainWindow;
 }
