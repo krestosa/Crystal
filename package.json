@@ -27,6 +27,7 @@
     "validate:visual-selection-overlay": "node scripts/validate-visual-selection-overlay.mjs",
     "validate:ui-flow": "node scripts/validate-ui-flow.mjs",
     "validate:local": "node scripts/validate-local.mjs",
+    "validate:local:quick": "npm run build && npm run typecheck && npm run validate:preview && npm run validate:preview-selection && npm run validate:preview-inspector && npm run validate:design-canvas && npm run validate:visual-selection-overlay && npm run validate:ui-flow && npm run validate:local:watch && npm run doctor:electron",
     "validate:local:watch": "node scripts/validate-local-watch.mjs",
     "doctor:electron": "node scripts/doctor-electron.mjs"
   },
