@@ -1,78 +1,37 @@
 <section class="crystal-html-element-library-panel" aria-label="HTML Element Library" data-html-element-library-panel>
   <header class="crystal-html-element-library-panel__header">
-    <div>
-      <h2>Element Library</h2>
-      <p>HTML5 command foundation</p>
-    </div>
+    <h2>Element Library</h2>
     <span class="crystal-html-element-library-panel__badge">Read-only</span>
   </header>
 
   <div class="crystal-html-element-library-panel__body">
-    <section class="crystal-html-element-library-panel__section" aria-label="HTML5 elements grouped by intent">
-      <div class="crystal-html-element-library-panel__section-header">
-        <h3>Catalog</h3>
-        <span>Grouped by intent</span>
-      </div>
-      <div class="crystal-html-element-library-panel__categories" data-html-element-library-categories></div>
-    </section>
+    <div class="crystal-html-element-library-panel__category-tabs" role="tablist" aria-label="Element categories" data-html-element-library-category-tabs></div>
+    <div class="crystal-html-element-library-panel__item-list" role="list" aria-label="Active element category" data-html-element-library-item-list></div>
 
-    <section class="crystal-html-element-library-panel__section" aria-label="Selected element metadata">
-      <div class="crystal-html-element-library-panel__section-header">
-        <h3>Selected</h3>
-        <span>Metadata only</span>
+    <p class="crystal-html-element-library-panel__target-line" data-html-element-library-target-summary>Target: No project</p>
+
+    <p class="crystal-html-element-library-panel__empty" data-html-element-library-selected-empty>Select an element</p>
+    <section class="crystal-html-element-library-panel__selected" aria-label="Selected element" data-html-element-library-selected-panel hidden>
+      <div class="crystal-html-element-library-panel__selected-header">
+        <span data-html-element-library-selected-title></span>
+        <span data-html-element-library-selected-kind></span>
       </div>
-      <dl class="crystal-html-element-library-panel__details">
-        <div>
-          <dt>Item</dt>
-          <dd data-html-element-library-selected-title>None</dd>
+      <p data-html-element-library-selected-description></p>
+      <dl class="crystal-html-element-library-panel__selected-details">
+        <div data-html-element-library-selected-attributes-row>
+          <dt>Attrs</dt>
+          <dd data-html-element-library-selected-attributes></dd>
         </div>
-        <div>
-          <dt>Kind</dt>
-          <dd data-html-element-library-selected-kind>none</dd>
-        </div>
-        <div>
-          <dt>Description</dt>
-          <dd data-html-element-library-selected-description>Select an item to inspect its read-only metadata.</dd>
-        </div>
-        <div>
-          <dt>Attributes</dt>
-          <dd data-html-element-library-selected-attributes>none</dd>
-        </div>
-        <div>
-          <dt>Accessibility</dt>
-          <dd data-html-element-library-selected-accessibility>none</dd>
+        <div data-html-element-library-selected-accessibility-row>
+          <dt>A11y</dt>
+          <dd data-html-element-library-selected-accessibility></dd>
         </div>
       </dl>
     </section>
 
-    <section class="crystal-html-element-library-panel__section" aria-label="Insertion target eligibility">
-      <div class="crystal-html-element-library-panel__section-header">
-        <h3>Target</h3>
-        <span>Selection eligibility</span>
-      </div>
-      <dl class="crystal-html-element-library-panel__details">
-        <div>
-          <dt>Status</dt>
-          <dd data-html-element-library-target-status>No project</dd>
-        </div>
-        <div>
-          <dt>Reason</dt>
-          <dd data-html-element-library-target-reason>Open a project before selecting an insertion target.</dd>
-        </div>
-        <div>
-          <dt>Details</dt>
-          <dd data-html-element-library-target-details>none</dd>
-        </div>
-      </dl>
-    </section>
-
-    <section class="crystal-html-element-library-panel__section crystal-html-element-library-panel__section--preview" aria-label="Read-only insertion preview placeholder">
-      <div class="crystal-html-element-library-panel__section-header">
-        <h3>Patch Preview</h3>
-        <span>Not implemented</span>
-      </div>
-      <p class="crystal-html-element-library-panel__placeholder" data-html-element-library-patch-preview>Patch preview not implemented. Insertion will be applied through validated commands in a later phase.</p>
-      <button class="crystal-html-element-library-panel__future-action" type="button" disabled title="Command foundation only" data-html-element-library-future-action>Command foundation only</button>
-    </section>
+    <div class="crystal-html-element-library-panel__command-row">
+      <p data-html-element-library-patch-preview>Preview: select an element</p>
+      <button class="crystal-html-element-library-panel__future-action" type="button" disabled hidden title="Command foundation only" data-html-element-library-future-action>Command</button>
+    </div>
   </div>
 </section>
