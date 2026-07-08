@@ -61,14 +61,15 @@
   cursor: pointer;
 }
 
-.crystal-project-design-canvas__button:hover,
-.crystal-project-design-canvas__button:focus-visible {
-  border-color: var(--crystal-color-accent-border);
+.crystal-project-design-canvas__button:hover {
+  border-color: rgba(255, 255, 255, 0.15);
   background: rgba(255, 255, 255, 0.06);
-  color: var(--crystal-color-text);
+  color: rgba(247, 242, 236, 0.9);
 }
 
 .crystal-project-design-canvas__button:focus-visible {
+  border-color: var(--crystal-color-accent-border);
+  color: var(--crystal-color-text);
   outline: 2px solid var(--crystal-focus-ring);
   outline-offset: 1px;
 }
@@ -174,13 +175,13 @@
   cursor: pointer;
 }
 
-.crystal-project-design-canvas__start-action:hover,
-.crystal-project-design-canvas__start-action:focus-visible {
-  border-color: var(--crystal-color-accent-border);
+.crystal-project-design-canvas__start-action:hover {
+  border-color: rgba(255, 255, 255, 0.16);
   background: rgba(255, 255, 255, 0.07);
 }
 
 .crystal-project-design-canvas__start-action:focus-visible {
+  border-color: var(--crystal-color-accent-border);
   outline: 2px solid var(--crystal-focus-ring);
   outline-offset: 1px;
 }
