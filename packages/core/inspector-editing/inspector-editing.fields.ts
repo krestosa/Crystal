@@ -59,7 +59,7 @@ function resolveFieldStatus(
     return isUnsupportedFieldKind(fieldKind) ? INSPECTOR_EDITING_UNSUPPORTED_FIELD_STATUS : INSPECTOR_EDITING_BLOCKED_FIELD_STATUS;
   }
 
-  if (inputStatus === INSPECTOR_EDITING_UNSUPPORTED_FIELD_STATUS || isUnsupportedFieldKind(fieldKind)) {
+  if (inputStatus === INSPECTOR_EDITING_UNSUPPORTED_FIELD_STATUS || !isDraftSupportedFieldKind(fieldKind)) {
     return INSPECTOR_EDITING_UNSUPPORTED_FIELD_STATUS;
   }
 
@@ -68,6 +68,10 @@ function resolveFieldStatus(
   }
 
   return INSPECTOR_EDITING_DRAFTABLE_FIELD_STATUS;
+}
+
+function isDraftSupportedFieldKind(fieldKind: InspectorEditableFieldKind): boolean {
+  return fieldKind === "text-content" || fieldKind === "attribute";
 }
 
 function isUnsupportedFieldKind(fieldKind: InspectorEditableFieldKind): boolean {
