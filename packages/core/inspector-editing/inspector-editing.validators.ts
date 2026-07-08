@@ -2,7 +2,9 @@ import {
   INSPECTOR_EDITING_BLOCKED_DRAFT_STATUS,
   INSPECTOR_EDITING_BLOCKED_FIELD_STATUS,
   INSPECTOR_EDITING_BLOCKED_INTENT_STATUS,
-  INSPECTOR_EDITING_READINESS_BLOCKED_STATUS
+  INSPECTOR_EDITING_READINESS_BLOCKED_STATUS,
+  INSPECTOR_EDITING_UNSUPPORTED_FIELD_STATUS,
+  INSPECTOR_EDITING_UNSUPPORTED_INTENT_STATUS
 } from "./inspector-editing.constants";
 import type {
   InspectorEditableFieldPreview,
@@ -19,7 +21,9 @@ export function validateInspectorEditableFieldPreview(
   const warnings: string[] = [];
 
   if (!preview.fieldId.trim()) errors.push("InspectorEditableFieldPreview requires a fieldId.");
-  if (!preview.nodePath.trim()) errors.push("InspectorEditableFieldPreview requires a nodePath.");
+  if (!preview.nodePath.trim() && !isBlockedOrUnsupportedField(preview)) {
+    errors.push("InspectorEditableFieldPreview requires a nodePath unless it is blocked or unsupported.");
+  }
   if (!preview.label.trim()) errors.push("InspectorEditableFieldPreview requires a label.");
   if (preview.canApply !== false) errors.push("InspectorEditableFieldPreview.canApply must remain false in Phase 7A.");
   if (preview.status === INSPECTOR_EDITING_BLOCKED_FIELD_STATUS && !preview.blockedReason?.trim()) {
@@ -47,7 +51,9 @@ export function validateInspectorEditDraftPreview(
   const warnings: string[] = [];
 
   if (!preview.draftId.trim()) errors.push("InspectorEditDraftPreview requires a draftId.");
-  if (!preview.selectedNodePath.trim()) errors.push("InspectorEditDraftPreview requires a selectedNodePath.");
+  if (!preview.selectedNodePath.trim() && preview.status !== INSPECTOR_EDITING_BLOCKED_DRAFT_STATUS) {
+    errors.push("InspectorEditDraftPreview requires a selectedNodePath unless it is blocked.");
+  }
   if (!preview.snapshotVersion.trim()) errors.push("InspectorEditDraftPreview requires a snapshotVersion.");
   if (preview.applyAvailable !== false) errors.push("InspectorEditDraftPreview.applyAvailable must remain false in Phase 7A.");
   if (preview.status === INSPECTOR_EDITING_BLOCKED_DRAFT_STATUS && !preview.blockedReason?.trim()) {
@@ -84,7 +90,9 @@ export function validateInspectorEditIntentPreview(
   const warnings: string[] = [];
 
   if (!preview.intentId.trim()) errors.push("InspectorEditIntentPreview requires an intentId.");
-  if (!preview.targetNodePath.trim()) errors.push("InspectorEditIntentPreview requires a targetNodePath.");
+  if (!preview.targetNodePath.trim() && !isBlockedOrUnsupportedIntent(preview)) {
+    errors.push("InspectorEditIntentPreview requires a targetNodePath unless it is blocked or unsupported.");
+  }
   if (preview.requiresSourceLocation !== true) errors.push("InspectorEditIntentPreview.requiresSourceLocation must remain true in Phase 7A.");
   if (preview.canApply !== false) errors.push("InspectorEditIntentPreview.canApply must remain false in Phase 7A.");
   if (preview.status !== "preview-only" && preview.canCreateSourcePatchPreview) {
@@ -118,10 +126,12 @@ export function validateInspectorEditingReadinessPreview(
   const warnings: string[] = [];
 
   if (!preview.readinessId.trim()) errors.push("InspectorEditingReadinessPreview requires a readinessId.");
-  if (!preview.selectedNodePath.trim()) errors.push("InspectorEditingReadinessPreview requires a selectedNodePath.");
+  if (!preview.selectedNodePath.trim() && preview.status !== INSPECTOR_EDITING_READINESS_BLOCKED_STATUS) {
+    errors.push("InspectorEditingReadinessPreview requires a selectedNodePath unless it is blocked.");
+  }
   if (preview.applyAvailable !== false) errors.push("InspectorEditingReadinessPreview.applyAvailable must remain false in Phase 7A.");
   if (!preview.applyBlockedReason.trim()) errors.push("InspectorEditingReadinessPreview requires an applyBlockedReason.");
-  if (preview.designEditingReadinessPreview?.applyAvailable !== false && preview.designEditingReadinessPreview) {
+  if (preview.designEditingReadinessPreview && preview.designEditingReadinessPreview.applyAvailable !== false) {
     errors.push("InspectorEditingReadinessPreview cannot depend on Apply-capable DesignEditingReadinessPreview in Phase 7A.");
   }
   if (preview.designEditingReadinessPreview?.status === "blocked" && preview.status !== INSPECTOR_EDITING_READINESS_BLOCKED_STATUS) {
@@ -166,4 +176,12 @@ export function normalizeInspectorEditingStringList(
     normalized.add(text);
   }
   return [...normalized].sort();
+}
+
+function isBlockedOrUnsupportedField(preview: InspectorEditableFieldPreview): boolean {
+  return preview.status === INSPECTOR_EDITING_BLOCKED_FIELD_STATUS || preview.status === INSPECTOR_EDITING_UNSUPPORTED_FIELD_STATUS;
+}
+
+function isBlockedOrUnsupportedIntent(preview: InspectorEditIntentPreview): boolean {
+  return preview.status === INSPECTOR_EDITING_BLOCKED_INTENT_STATUS || preview.status === INSPECTOR_EDITING_UNSUPPORTED_INTENT_STATUS;
 }
