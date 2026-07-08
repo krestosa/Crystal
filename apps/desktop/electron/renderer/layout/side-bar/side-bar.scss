@@ -5,25 +5,30 @@
   border-right: 1px solid var(--crystal-color-border-soft);
   background: var(--crystal-color-surface-strong);
   overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable both-edges;
 }
 
 .crystal-side-bar__section {
   display: grid;
   gap: 6px;
+  min-width: 0;
 }
 
 .crystal-side-bar__header {
   display: grid;
   gap: 2px;
   padding-bottom: 5px;
-  border-bottom: 1px solid var(--crystal-color-border-soft);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.065);
 }
 
 .crystal-side-bar__title {
   margin: 0;
   color: rgba(247, 242, 236, 0.84);
   font-size: 9px;
+  font-weight: 650;
   letter-spacing: 0.12em;
+  line-height: 1.15;
   text-transform: uppercase;
 }
 
