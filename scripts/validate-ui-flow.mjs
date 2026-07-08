@@ -55,6 +55,9 @@ expect(source.appShellScss.includes("-webkit-app-region: drag"), "App shell chro
 expect(source.appShellScss.includes("-webkit-app-region: no-drag"), "App shell interactive chrome controls may be captured by the drag region.");
 expect(source.appShellScss.includes("--crystal-app-chrome-height: 32px"), "App shell chrome height is not aligned to native overlay controls.");
 expect(source.appShellScss.includes("grid-template-rows: var(--crystal-app-chrome-height) minmax(0, 1fr) 20px"), "App shell chrome/status rows are not compactly integrated.");
+expect(source.appShellScss.includes(".crystal-app-shell__diagnostics-button:hover {"), "Diagnostics chrome trigger hover is not isolated from focus/active state.");
+expect(!source.appShellScss.includes(".crystal-app-shell__diagnostics-button:hover,\n.crystal-app-shell__diagnostics-button:focus-visible"), "Diagnostics chrome trigger hover still shares active/focus accent styling.");
+expect(source.appShellScss.includes(".crystal-app-shell__diagnostics-button[aria-expanded=\"true\"]"), "Diagnostics chrome trigger does not expose an active open state.");
 expect(source.appShellScss.includes("height: 100vh"), "App shell does not lock to the viewport height.");
 expect(source.appShellScss.includes("overflow: hidden"), "App shell does not prevent global overflow.");
 expect(source.reset.includes("overflow: hidden"), "Document reset does not prevent window-level app scrolling.");
@@ -72,7 +75,8 @@ expect(source.designHtml.includes("data-crystal-right-sidebar-resizer"), "Design
 expect(source.designHtml.includes("data-crystal-diagnostics-popover"), "Design view does not expose the floating diagnostics panel.");
 expect(source.designHtml.includes("data-crystal-diagnostics-close"), "Design view does not expose the floating diagnostics close action.");
 expect(source.designHtml.includes("data-crystal-diagnostics-pin"), "Design view does not expose the diagnostics pin action.");
-expect(source.designHtml.includes("aria-label=\"Unpin diagnostics\""), "Diagnostics pin icon button is missing an accessible active-state label.");
+expect(source.designHtml.includes("aria-label=\"Unpin Diagnostics\""), "Diagnostics pin icon button is missing the exact accessible active-state label.");
+expect(source.designTs.includes("\"Unpin Diagnostics\" : \"Pin Diagnostics\""), "Diagnostics pin runtime labels do not match the required accessible labels.");
 expect(!source.designHtml.includes(">Pinned<") && !source.designHtml.includes(">Unpinned<"), "Diagnostics pin still renders textual state labels.");
 expect(source.designHtml.includes("data-crystal-diagnostics-drag-handle"), "Design view does not expose a diagnostics drag handle.");
 for (const requiredHandle of [
@@ -135,6 +139,7 @@ expect(source.designTs.includes("diagnosticsWidth") && source.designTs.includes(
 expect(source.designTs.includes("diagnostics-resize-left") && source.designTs.includes("diagnostics-resize-right") && source.designTs.includes("diagnostics-resize-bottom"), "Floating diagnostics does not implement edge resize sessions.");
 expect(source.designTs.includes("window.innerWidth") && source.designTs.includes("window.innerHeight"), "Diagnostics bounds are not clamped to the renderer viewport.");
 expect(source.designTs.includes("setPointerCapture"), "Design resize/drag handles do not capture pointer drags.");
+expect(source.designTs.includes(".crystal-design-view__debug-list, .crystal-design-view__debug-tree"), "Diagnostics drag guard does not protect internal scrollable debug controls.");
 expect(!source.designTs.includes("CRYSTAL_DIAGNOSTICS_PANEL_MAX_WIDTH") && !source.designTs.includes("CRYSTAL_DIAGNOSTICS_PANEL_MAX_HEIGHT"), "Diagnostics resize still uses artificial max dimensions.");
 expect(!source.appShellTs.includes("localStorage") && !source.designTs.includes("localStorage"), "Resizable shell panels introduced persistence without a preferences contract.");
 
@@ -149,6 +154,7 @@ expect(source.designCanvasScss.includes("[data-crystal-workspace][data-crystal-p
 
 expect(!source.designHtml.includes("Phase 2"), "Design view still exposes phase copy in the workspace.");
 expect(!source.sideBarHtml.includes("verification panel"), "Sidebar still reads like a validation panel.");
+expect(source.sideBarScss.includes("scrollbar-gutter: stable both-edges"), "Sidebar scrolling is not integrated into the compact shell.");
 expect(!source.previewHtml.includes("../design-canvas/project-design-canvas.html"), "Preview panel still owns the Design Canvas partial.");
 expect(source.designHtml.includes("../../components/design-canvas/project-design-canvas.html"), "Design view does not own the Design Canvas partial.");
 expect(source.graphTs.includes("document.querySelectorAll<HTMLButtonElement>"), "Open actions are not bound across the start screen and sidebar.");
