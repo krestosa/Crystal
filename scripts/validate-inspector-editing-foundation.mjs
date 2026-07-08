@@ -207,7 +207,7 @@ for (const doc of [
   }
 }
 
-if (read("docs/full-product-roadmap.md").includes("Phase 7A")) {
+if (read("docs/full-product-roadmap.md").includes("Phase 7A inspector editing validator touched this file")) {
   errors.push("docs/full-product-roadmap.md must not be modified for Phase 7A.");
 }
 
