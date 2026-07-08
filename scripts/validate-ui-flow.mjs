@@ -250,13 +250,31 @@ function countToken(sourceText, token) {
 }
 
 function extractBlock(sourceText, selector) {
-  const start = sourceText.indexOf(selector);
-  if (start === -1) return "";
+  const selectorPattern = new RegExp(`(^|\\r?\\n)\\s*${escapeRegExp(selector)}\\s*\\{`);
+  const match = selectorPattern.exec(sourceText);
+  if (!match) return "";
 
-  const closeMatch = /\}\r?\n/.exec(sourceText.slice(start));
-  if (!closeMatch) return sourceText.slice(start);
+  const start = match.index + match[1].length;
+  const openingBrace = sourceText.indexOf("{", start);
+  if (openingBrace === -1) return "";
 
-  return sourceText.slice(start, start + closeMatch.index + 1);
+  let depth = 0;
+
+  for (let index = openingBrace; index < sourceText.length; index += 1) {
+    const char = sourceText[index];
+
+    if (char === "{") depth += 1;
+    if (char === "}") {
+      depth -= 1;
+      if (depth === 0) return sourceText.slice(start, index + 1);
+    }
+  }
+
+  return sourceText.slice(start);
+}
+
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 function parsePackageJson(sourceText) {
