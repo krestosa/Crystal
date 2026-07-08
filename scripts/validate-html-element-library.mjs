@@ -4,8 +4,19 @@ const failures = [];
 
 const paths = {
   packageJson: "package.json",
-  catalog: "packages/core/project/html-element-library/index.ts",
-  commandContracts: "packages/core/commands/html-insertion/index.ts",
+  libraryIndex: "packages/core/project/html-element-library/index.ts",
+  libraryTypes: "packages/core/project/html-element-library/html-element-library.types.ts",
+  libraryConstants: "packages/core/project/html-element-library/html-element-library.constants.ts",
+  libraryCatalog: "packages/core/project/html-element-library/html-element-library.catalog.ts",
+  librarySelectors: "packages/core/project/html-element-library/html-element-library.selectors.ts",
+  libraryValidators: "packages/core/project/html-element-library/html-element-library.validators.ts",
+  insertionTargetTypes: "packages/core/project/html-element-library/insertion-target.types.ts",
+  insertionTargetSelectors: "packages/core/project/html-element-library/insertion-target.selectors.ts",
+  commandIndex: "packages/core/commands/html-insertion/index.ts",
+  commandTypes: "packages/core/commands/html-insertion/html-insertion-command.types.ts",
+  commandConstants: "packages/core/commands/html-insertion/html-insertion-command.constants.ts",
+  commandValidators: "packages/core/commands/html-insertion/html-insertion-command.validators.ts",
+  commandBlockers: "packages/core/commands/html-insertion/html-insertion-command.blockers.ts",
   panelHtml: "apps/desktop/electron/renderer/components/html-element-library-panel/html-element-library-panel.html",
   panelScss: "apps/desktop/electron/renderer/components/html-element-library-panel/html-element-library-panel.scss",
   panelTs: "apps/desktop/electron/renderer/components/html-element-library-panel/html-element-library-panel.ts",
@@ -32,7 +43,9 @@ const mandatoryItemIds = [
   "hero-section", "card", "navbar", "footer-preset", "product-grid", "modal", "form-group", "cta-block", "gallery", "menu-section"
 ];
 const forbiddenRuntimeTokens = ["contenteditable", "insertAdjacentHTML", "iframe.contentDocument", "iframe.contentWindow.document", ".contentDocument", ".contentWindow.document", "localStorage", "execCommand", "allow-same-origin"];
-const runtimeSource = [source.catalog, source.commandContracts, source.panelHtml, source.panelScss, source.panelTs, source.panelTypes, source.designHtml, source.mainScss, source.bootstrap, source.mainWindow, source.webPreferences].join("\n");
+const coreSource = [source.libraryTypes, source.libraryConstants, source.libraryCatalog, source.librarySelectors, source.libraryValidators, source.insertionTargetTypes, source.insertionTargetSelectors].join("\n");
+const commandSource = [source.commandTypes, source.commandConstants, source.commandValidators, source.commandBlockers].join("\n");
+const runtimeSource = [coreSource, commandSource, source.panelHtml, source.panelScss, source.panelTs, source.panelTypes, source.designHtml, source.mainScss, source.bootstrap, source.mainWindow, source.webPreferences].join("\n");
 const uiPanelSource = [source.panelHtml, source.panelScss, source.panelTs, source.panelTypes].join("\n");
 
 expect(packageData.scripts?.["validate:html-element-library"] === "node scripts/validate-html-element-library.mjs", "package.json does not expose validate:html-element-library.");
@@ -43,17 +56,29 @@ expect(packageData.scripts?.["validate:local:quick:core"], "validate:local:quick
 expect(packageData.scripts?.["validate:local:quick:preview"], "validate:local:quick:preview script is missing.");
 expect(packageData.scripts?.["validate:local:quick:ui"], "validate:local:quick:ui script is missing.");
 
-expect(source.catalog.includes("HTML_ELEMENT_LIBRARY_CATEGORIES"), "HTML Element Library categories are missing.");
-expect(source.catalog.includes("HTML_ELEMENT_LIBRARY_CATALOG"), "HTML Element Library catalog is missing.");
-expect(source.catalog.includes("HtmlInsertionTargetEligibility"), "Insertion target eligibility type is missing.");
-expect(source.catalog.includes("selectHtmlInsertionTargetEligibility"), "Insertion target selector is missing.");
-expect(source.catalog.includes("findDomSnapshotNodeByPath") && !source.catalog.includes("DOMParser") && !source.catalog.includes("document.createElement"), "Catalog/target core must stay renderer-independent and avoid DOM construction.");
+expectIsBarrel(source.libraryIndex, "html-element-library index.ts");
+expect(source.libraryIndex.includes("html-element-library.catalog"), "HTML Element Library barrel does not export catalog.");
+expect(source.libraryIndex.includes("html-element-library.constants"), "HTML Element Library barrel does not export constants.");
+expect(source.libraryIndex.includes("html-element-library.selectors"), "HTML Element Library barrel does not export selectors.");
+expect(source.libraryIndex.includes("html-element-library.types"), "HTML Element Library barrel does not export types.");
+expect(source.libraryIndex.includes("html-element-library.validators"), "HTML Element Library barrel does not export validators.");
+expect(source.libraryIndex.includes("insertion-target.selectors"), "HTML Element Library barrel does not export insertion target selectors.");
+expect(source.libraryIndex.includes("insertion-target.types"), "HTML Element Library barrel does not export insertion target types.");
+
+expect(source.libraryTypes.includes("HtmlElementLibraryItem") && source.libraryTypes.includes("HtmlElementInsertionMode"), "HTML Element Library types are not isolated.");
+expect(source.libraryConstants.includes("HTML_ELEMENT_LIBRARY_CATEGORIES") && source.libraryConstants.includes("HTML_ELEMENT_VOID_TAG_NAMES"), "HTML Element Library constants are not isolated.");
+expect(source.libraryCatalog.includes("HTML_ELEMENT_LIBRARY_CATALOG"), "HTML Element Library catalog is missing.");
+expect(source.librarySelectors.includes("getHtmlElementLibraryCategories") && source.librarySelectors.includes("findHtmlElementLibraryItem"), "HTML Element Library selectors are missing.");
+expect(source.libraryValidators.includes("validateHtmlElementLibraryCatalog"), "HTML Element Library validator is missing.");
+expect(source.insertionTargetTypes.includes("HtmlInsertionTargetEligibility"), "Insertion target eligibility types are missing.");
+expect(source.insertionTargetSelectors.includes("selectHtmlInsertionTargetEligibility") && source.insertionTargetSelectors.includes("findDomSnapshotNodeByPath"), "Insertion target selectors are missing.");
+expect(!coreSource.includes("DOMParser") && !coreSource.includes("document.createElement"), "Core HTML Element Library must stay renderer-independent and avoid DOM construction.");
 
 for (const category of mandatoryCategories) {
-  expect(source.catalog.includes(`id: "${category}"`), `Missing mandatory category: ${category}`);
+  expect(source.libraryConstants.includes(`id: "${category}"`), `Missing mandatory category: ${category}`);
 }
 
-const itemIds = readItemIds(source.catalog);
+const itemIds = readItemIds(source.libraryCatalog);
 const uniqueItemIds = new Set(itemIds);
 expect(itemIds.length >= mandatoryItemIds.length, `Catalog has too few items: ${itemIds.length}.`);
 expect(itemIds.length === uniqueItemIds.size, "Catalog item IDs must be unique.");
@@ -62,26 +87,34 @@ for (const itemId of mandatoryItemIds) {
 }
 
 for (const requiredField of ["readonly id: string", "readonly label: string", "readonly category", "readonly kind", "readonly description", "readonly allowedInsertionModes", "readonly isImplemented: false"]) {
-  expect(source.catalog.includes(requiredField), `Catalog item metadata field is missing: ${requiredField}`);
+  expect(source.libraryTypes.includes(requiredField), `Catalog item metadata field is missing from types: ${requiredField}`);
 }
-expect(!source.catalog.includes("isImplemented: true"), "No catalog item may be implemented in this foundation phase.");
-expect(countToken(source.catalog, "isImplemented: false") >= 2, "Catalog does not enforce read-only item implementation state.");
+expect(!coreSource.includes("isImplemented: true"), "No catalog item may be implemented in this foundation phase.");
+expect(countToken(source.libraryCatalog, "isImplemented: false") >= 1, "Catalog does not enforce read-only item implementation state.");
 
 for (const state of ["none", "no-project", "no-preview-target", "no-selection", "missing-snapshot", "stale-snapshot", "mismatched-selection", "ambiguous-selection", "matched-target", "unsupported-target"]) {
-  expect(source.catalog.includes(`| "${state}"`) || source.catalog.includes(`state: "${state}"`), `Insertion target state missing: ${state}`);
+  expect(source.insertionTargetTypes.includes(`| "${state}"`) || source.insertionTargetSelectors.includes(`state: "${state}"`), `Insertion target state missing: ${state}`);
 }
 for (const targetField of ["targetTagName", "targetSnapshotPath", "targetFilePath", "canInsertBefore", "canInsertAfter", "canInsertInside", "reason"]) {
-  expect(source.catalog.includes(targetField), `Matched target metadata field missing: ${targetField}`);
+  expect(source.insertionTargetTypes.includes(targetField) || source.insertionTargetSelectors.includes(targetField), `Matched target metadata field missing: ${targetField}`);
 }
 
-expect(source.commandContracts.includes("AddHtmlElementCommand"), "AddHtmlElementCommand contract is missing.");
+expectIsBarrel(source.commandIndex, "html-insertion index.ts");
+expect(source.commandIndex.includes("html-insertion-command.blockers"), "HTML insertion barrel does not export blockers.");
+expect(source.commandIndex.includes("html-insertion-command.constants"), "HTML insertion barrel does not export constants.");
+expect(source.commandIndex.includes("html-insertion-command.types"), "HTML insertion barrel does not export types.");
+expect(source.commandIndex.includes("html-insertion-command.validators"), "HTML insertion barrel does not export validators.");
+expect(source.commandTypes.includes("AddHtmlElementCommand"), "AddHtmlElementCommand contract is missing.");
 for (const commandField of ["commandId", "kind", "elementId", "targetFilePath", "targetSnapshotPath", "insertionMode", "requestedAt", "source"]) {
-  expect(source.commandContracts.includes(commandField), `AddHtmlElementCommand payload field missing: ${commandField}`);
+  expect(source.commandTypes.includes(commandField), `AddHtmlElementCommand payload field missing: ${commandField}`);
 }
-expect(source.commandContracts.includes("validateAddHtmlElementCommand"), "HTML insertion command validator is missing.");
-expect(source.commandContracts.includes("HTML_INSERTION_NOT_IMPLEMENTED_REASON"), "HTML insertion explicit blocker is missing.");
-expect(source.commandContracts.includes("valid: false") && source.commandContracts.includes("not implemented"), "Command validator must block execution in this phase.");
-expect(!source.commandContracts.includes("fs") && !source.commandContracts.includes("writeFile") && !source.commandContracts.includes("appendFile"), "Command contracts must not write files.");
+for (const commandConstant of ["ADD_HTML_ELEMENT_COMMAND_KIND", "HTML_ELEMENT_LIBRARY_COMMAND_SOURCE", "HTML_INSERTION_NOT_IMPLEMENTED_REASON"]) {
+  expect(source.commandConstants.includes(commandConstant), `HTML insertion command constant missing: ${commandConstant}`);
+}
+expect(source.commandValidators.includes("validateAddHtmlElementCommand"), "HTML insertion command validator is missing.");
+expect(source.commandBlockers.includes("createHtmlInsertionExecutionBlocker") && source.commandBlockers.includes("assertHtmlInsertionExecutionBlocked"), "HTML insertion blockers are missing.");
+expect(source.commandValidators.includes("valid: false") && source.commandValidators.includes("not implemented"), "Command validator must block execution in this phase.");
+expect(!commandSource.includes("fs") && !commandSource.includes("writeFile") && !commandSource.includes("appendFile"), "Command contracts must not write files.");
 
 expect(source.panelHtml.includes("data-html-element-library-panel"), "Element Library panel markup is missing.");
 expect(source.panelHtml.includes("Command foundation only"), "Element Library panel must expose disabled command foundation affordance.");
@@ -93,6 +126,10 @@ expect(source.panelScss.includes("crystal-html-element-library-panel") && source
 expect(source.designHtml.includes("html-element-library-panel/html-element-library-panel.html"), "Design mode does not include the Element Library panel.");
 expect(source.mainScss.includes("html-element-library-panel/html-element-library-panel"), "Renderer SCSS does not include the Element Library panel styles.");
 expect(source.bootstrap.includes("initializeHtmlElementLibraryPanel"), "Renderer bootstrap does not initialize the Element Library panel.");
+expect(!source.panelTs.includes("aria-disabled", "true") && !source.panelTs.includes("aria-disabled\", \"true"), "Selectable Element Library item buttons must not use aria-disabled=true.");
+expect(source.panelTs.includes("aria-pressed") && source.panelTs.includes("dataset.htmlElementLibraryCommandState"), "Selectable Element Library items must preserve selection state and command-foundation metadata.");
+expect(source.panelHtml.includes("data-html-element-library-future-action") && source.panelHtml.includes("disabled"), "Future insertion action must remain disabled.");
+expect(source.panelTs.includes("elements.futureAction.disabled = true"), "Panel controller must keep the future insertion action disabled.");
 
 for (const forbiddenToken of forbiddenRuntimeTokens) {
   expect(!runtimeSource.includes(forbiddenToken), `Forbidden runtime token found: ${forbiddenToken}`);
@@ -153,4 +190,12 @@ function expectSameKeys(record, expectedKeys, message) {
   const actual = Object.keys(record).sort();
   const expected = [...expectedKeys].sort();
   expect(actual.length === expected.length && actual.every((key, index) => key === expected[index]), message);
+}
+
+function expectIsBarrel(sourceText, label) {
+  const implementationTokens = ["function ", "const ", "let ", "interface ", "type ", "class "];
+  expect(sourceText.trim().split("\n").every((line) => line.trim().startsWith("export * from") || line.trim() === ""), `${label} must be a barrel export only.`);
+  for (const token of implementationTokens) {
+    expect(!sourceText.includes(token), `${label} contains implementation token: ${token.trim()}`);
+  }
 }
