@@ -1,7 +1,7 @@
 .crystal-project-preview-panel {
   display: grid;
   align-content: start;
-  gap: 6px;
+  gap: var(--crystal-space-2);
   min-width: 0;
   min-height: 0;
 }
@@ -12,7 +12,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 6px;
+  gap: var(--crystal-space-2);
   min-width: 0;
 }
 
@@ -21,8 +21,8 @@
 .crystal-project-preview-panel__inspector-title {
   margin: 0;
   color: var(--crystal-color-text-muted);
-  font-size: 10px;
-  letter-spacing: 0.08em;
+  font-size: var(--crystal-font-size-label);
+  letter-spacing: var(--crystal-letter-spacing-label);
   line-height: 1.15;
   text-transform: uppercase;
 }
@@ -33,7 +33,7 @@
 .crystal-project-preview-panel__error {
   margin: 0;
   color: var(--crystal-color-text-subtle);
-  font-size: 9px;
+  font-size: var(--crystal-font-size-caption);
   line-height: 1.25;
 }
 
@@ -41,20 +41,20 @@
 
 .crystal-project-preview-panel__target-label {
   display: grid;
-  gap: 3px;
+  gap: var(--crystal-space-1);
   min-width: 0;
   color: var(--crystal-color-text-subtle);
-  font-size: 9px;
+  font-size: var(--crystal-font-size-caption);
   line-height: 1.15;
 }
 
 .crystal-project-preview-panel__target,
 .crystal-project-preview-panel__button {
-  min-height: var(--crystal-control-compact-size);
-  border: 1px solid var(--crystal-color-control-border);
+  min-height: var(--crystal-control-height-compact);
+  border: 1px solid var(--crystal-control-border);
   border-radius: var(--crystal-control-radius);
-  background: var(--crystal-color-control-bg);
-  color: var(--crystal-color-control-text);
+  background: var(--crystal-control-bg);
+  color: var(--crystal-control-text);
   font: inherit;
   font-size: 10px;
 }
@@ -62,8 +62,8 @@
 .crystal-project-preview-panel__target {
   width: 100%;
   min-width: 0;
-  height: var(--crystal-control-compact-size);
-  padding: 3px 24px 3px 6px;
+  height: var(--crystal-control-height-compact);
+  padding: 3px 24px 3px var(--crystal-control-padding-x);
   appearance: none;
   background-color: var(--crystal-color-surface-raised);
   background-image: linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%);
@@ -75,13 +75,13 @@
 }
 
 .crystal-project-preview-panel__target:hover:not(:disabled) {
-  border-color: var(--crystal-color-control-hover-border);
+  border-color: var(--crystal-control-hover-border);
   background-color: var(--crystal-color-surface-muted);
-  color: var(--crystal-color-control-hover-text);
+  color: var(--crystal-control-hover-text);
 }
 
 .crystal-project-preview-panel__target:active {
-  border-color: var(--crystal-color-accent-border);
+  border-color: var(--crystal-control-active-border);
   background-color: var(--crystal-color-surface-muted);
 }
 
@@ -97,14 +97,14 @@
 
 .crystal-project-preview-panel__target:focus-visible,
 .crystal-project-preview-panel__button:focus-visible {
-  border-color: var(--crystal-color-accent-border);
+  border-color: var(--crystal-control-active-border);
   outline: 2px solid var(--crystal-focus-ring);
   outline-offset: 1px;
 }
 
 .crystal-project-preview-panel__button {
   overflow: hidden;
-  padding: 4px 6px;
+  padding: 0 var(--crystal-control-padding-x);
   text-align: left;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -112,64 +112,64 @@
 }
 
 .crystal-project-preview-panel__button:hover:not(:disabled) {
-  border-color: var(--crystal-color-control-hover-border);
-  background: var(--crystal-color-control-hover-bg);
-  color: var(--crystal-color-control-hover-text);
+  border-color: var(--crystal-control-hover-border);
+  background: var(--crystal-control-hover-bg);
+  color: var(--crystal-control-hover-text);
 }
 
 .crystal-project-preview-panel__button--primary {
-  border-color: var(--crystal-color-accent-border);
-  background: var(--crystal-color-accent-soft);
+  border-color: var(--crystal-control-active-border);
+  background: var(--crystal-control-active-bg);
   color: var(--crystal-color-text);
 }
 
 .crystal-project-preview-panel__button:disabled,
 .crystal-project-preview-panel__target:disabled {
   cursor: not-allowed;
-  opacity: 0.48;
+  opacity: var(--crystal-control-disabled-opacity);
 }
 
 .crystal-project-preview-panel__actions {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(78px, 1fr));
-  gap: 4px;
+  gap: var(--crystal-space-1);
 }
 
 .crystal-project-preview-panel__selection,
 .crystal-project-preview-panel__inspector {
   display: grid;
-  gap: 5px;
+  gap: var(--crystal-space-2);
   min-width: 0;
-  padding-top: 6px;
-  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  padding-top: var(--crystal-space-2);
+  border-top: 1px solid var(--crystal-color-border-soft);
 }
 
 .crystal-project-preview-panel__inspector-message,
 .crystal-project-preview-panel__inspector-empty {
   margin: 0;
   color: var(--crystal-color-text-subtle);
-  font-size: 9px;
+  font-size: var(--crystal-font-size-caption);
   line-height: 1.3;
 }
 
 .crystal-project-preview-panel__inspector-grid,
 .crystal-project-preview-panel__inspector-details {
   display: grid;
-  gap: 5px;
+  gap: var(--crystal-space-2);
   min-width: 0;
 }
 
 .crystal-project-preview-panel__inspector-subtitle {
-  margin: 0 0 3px;
+  margin: 0 0 var(--crystal-space-1);
   color: var(--crystal-color-subtle);
-  font-size: 9px;
+  font-size: var(--crystal-font-size-caption);
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
 .crystal-project-preview-panel__inspector-details div {
   min-width: 0;
-  padding: 5px;
+  padding: var(--crystal-space-2);
   background: rgba(255, 255, 255, 0.032);
 }
 
@@ -179,7 +179,7 @@
   margin: 0;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 9px;
+  font-size: var(--crystal-font-size-caption);
 }
 
 .crystal-project-preview-panel__inspector-details dt { color: var(--crystal-color-text-faint); }
@@ -204,9 +204,9 @@
 .crystal-project-preview-panel__issue {
   display: grid;
   grid-template-columns: 68px minmax(0, 1fr) 26px;
-  gap: 5px;
+  gap: var(--crystal-space-2);
   align-items: center;
-  font-size: 9px;
+  font-size: var(--crystal-font-size-caption);
 }
 
 .crystal-project-preview-panel__issue-reason { display: none; }

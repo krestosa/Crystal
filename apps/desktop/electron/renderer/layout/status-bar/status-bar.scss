@@ -1,36 +1,92 @@
 .crystal-status-bar {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, auto) minmax(0, 1fr);
   align-items: center;
-  justify-content: space-between;
-  min-height: 20px;
-  padding: 0 7px;
+  gap: var(--crystal-space-2);
+  min-height: 22px;
+  padding: 0 var(--crystal-space-2);
   border-top: 1px solid var(--crystal-color-border-soft);
   color: var(--crystal-color-subtle);
   background: var(--crystal-color-surface-strong);
-  font-size: 9px;
+  font-size: var(--crystal-font-size-caption);
   letter-spacing: 0.02em;
 }
 
-.crystal-status-bar__runtime {
+.crystal-status-bar__context,
+.crystal-status-bar__runtime,
+.crystal-status-bar__controls {
   display: flex;
   align-items: center;
-  gap: 6px;
   min-width: 0;
 }
 
-.crystal-status-bar__diagnostics-button {
+.crystal-status-bar__context {
+  gap: var(--crystal-space-2);
+}
+
+.crystal-status-bar__runtime {
+  justify-content: flex-end;
+  gap: var(--crystal-space-2);
+}
+
+.crystal-status-bar__controls {
+  flex: 0 0 auto;
+  gap: var(--crystal-space-1);
+}
+
+.crystal-status-bar__product,
+.crystal-status-bar__badge {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crystal-status-bar__product {
+  color: var(--crystal-color-text-subtle);
+}
+
+.crystal-status-bar__badge {
+  max-width: min(34vw, 160px);
+  padding: 1px var(--crystal-space-2);
+  border: 1px solid var(--crystal-color-border-soft);
+  background: rgba(255, 255, 255, 0.025);
+  color: var(--crystal-color-text-subtle);
+  line-height: 1.35;
+}
+
+.crystal-status-bar__icon-button {
   position: relative;
   display: grid;
   flex: 0 0 auto;
   place-items: center;
-  width: var(--crystal-control-compact-size);
-  height: var(--crystal-control-compact-size);
+  width: var(--crystal-control-size-compact);
+  height: var(--crystal-control-size-compact);
   padding: 0;
-  border: 1px solid var(--crystal-color-control-border);
+  border: 1px solid var(--crystal-control-border);
   border-radius: var(--crystal-control-radius);
-  background: var(--crystal-color-control-bg);
-  color: var(--crystal-color-control-text);
+  background: var(--crystal-control-bg);
+  color: var(--crystal-control-text);
   cursor: pointer;
+}
+
+.crystal-status-bar__icon-button:hover {
+  border-color: var(--crystal-control-hover-border);
+  background: var(--crystal-control-hover-bg);
+  color: var(--crystal-control-hover-text);
+}
+
+.crystal-status-bar__icon-button:focus-visible {
+  border-color: var(--crystal-control-active-border);
+  color: var(--crystal-color-text);
+  outline: 2px solid var(--crystal-focus-ring);
+  outline-offset: 1px;
+}
+
+.crystal-status-bar__icon-button:active,
+.crystal-status-bar__icon-button[aria-expanded="true"] {
+  border-color: var(--crystal-control-active-border);
+  background: var(--crystal-control-active-bg);
+  color: var(--crystal-color-text);
 }
 
 .crystal-status-bar__diagnostics-button::before {
@@ -52,21 +108,32 @@
   content: "";
 }
 
-.crystal-status-bar__diagnostics-button:hover {
-  border-color: var(--crystal-color-control-hover-border);
-  background: var(--crystal-color-control-hover-bg);
-  color: var(--crystal-color-control-hover-text);
+.crystal-status-bar__devtools-button::before,
+.crystal-status-bar__devtools-button::after {
+  position: absolute;
+  content: "";
 }
 
-.crystal-status-bar__diagnostics-button[aria-expanded="true"] {
-  border-color: var(--crystal-color-accent-border);
-  background: var(--crystal-color-accent-soft);
-  color: var(--crystal-color-text);
+.crystal-status-bar__devtools-button::before {
+  width: 12px;
+  height: 8px;
+  border: 1px solid currentColor;
 }
 
-.crystal-status-bar__diagnostics-button:focus-visible {
-  border-color: var(--crystal-color-accent-border);
-  color: var(--crystal-color-text);
-  outline: 2px solid var(--crystal-focus-ring);
-  outline-offset: 1px;
+.crystal-status-bar__devtools-button::after {
+  bottom: 4px;
+  width: 7px;
+  height: 1px;
+  background: currentColor;
+  box-shadow: 0 2px 0 currentColor;
+}
+
+@media (max-width: 560px) {
+  .crystal-status-bar {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .crystal-status-bar__badge {
+    max-width: 26vw;
+  }
 }
