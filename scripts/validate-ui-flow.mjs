@@ -48,7 +48,11 @@ const runtimeSource = Object.entries(source)
 const packageData = parsePackageJson(source.packageJson);
 const triggerCount = countToken(`${source.appShellHtml}\n${source.statusBarHtml}\n${source.designHtml}`, "data-crystal-diagnostics-toggle");
 const devtoolsButtonCount = countToken(`${source.appShellHtml}\n${source.statusBarHtml}\n${source.designHtml}`, "data-crystal-devtools-toggle");
+const diagnosticsBodyBlock = extractBlock(source.designScss, ".crystal-design-view__diagnostics-body");
 const debugGridBlock = extractBlock(source.designScss, ".crystal-design-view__debug-grid");
+const debugPanelBlock = extractBlock(source.designScss, ".crystal-design-view__debug-panel");
+const debugListBlock = extractBlock(source.designScss, ".crystal-design-view__debug-list");
+const debugTreeBlock = extractBlock(source.designScss, ".crystal-design-view__debug-tree");
 
 expect(!source.appShellHtml.includes("top-bar"), "App shell still renders the old internal top bar.");
 expect(!source.appShellHtml.includes("activity-bar"), "App shell still renders the internal activity strip.");
@@ -58,7 +62,7 @@ expect(source.mainWindow.includes("titleBarOverlay"), "Main window does not expo
 expect(source.mainWindow.includes("CRYSTAL_TITLE_BAR_OVERLAY_HEIGHT = 32"), "Native titlebar overlay is not aligned to the compact chrome height.");
 expect(source.mainWindow.includes("height: CRYSTAL_TITLE_BAR_OVERLAY_HEIGHT"), "Native titlebar overlay height is not routed through the chrome constant.");
 expect(source.mainWindow.includes("webPreferences: getSecureWebPreferences()"), "Main window security preferences were not preserved.");
-expect(source.mainWindow.includes('process.env.CRYSTAL_OPEN_DEVTOOLS === CRYSTAL_OPEN_DEVTOOLS'), "Electron DevTools are not guarded by CRYSTAL_OPEN_DEVTOOLS.");
+expect(source.mainWindow.includes('process.env.CRYSTAL_OPEN_DEVTOOLS === CRYSTAL_OPEN_DEVTOOLS'), "Manual Electron DevTools env support was removed.");
 expect(source.mainWindow.includes('openDevTools({ mode: "detach" })'), "Electron DevTools launch mode is not explicit.");
 
 expect(source.ipcConstants.includes('appOpenDevTools: "app:open-devtools"'), "DevTools IPC channel is missing or not narrow.");
@@ -136,12 +140,15 @@ for (const areaClass of ["debug-panel--graph", "debug-panel--preview", "debug-pa
 }
 expect(source.designScss.includes("grid-template-areas") && source.designScss.includes("graph preview") && source.designScss.includes("dom events"), "Diagnostics sections are not separated by grid areas.");
 expect(source.designScss.includes('"graph preview dom"') && source.designScss.includes('"events events dom"'), "Diagnostics medium layout does not prevent DOM/Events overlap.");
-expect(debugGridBlock.includes("overflow: auto") && !debugGridBlock.includes("overflow: visible"), "Diagnostics grid can still overflow visibly and overlap sections.");
+expect(diagnosticsBodyBlock.includes("overflow: auto") && diagnosticsBodyBlock.includes("scrollbar-gutter: stable") && diagnosticsBodyBlock.includes("padding-inline-end: calc(var(--crystal-space-2) + 12px)"), "Diagnostics body does not reserve a stable principal scrollbar gutter.");
+expect(debugGridBlock.includes("overflow: clip") && !debugGridBlock.includes("overflow: auto") && !debugGridBlock.includes("overflow: visible"), "Diagnostics grid should be layout-only and must not create a competing scrollbar.");
+expect(debugPanelBlock.includes("overflow: hidden") && debugPanelBlock.includes("box-sizing: border-box"), "Diagnostics panels do not contain their own boxes safely.");
+expect(debugListBlock.includes("overflow: auto") && debugListBlock.includes("scrollbar-gutter: stable") && debugListBlock.includes("padding-inline-end"), "Diagnostics lists do not reserve internal scrollbar space.");
+expect(debugTreeBlock.includes("overflow: auto") && debugTreeBlock.includes("scrollbar-gutter: stable") && debugTreeBlock.includes("white-space: pre") && debugTreeBlock.includes("font-family: monospace"), "DOM tree diagnostics scroll/formatting is not preserved.");
 expect(!source.designScss.includes(".crystal-design-view__debug-panel {\n  position: absolute"), "Diagnostics panels must not use absolute layout.");
 expect(!source.designScss.includes("transform: translate") || source.designScss.includes("crystal-project-design-canvas__start"), "Transforms appear to be used as layout patches.");
 expect(source.designScss.includes("grid-auto-rows: minmax(min-content, max-content)"), "Diagnostics grid rows are not robust for intermediate sizes.");
 expect(source.designScss.includes("max-height: clamp(64px, 22cqh, 260px)") && source.designScss.includes("max-height: clamp(96px, 38cqh, 460px)"), "Diagnostics scroll regions do not scale with panel height.");
-expect(source.designScss.includes("white-space: pre") && source.designScss.includes("font-family: monospace"), "DOM tree diagnostics formatting is not preserved.");
 expect(source.designScss.includes("overflow-wrap: anywhere") && source.designScss.includes("word-break: normal"), "Diagnostics metadata does not wrap long technical text safely.");
 expect(source.designScss.includes("height: var(--crystal-control-height-compact)") && source.designScss.includes("flex: 0 0 auto"), "Diagnostics action buttons can still stretch across the grid.");
 
@@ -219,13 +226,19 @@ for (const requiredScript of ["validate:local:quick", "validate:local:quick:core
 expect(packageData.scripts?.["validate:ui-flow"] === "node scripts/validate-ui-flow.mjs", "package.json does not expose validate:ui-flow.");
 expect(source.validateLocal.includes("npm run validate:ui-flow"), "validate-local does not run validate:ui-flow.");
 
+for (const [scriptName, scriptCommand] of getPackageScriptEntries(packageData)) {
+  for (const forbiddenDevToolsToken of ["CRYSTAL_OPEN_DEVTOOLS=1", "$env:CRYSTAL_OPEN_DEVTOOLS", "set CRYSTAL_OPEN_DEVTOOLS", "cross-env CRYSTAL_OPEN_DEVTOOLS"]) {
+    expect(!scriptCommand.includes(forbiddenDevToolsToken), `package.json script ${scriptName} auto-launches DevTools with ${forbiddenDevToolsToken}.`);
+  }
+}
+
 if (failures.length > 0) {
   console.error("UI flow validation failed:");
   for (const failure of failures) console.error(`- ${failure}`);
   process.exit(1);
 }
 
-console.log("UI flow validation passed: final compact shell polish, status-bar Diagnostics and DevTools controls, secure DevTools IPC bridge, resilient Diagnostics responsive grid, reliable resize handles, compact control tokens, neutral hover states, dark fixtures, and iframe/security boundaries.");
+console.log("UI flow validation passed: final compact shell polish, contained Diagnostics scrollbar hierarchy, status-bar Diagnostics and DevTools controls, secure DevTools IPC bridge, no scripted DevTools auto-launch, compact control tokens, neutral hover states, dark fixtures, and iframe/security boundaries.");
 
 async function readText(filePath) {
   return readFile(path.resolve(filePath), "utf8");
@@ -263,6 +276,16 @@ function getPackageDependencyNames(packageData) {
     dependencyNames.push(...Object.keys(dependencyMap).map((name) => name.toLowerCase()));
   }
   return dependencyNames;
+}
+
+function getPackageScriptEntries(packageData) {
+  const scripts = packageData.scripts;
+  if (!scripts) return [];
+  if (typeof scripts !== "object" || Array.isArray(scripts)) {
+    expect(false, "package.json scripts must be an object.");
+    return [];
+  }
+  return Object.entries(scripts).filter(([, command]) => typeof command === "string");
 }
 
 function expect(ok, message) {
