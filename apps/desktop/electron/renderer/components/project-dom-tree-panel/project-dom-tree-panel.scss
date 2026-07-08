@@ -1,22 +1,24 @@
 .crystal-project-dom-tree-panel {
   display: grid;
-  gap: 6px;
-  padding-top: 6px;
-  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  gap: var(--crystal-space-2);
+  min-width: 0;
+  padding-top: var(--crystal-space-2);
+  border-top: 1px solid var(--crystal-color-border-soft);
 }
 
 .crystal-project-dom-tree-panel__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 6px;
+  gap: var(--crystal-space-2);
+  min-width: 0;
 }
 
 .crystal-project-dom-tree-panel__title {
   margin: 0;
-  color: rgba(247, 242, 236, 0.84);
-  font-size: 10px;
-  letter-spacing: 0.08em;
+  color: var(--crystal-color-text-muted);
+  font-size: var(--crystal-font-size-label);
+  letter-spacing: var(--crystal-letter-spacing-label);
   line-height: 1.15;
   text-transform: uppercase;
 }
@@ -24,8 +26,8 @@
 .crystal-project-dom-tree-panel__status,
 .crystal-project-dom-tree-panel__error {
   margin: 0;
-  color: rgba(247, 242, 236, 0.48);
-  font-size: 9px;
+  color: var(--crystal-color-text-subtle);
+  font-size: var(--crystal-font-size-caption);
   line-height: 1.25;
 }
 
@@ -34,16 +36,17 @@
 .crystal-project-dom-tree-panel__actions {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(78px, 1fr));
-  gap: 4px;
+  gap: var(--crystal-space-1);
 }
 
 .crystal-project-dom-tree-panel__button {
-  min-height: 24px;
+  min-height: var(--crystal-control-height-compact);
   overflow: hidden;
-  padding: 4px 6px;
-  border: 1px solid var(--crystal-color-border-soft);
-  background: rgba(255, 255, 255, 0.04);
-  color: rgba(247, 242, 236, 0.78);
+  padding: 0 var(--crystal-control-padding-x);
+  border: 1px solid var(--crystal-control-border);
+  border-radius: var(--crystal-control-radius);
+  background: var(--crystal-control-bg);
+  color: var(--crystal-control-text);
   font: inherit;
   font-size: 10px;
   text-align: left;
@@ -53,34 +56,34 @@
 }
 
 .crystal-project-dom-tree-panel__button:hover:not(:disabled) {
-  border-color: var(--crystal-color-accent-border);
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--crystal-color-text);
+  border-color: var(--crystal-control-hover-border);
+  background: var(--crystal-control-hover-bg);
+  color: var(--crystal-control-hover-text);
 }
 
 .crystal-project-dom-tree-panel__button:focus-visible {
-  border-color: var(--crystal-color-accent-border);
+  border-color: var(--crystal-control-active-border);
   outline: 2px solid var(--crystal-focus-ring);
   outline-offset: 1px;
 }
 
 .crystal-project-dom-tree-panel__button--primary {
-  border-color: var(--crystal-color-accent-border);
-  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--crystal-control-active-border);
+  background: var(--crystal-control-active-bg);
   color: var(--crystal-color-text);
 }
 
 .crystal-project-dom-tree-panel__button:disabled {
   cursor: not-allowed;
-  opacity: 0.48;
+  opacity: var(--crystal-control-disabled-opacity);
 }
 
 .crystal-project-dom-tree-panel__issue {
   display: grid;
   grid-template-columns: 74px minmax(0, 1fr);
-  gap: 5px;
+  gap: var(--crystal-space-2);
   align-items: center;
-  font-size: 9px;
+  font-size: var(--crystal-font-size-caption);
 }
 
 .crystal-project-dom-tree-panel__issue-reason { display: none; }
