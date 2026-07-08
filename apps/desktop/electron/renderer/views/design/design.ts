@@ -4,11 +4,11 @@ import { initializeProjectDesignCanvasSelectionOverlay } from "../../components/
 const CRYSTAL_RIGHT_SIDEBAR_MIN_WIDTH = 220;
 const CRYSTAL_RIGHT_SIDEBAR_MAX_WIDTH = 420;
 const CRYSTAL_MIN_CANVAS_WIDTH = 560;
-const CRYSTAL_DIAGNOSTICS_PANEL_MIN_WIDTH = 320;
-const CRYSTAL_DIAGNOSTICS_PANEL_MIN_HEIGHT = 190;
+const CRYSTAL_DIAGNOSTICS_PANEL_MIN_WIDTH = 300;
+const CRYSTAL_DIAGNOSTICS_PANEL_MIN_HEIGHT = 172;
 const CRYSTAL_DIAGNOSTICS_PANEL_MARGIN = 12;
 const CRYSTAL_DIAGNOSTICS_PANEL_RECOVERY_SIZE = 32;
-const CRYSTAL_DIAGNOSTICS_PANEL_MAX_VIEWPORT_RATIO = 1.5;
+const CRYSTAL_DIAGNOSTICS_PANEL_MAX_VIEWPORT_RATIO = 2;
 const CRYSTAL_RESIZE_KEYBOARD_STEP = 12;
 
 type CrystalWorkspaceInteractionKind =
@@ -164,6 +164,7 @@ function initializeWorkspaceResize(): void {
       if (isInteractiveDiagnosticsTarget(event.target)) return;
       if (diagnosticsPinned) setDiagnosticsPinned(false);
     }
+    if (isDiagnosticsResizeKind(kind) && diagnosticsPinned) setDiagnosticsPinned(false);
     event.preventDefault();
     event.stopPropagation();
     interactionSession = {
