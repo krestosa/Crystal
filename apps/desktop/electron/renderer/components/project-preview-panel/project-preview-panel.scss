@@ -2,6 +2,7 @@
   display: grid;
   align-content: start;
   gap: 6px;
+  min-width: 0;
   min-height: 0;
 }
 
@@ -12,6 +13,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 6px;
+  min-width: 0;
 }
 
 .crystal-project-preview-panel__title,
@@ -40,6 +42,7 @@
 .crystal-project-preview-panel__target-label {
   display: grid;
   gap: 3px;
+  min-width: 0;
   color: rgba(247, 242, 236, 0.48);
   font-size: 9px;
   line-height: 1.15;
@@ -57,8 +60,21 @@
 
 .crystal-project-preview-panel__target {
   width: 100%;
-  padding: 4px 6px;
+  min-width: 0;
+  padding: 4px 26px 4px 6px;
+  background-color: #100d0a;
+  color: rgba(247, 242, 236, 0.88);
   color-scheme: dark;
+}
+
+.crystal-project-preview-panel__target option {
+  background-color: #100d0a;
+  color: #f7f2ec;
+}
+
+.crystal-project-preview-panel__target option:checked {
+  background-color: #24180f;
+  color: #f7f2ec;
 }
 
 .crystal-project-preview-panel__target:focus-visible,
@@ -78,9 +94,9 @@
 }
 
 .crystal-project-preview-panel__button:hover:not(:disabled) {
-  border-color: var(--crystal-color-accent-border);
+  border-color: rgba(255, 255, 255, 0.16);
   background: rgba(255, 255, 255, 0.06);
-  color: var(--crystal-color-text);
+  color: rgba(247, 242, 236, 0.9);
 }
 
 .crystal-project-preview-panel__button--primary {
@@ -105,6 +121,7 @@
 .crystal-project-preview-panel__inspector {
   display: grid;
   gap: 5px;
+  min-width: 0;
   padding-top: 6px;
   border-top: 1px solid rgba(255, 255, 255, 0.07);
 }
@@ -121,6 +138,7 @@
 .crystal-project-preview-panel__inspector-details {
   display: grid;
   gap: 5px;
+  min-width: 0;
 }
 
 .crystal-project-preview-panel__inspector-subtitle {
