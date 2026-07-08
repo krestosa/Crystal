@@ -13,7 +13,18 @@
   font: inherit;
 }
 
-.crystal-tabs__button[aria-pressed="true"] {
+.crystal-tabs__button:hover {
+  border-color: var(--crystal-color-accent-border);
   color: var(--crystal-color-text);
-  background: var(--crystal-color-surface-raised);
+}
+
+.crystal-tabs__button:focus-visible {
+  outline: 2px solid var(--crystal-focus-ring);
+  outline-offset: 2px;
+}
+
+.crystal-tabs__button[aria-pressed="true"] {
+  border-color: var(--crystal-color-accent-border);
+  color: var(--crystal-color-text);
+  background: var(--crystal-color-accent-soft);
 }

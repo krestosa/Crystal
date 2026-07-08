@@ -8,73 +8,147 @@
       <crystal-include src="../../components/project-preview-panel/project-preview-panel.html"></crystal-include>
       <crystal-include src="../../components/project-dom-tree-panel/project-dom-tree-panel.html"></crystal-include>
     </aside>
+    <div class="crystal-design-view__right-resizer" role="separator" aria-label="Resize inspector sidebar" aria-orientation="vertical" tabindex="0" data-crystal-right-sidebar-resizer></div>
 
-    <section class="crystal-design-view__bottom-diagnostics" aria-label="Workspace diagnostics">
-      <details class="crystal-design-view__debug-dock" data-workspace-bottom-diagnostics>
-        <summary>
-          <span>Diagnostics</span>
-          <span>Graph · Preview · DOM · Events</span>
-        </summary>
+    <aside class="crystal-design-view__diagnostics-popover" id="crystal-design-diagnostics-popover" aria-label="Workspace diagnostics" tabindex="-1" data-crystal-diagnostics-popover data-crystal-diagnostics-pinned="true" hidden>
+      <div class="crystal-design-view__diagnostics-resize-handle crystal-design-view__diagnostics-resize-handle--top-left" role="separator" aria-label="Resize diagnostics panel from top left" aria-orientation="horizontal" tabindex="0" data-crystal-diagnostics-resizer data-crystal-diagnostics-resize-top-left></div>
+      <div class="crystal-design-view__diagnostics-resize-handle crystal-design-view__diagnostics-resize-handle--top" role="separator" aria-label="Resize diagnostics panel from top edge" aria-orientation="horizontal" tabindex="0" data-crystal-diagnostics-resizer data-crystal-diagnostics-resize-top></div>
+      <div class="crystal-design-view__diagnostics-resize-handle crystal-design-view__diagnostics-resize-handle--top-right" role="separator" aria-label="Resize diagnostics panel from top right" aria-orientation="horizontal" tabindex="0" data-crystal-diagnostics-resizer data-crystal-diagnostics-resize-top-right></div>
+      <div class="crystal-design-view__diagnostics-resize-handle crystal-design-view__diagnostics-resize-handle--right" role="separator" aria-label="Resize diagnostics panel from right edge" aria-orientation="vertical" tabindex="0" data-crystal-diagnostics-resizer data-crystal-diagnostics-resize-right></div>
+      <div class="crystal-design-view__diagnostics-resize-handle crystal-design-view__diagnostics-resize-handle--bottom-right" role="separator" aria-label="Resize diagnostics panel from bottom right" aria-orientation="horizontal" tabindex="0" data-crystal-diagnostics-resizer data-crystal-diagnostics-resize-bottom-right></div>
+      <div class="crystal-design-view__diagnostics-resize-handle crystal-design-view__diagnostics-resize-handle--bottom" role="separator" aria-label="Resize diagnostics panel from bottom edge" aria-orientation="horizontal" tabindex="0" data-crystal-diagnostics-resizer data-crystal-diagnostics-resize-bottom></div>
+      <div class="crystal-design-view__diagnostics-resize-handle crystal-design-view__diagnostics-resize-handle--bottom-left" role="separator" aria-label="Resize diagnostics panel from bottom left" aria-orientation="horizontal" tabindex="0" data-crystal-diagnostics-resizer data-crystal-diagnostics-resize-bottom-left></div>
+      <div class="crystal-design-view__diagnostics-resize-handle crystal-design-view__diagnostics-resize-handle--left" role="separator" aria-label="Resize diagnostics panel from left edge" aria-orientation="vertical" tabindex="0" data-crystal-diagnostics-resizer data-crystal-diagnostics-resize-left></div>
+      <header class="crystal-design-view__diagnostics-header" data-crystal-diagnostics-drag-handle>
+        <h2>Diagnostics</h2>
+        <div class="crystal-design-view__diagnostics-actions">
+          <button class="crystal-design-view__diagnostics-icon-button crystal-design-view__diagnostics-pin" type="button" aria-label="Unpin Diagnostics" aria-pressed="true" title="Unpin Diagnostics" data-crystal-diagnostics-pin>
+            <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+              <path d="M6.25 2.75h4.5" />
+              <path d="M8.5 2.75v4.75" />
+              <path d="M5 7.5h7" />
+              <path d="M8.5 7.5 6.75 12" />
+              <path d="M8.5 7.5 10.25 12" />
+            </svg>
+          </button>
+          <button class="crystal-design-view__diagnostics-icon-button crystal-design-view__diagnostics-close" type="button" aria-label="Close diagnostics" title="Close diagnostics" data-crystal-diagnostics-close>
+            <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+              <path d="M5 5l6 6" />
+              <path d="M11 5l-6 6" />
+            </svg>
+          </button>
+        </div>
+      </header>
+      <div class="crystal-design-view__diagnostics-body">
         <div class="crystal-design-view__debug-grid">
-          <section class="crystal-design-view__debug-panel" aria-label="Project diagnostics">
-            <h3>Graph</h3>
-            <div class="crystal-design-view__debug-row">
-              <button class="crystal-design-view__debug-button" type="button" data-project-refresh>Refresh</button>
-              <button class="crystal-design-view__debug-button" type="button" data-project-start-watcher>Watch</button>
-              <button class="crystal-design-view__debug-button" type="button" data-project-stop-watcher>Stop</button>
-              <button class="crystal-design-view__debug-button" type="button" data-project-clear-cache>Clear cache</button>
+          <section class="crystal-design-view__debug-panel crystal-design-view__debug-panel--graph" aria-label="Project diagnostics">
+            <div class="crystal-design-view__debug-panel-header">
+              <h3>Graph</h3>
+              <span>Project index</span>
             </div>
-            <div class="crystal-design-view__debug-meta">
-              <p data-project-watcher-state>Watcher: idle</p>
-              <p data-project-cache-state>Cache: empty</p>
-              <p data-project-last-refresh>Last refresh: none</p>
-              <p data-project-refresh-mode>Refresh mode: none</p>
+            <div class="crystal-design-view__debug-section">
+              <span class="crystal-design-view__debug-section-title">Controls</span>
+              <div class="crystal-design-view__debug-row">
+                <button class="crystal-design-view__debug-button" type="button" data-project-refresh>Refresh</button>
+                <button class="crystal-design-view__debug-button" type="button" data-project-start-watcher>Watch</button>
+                <button class="crystal-design-view__debug-button" type="button" data-project-stop-watcher>Stop</button>
+                <button class="crystal-design-view__debug-button" type="button" data-project-clear-cache>Clear cache</button>
+              </div>
             </div>
-            <ul class="crystal-design-view__debug-list" data-project-watch-events></ul>
-            <ul class="crystal-design-view__debug-list" data-project-files></ul>
-            <ul class="crystal-design-view__debug-list" data-project-issues></ul>
+            <div class="crystal-design-view__debug-section">
+              <span class="crystal-design-view__debug-section-title">State</span>
+              <div class="crystal-design-view__debug-meta crystal-design-view__debug-meta--stack">
+                <p data-project-watcher-state>Watcher: idle</p>
+                <p data-project-cache-state>Cache: empty</p>
+                <p data-project-last-refresh>Last refresh: none</p>
+                <p data-project-refresh-mode>Refresh mode: none</p>
+              </div>
+            </div>
+            <div class="crystal-design-view__debug-section">
+              <span class="crystal-design-view__debug-section-title">Files</span>
+              <ul class="crystal-design-view__debug-list crystal-design-view__debug-list--compact" data-project-files></ul>
+            </div>
+            <div class="crystal-design-view__debug-section">
+              <span class="crystal-design-view__debug-section-title">Issues</span>
+              <ul class="crystal-design-view__debug-list crystal-design-view__debug-list--compact" data-project-issues></ul>
+            </div>
           </section>
 
-          <section class="crystal-design-view__debug-panel" aria-label="Preview diagnostics">
-            <h3>Preview</h3>
-            <dl class="crystal-design-view__debug-meta crystal-design-view__debug-meta--dl">
-              <div><dt>Target</dt><dd data-project-preview-page>None</dd></div>
-              <div><dt>Load</dt><dd data-project-preview-last-load>none</dd></div>
-              <div><dt>Reload</dt><dd data-project-preview-last-reload>none</dd></div>
-              <div><dt>Reason</dt><dd data-project-preview-reason>none</dd></div>
-              <div><dt>Issues</dt><dd data-project-preview-issue-count>0</dd></div>
-              <div><dt>Last issue</dt><dd data-project-preview-last-issue>none</dd></div>
-            </dl>
-            <dl class="crystal-design-view__debug-meta crystal-design-view__debug-meta--dl">
-              <div><dt>Tag</dt><dd data-project-preview-selected-tag>none</dd></div>
-              <div><dt>Path</dt><dd data-project-preview-selected-path>none</dd></div>
-              <div><dt>Map</dt><dd data-project-preview-selection-mapping-status>unknown</dd></div>
-              <div><dt>Mapped</dt><dd data-project-preview-mapped-snapshot-path>none</dd></div>
-              <div><dt>Reason</dt><dd data-project-preview-selection-mapping-reason>none</dd></div>
-              <div><dt>Selector</dt><dd data-project-preview-selected-selector>none</dd></div>
-              <div><dt>Attrs</dt><dd data-project-preview-selected-attributes>none</dd></div>
-              <div><dt>Text</dt><dd data-project-preview-selected-text>none</dd></div>
-            </dl>
-            <p class="crystal-design-view__debug-warning" data-project-preview-selection-issue hidden></p>
-            <p class="crystal-design-view__debug-empty" data-project-preview-issues-empty>No preview issues.</p>
-            <ul class="crystal-design-view__debug-list" data-project-preview-issues-list></ul>
+          <section class="crystal-design-view__debug-panel crystal-design-view__debug-panel--preview" aria-label="Preview diagnostics">
+            <div class="crystal-design-view__debug-panel-header">
+              <h3>Preview</h3>
+              <span>Frame state</span>
+            </div>
+            <div class="crystal-design-view__debug-section">
+              <span class="crystal-design-view__debug-section-title">Runtime</span>
+              <dl class="crystal-design-view__debug-meta crystal-design-view__debug-meta--dl">
+                <div><dt>Target</dt><dd data-project-preview-page>None</dd></div>
+                <div><dt>Load</dt><dd data-project-preview-last-load>none</dd></div>
+                <div><dt>Reload</dt><dd data-project-preview-last-reload>none</dd></div>
+                <div><dt>Reason</dt><dd data-project-preview-reason>none</dd></div>
+                <div><dt>Issues</dt><dd data-project-preview-issue-count>0</dd></div>
+                <div><dt>Last issue</dt><dd data-project-preview-last-issue>none</dd></div>
+              </dl>
+            </div>
+            <div class="crystal-design-view__debug-section">
+              <span class="crystal-design-view__debug-section-title">Selection</span>
+              <dl class="crystal-design-view__debug-meta crystal-design-view__debug-meta--dl">
+                <div><dt>Tag</dt><dd data-project-preview-selected-tag>none</dd></div>
+                <div><dt>Path</dt><dd data-project-preview-selected-path>none</dd></div>
+                <div><dt>Map</dt><dd data-project-preview-selection-mapping-status>unknown</dd></div>
+                <div><dt>Mapped</dt><dd data-project-preview-mapped-snapshot-path>none</dd></div>
+                <div><dt>Reason</dt><dd data-project-preview-selection-mapping-reason>none</dd></div>
+                <div><dt>Selector</dt><dd data-project-preview-selected-selector>none</dd></div>
+                <div><dt>Attrs</dt><dd data-project-preview-selected-attributes>none</dd></div>
+                <div><dt>Text</dt><dd data-project-preview-selected-text>none</dd></div>
+              </dl>
+            </div>
+            <div class="crystal-design-view__debug-section">
+              <span class="crystal-design-view__debug-section-title">Issues</span>
+              <p class="crystal-design-view__debug-warning" data-project-preview-selection-issue hidden></p>
+              <p class="crystal-design-view__debug-empty" data-project-preview-issues-empty>No preview issues.</p>
+              <ul class="crystal-design-view__debug-list" data-project-preview-issues-list></ul>
+            </div>
           </section>
 
-          <section class="crystal-design-view__debug-panel" aria-label="DOM diagnostics">
-            <h3>DOM</h3>
-            <dl class="crystal-design-view__debug-meta crystal-design-view__debug-meta--dl">
-              <div><dt>Target</dt><dd data-project-dom-tree-target>None</dd></div>
-              <div><dt>Nodes</dt><dd data-project-dom-tree-node-count>0</dd></div>
-              <div><dt>Depth</dt><dd data-project-dom-tree-max-depth>0</dd></div>
-              <div><dt>Issues</dt><dd data-project-dom-tree-issue-count>0</dd></div>
-            </dl>
-            <p class="crystal-design-view__debug-warning" data-project-dom-tree-error hidden></p>
-            <p class="crystal-design-view__debug-empty" data-project-dom-tree-issues-empty>No DOM snapshot issues.</p>
-            <ul class="crystal-design-view__debug-list" data-project-dom-tree-issues-list></ul>
-            <pre class="crystal-design-view__debug-tree" data-project-dom-tree-output>No DOM snapshot built.</pre>
+          <section class="crystal-design-view__debug-panel crystal-design-view__debug-panel--dom" aria-label="DOM diagnostics">
+            <div class="crystal-design-view__debug-panel-header">
+              <h3>DOM</h3>
+              <span>Snapshot</span>
+            </div>
+            <div class="crystal-design-view__debug-section">
+              <span class="crystal-design-view__debug-section-title">Stats</span>
+              <dl class="crystal-design-view__debug-meta crystal-design-view__debug-meta--dl">
+                <div><dt>Target</dt><dd data-project-dom-tree-target>None</dd></div>
+                <div><dt>Nodes</dt><dd data-project-dom-tree-node-count>0</dd></div>
+                <div><dt>Depth</dt><dd data-project-dom-tree-max-depth>0</dd></div>
+                <div><dt>Issues</dt><dd data-project-dom-tree-issue-count>0</dd></div>
+              </dl>
+            </div>
+            <div class="crystal-design-view__debug-section">
+              <span class="crystal-design-view__debug-section-title">Issues</span>
+              <p class="crystal-design-view__debug-warning" data-project-dom-tree-error hidden></p>
+              <p class="crystal-design-view__debug-empty" data-project-dom-tree-issues-empty>No DOM snapshot issues.</p>
+              <ul class="crystal-design-view__debug-list" data-project-dom-tree-issues-list></ul>
+            </div>
+            <div class="crystal-design-view__debug-section crystal-design-view__debug-section--tree">
+              <span class="crystal-design-view__debug-section-title">Tree</span>
+              <pre class="crystal-design-view__debug-tree" data-project-dom-tree-output>No DOM snapshot built.</pre>
+            </div>
+          </section>
+
+          <section class="crystal-design-view__debug-panel crystal-design-view__debug-panel--events" aria-label="Event diagnostics">
+            <div class="crystal-design-view__debug-panel-header">
+              <h3>Events</h3>
+              <span>Watcher feed</span>
+            </div>
+            <div class="crystal-design-view__debug-section crystal-design-view__debug-section--events">
+              <span class="crystal-design-view__debug-section-title">Recent</span>
+              <ul class="crystal-design-view__debug-list crystal-design-view__debug-list--events" data-project-watch-events></ul>
+            </div>
           </section>
         </div>
-      </details>
-    </section>
+      </div>
+    </aside>
   </div>
 </section>

@@ -1,6 +1,13 @@
 .crystal-app-shell {
+  --crystal-native-titlebar-height: 32px;
+  --crystal-window-controls-fallback-width: 178px;
+  --crystal-window-controls-width: max(
+    var(--crystal-window-controls-fallback-width),
+    calc(100vw - env(titlebar-area-width, calc(100vw - var(--crystal-window-controls-fallback-width))) - env(titlebar-area-x, 0px))
+  );
+
   display: grid;
-  grid-template-rows: minmax(0, 1fr) 20px;
+  grid-template-rows: var(--crystal-native-titlebar-height) minmax(0, 1fr) 20px;
   width: 100vw;
   height: 100vh;
   overflow: hidden;
@@ -8,10 +15,102 @@
   background: var(--crystal-color-bg);
 }
 
-.crystal-app-shell__body {
+.crystal-app-shell__chrome {
+  position: relative;
   display: grid;
-  grid-template-columns: 232px minmax(0, 1fr);
+  grid-template-rows: var(--crystal-native-titlebar-height);
+  min-width: 0;
+  min-height: var(--crystal-native-titlebar-height);
+  background: var(--crystal-color-surface-strong);
+  -webkit-app-region: drag;
+  user-select: none;
+}
+
+.crystal-app-shell__native-titlebar {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
+  min-width: 0;
+  min-height: var(--crystal-native-titlebar-height);
+  padding: 0 calc(var(--crystal-window-controls-width) + 12px) 0 10px;
+  background: var(--crystal-color-surface-strong);
+}
+
+.crystal-app-shell__native-titlebar::before {
+  position: absolute;
+  z-index: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: var(--crystal-window-controls-width);
+  background: var(--crystal-color-surface-strong);
+  content: "";
+  pointer-events: none;
+}
+
+.crystal-app-shell__chrome-identity {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.crystal-app-shell__chrome-title {
+  color: var(--crystal-color-text-muted);
+  font-size: 9px;
+  font-weight: 650;
+  letter-spacing: 0.14em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.crystal-app-shell__body {
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--crystal-left-sidebar-width, 232px) minmax(0, 1fr);
   min-width: 0;
   min-height: 0;
   overflow: hidden;
+}
+
+.crystal-app-shell__left-resizer {
+  position: absolute;
+  z-index: 12;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--crystal-left-sidebar-width, 232px) - 3px);
+  width: 6px;
+  border: 0;
+  background: transparent;
+  cursor: col-resize;
+  outline: none;
+  touch-action: none;
+}
+
+.crystal-app-shell__left-resizer::after {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 2px;
+  width: 1px;
+  background: transparent;
+  content: "";
+}
+
+.crystal-app-shell__left-resizer:hover::after,
+.crystal-app-shell__left-resizer:focus-visible::after,
+.crystal-app-shell__body--resizing-left .crystal-app-shell__left-resizer::after {
+  background: var(--crystal-color-control-hover-border);
+}
+
+.crystal-app-shell__left-resizer:focus-visible {
+  box-shadow: 0 0 0 2px var(--crystal-focus-ring);
+}
+
+.crystal-app-shell__body--resizing-left {
+  cursor: col-resize;
+  user-select: none;
 }

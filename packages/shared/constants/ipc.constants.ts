@@ -1,6 +1,7 @@
 export const crystalIpcChannels = {
   appGetVersion: "app:get-version",
   appGetPlatform: "app:get-platform",
+  appOpenDevTools: "app:open-devtools",
   projectOpenFolder: "project:open-folder",
   projectOpenHtmlFile: "project:open-html-file",
   projectScan: "project:scan",

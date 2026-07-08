@@ -10,6 +10,7 @@ export interface CrystalPreloadApi {
   readonly app: {
     readonly getVersion: () => Promise<string>;
     readonly getPlatform: () => Promise<NodeJS.Platform>;
+    readonly openDevTools: () => Promise<boolean>;
   };
   readonly project: {
     readonly openFolder: () => Promise<ProjectScanResult | null>;

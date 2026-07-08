@@ -27,7 +27,8 @@ function onCrystal<TChannel extends CrystalIpcChannel>(channel: TChannel, listen
 const crystalApi: CrystalPreloadApi = {
   app: {
     getVersion: () => invokeCrystal(crystalIpcChannels.appGetVersion),
-    getPlatform: () => invokeCrystal(crystalIpcChannels.appGetPlatform)
+    getPlatform: () => invokeCrystal(crystalIpcChannels.appGetPlatform),
+    openDevTools: () => invokeCrystal(crystalIpcChannels.appOpenDevTools)
   },
   project: {
     openFolder: () => invokeCrystal(crystalIpcChannels.projectOpenFolder),

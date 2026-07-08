@@ -1,6 +1,14 @@
 <div class="crystal-app-shell" data-crystal-app-shell>
-  <div class="crystal-app-shell__body">
+  <header class="crystal-app-shell__chrome" data-crystal-app-chrome>
+    <div class="crystal-app-shell__native-titlebar" data-crystal-native-titlebar>
+      <div class="crystal-app-shell__chrome-identity">
+        <span class="crystal-app-shell__chrome-title">Crystal</span>
+      </div>
+    </div>
+  </header>
+  <div class="crystal-app-shell__body" data-crystal-app-shell-body>
     <crystal-include src="../side-bar/side-bar.html"></crystal-include>
+    <div class="crystal-app-shell__left-resizer" role="separator" aria-label="Resize project sidebar" aria-orientation="vertical" tabindex="0" data-crystal-left-sidebar-resizer></div>
     <crystal-include src="../workbench/workbench.html"></crystal-include>
   </div>
   <crystal-include src="../status-bar/status-bar.html"></crystal-include>

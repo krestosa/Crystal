@@ -13,7 +13,7 @@ textarea {
 }
 
 * {
-  scrollbar-color: rgba(125, 132, 150, 0.42) rgba(5, 8, 13, 0.38);
+  scrollbar-color: rgba(247, 242, 236, 0.26) rgba(7, 6, 5, 0.72);
   scrollbar-width: thin;
 }
 
@@ -23,13 +23,17 @@ textarea {
 }
 
 *::-webkit-scrollbar-track {
-  background: rgba(5, 8, 13, 0.38);
+  background: rgba(7, 6, 5, 0.72);
 }
 
 *::-webkit-scrollbar-thumb {
-  border: 2px solid rgba(5, 8, 13, 0.38);
+  border: 2px solid rgba(7, 6, 5, 0.72);
   border-radius: 999px;
-  background: rgba(125, 132, 150, 0.46);
+  background: rgba(247, 242, 236, 0.24);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(247, 242, 236, 0.34);
 }
 
 .crystal-view {

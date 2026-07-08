@@ -1,7 +1,7 @@
 .crystal-project-design-canvas {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
   width: 100%;
   height: 100%;
   min-height: 0;
@@ -11,24 +11,24 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  min-height: 28px;
-  padding: 4px 6px;
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  background: #090c13;
+  gap: 6px;
+  min-height: 24px;
+  padding: 3px 5px;
+  border: 1px solid var(--crystal-color-border-soft);
+  background: var(--crystal-color-surface);
 }
 
 .crystal-project-design-canvas__identity {
   display: flex;
   align-items: baseline;
-  gap: 8px;
+  gap: 6px;
   min-width: 0;
 }
 
 .crystal-project-design-canvas__title {
   margin: 0;
-  color: rgba(255, 255, 255, 0.82);
-  font-size: 10px;
+  color: var(--crystal-color-text-muted);
+  font-size: 9px;
   letter-spacing: 0.12em;
   line-height: 1;
   text-transform: uppercase;
@@ -37,8 +37,8 @@
 .crystal-project-design-canvas__hint {
   overflow: hidden;
   margin: 0;
-  color: rgba(255, 255, 255, 0.36);
-  font-size: 10px;
+  color: var(--crystal-color-text-faint);
+  font-size: 9px;
   line-height: 1;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -47,27 +47,41 @@
 .crystal-project-design-canvas__controls {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
 }
 
 .crystal-project-design-canvas__button {
-  min-height: 22px;
-  padding: 3px 6px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.045);
-  color: rgba(255, 255, 255, 0.72);
+  min-height: 20px;
+  padding: 2px 5px;
+  border: 1px solid var(--crystal-color-control-border);
+  border-radius: var(--crystal-control-radius);
+  background: var(--crystal-color-control-bg);
+  color: var(--crystal-color-control-text);
   font: inherit;
-  font-size: 10px;
+  font-size: 9px;
   cursor: pointer;
 }
 
+.crystal-project-design-canvas__button:hover {
+  border-color: var(--crystal-color-control-hover-border);
+  background: var(--crystal-color-control-hover-bg);
+  color: var(--crystal-color-control-hover-text);
+}
+
+.crystal-project-design-canvas__button:focus-visible {
+  border-color: var(--crystal-color-accent-border);
+  color: var(--crystal-color-text);
+  outline: 2px solid var(--crystal-focus-ring);
+  outline-offset: 1px;
+}
+
 .crystal-project-design-canvas__zoom {
-  min-width: 44px;
-  padding: 4px 5px;
-  background: rgba(0, 0, 0, 0.28);
+  min-width: 40px;
+  padding: 3px 5px;
+  background: rgba(0, 0, 0, 0.34);
   text-align: center;
-  font-size: 10px;
-  color: rgba(255, 255, 255, 0.58);
+  font-size: 9px;
+  color: var(--crystal-color-text-subtle);
 }
 
 .crystal-project-design-canvas__surface {
@@ -78,20 +92,19 @@
   overscroll-behavior: contain;
   overscroll-behavior-x: contain;
   overscroll-behavior-y: contain;
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  border: 1px solid var(--crystal-color-border-soft);
   background:
-    radial-gradient(circle at 50% 34%, rgba(124, 58, 237, 0.12), transparent 24%),
-    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
-    #090d14;
-  background-size: auto, 28px 28px, 28px 28px, auto;
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    #0a0806;
+  background-size: 28px 28px, 28px 28px, auto;
   contain: paint;
   outline: none;
   touch-action: auto;
 }
 
 .crystal-project-design-canvas__surface:focus-visible {
-  box-shadow: 0 0 0 2px rgba(147, 197, 253, 0.28);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
 }
 
 .crystal-project-design-canvas__start {
@@ -101,12 +114,12 @@
   left: 50%;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
-  gap: 10px 12px;
-  width: min(380px, calc(100% - 48px));
-  padding: 13px;
+  gap: 8px 10px;
+  width: min(360px, calc(100% - 44px));
+  padding: 11px;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(8, 12, 19, 0.84);
-  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.28);
+  background: rgba(10, 8, 6, 0.86);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.34);
   transform: translate(-50%, -50%);
   backdrop-filter: blur(12px);
 }
@@ -118,12 +131,12 @@
 .crystal-project-design-canvas__start-icon {
   display: grid;
   place-items: center;
-  width: 30px;
-  height: 30px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.045);
-  color: rgba(255, 255, 255, 0.74);
-  font-size: 15px;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--crystal-color-control-border);
+  background: var(--crystal-color-control-bg);
+  color: var(--crystal-color-control-text);
+  font-size: 14px;
 }
 
 .crystal-project-design-canvas__start-title,
@@ -132,50 +145,57 @@
 }
 
 .crystal-project-design-canvas__start-title {
-  font-size: 14px;
-  line-height: 1.2;
+  font-size: 13px;
+  line-height: 1.15;
 }
 
 .crystal-project-design-canvas__start-text {
-  margin-top: 3px;
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 11px;
-  line-height: 1.35;
+  margin-top: 2px;
+  color: var(--crystal-color-text-dim);
+  font-size: 10px;
+  line-height: 1.3;
 }
 
 .crystal-project-design-canvas__start-actions {
   grid-column: 1 / -1;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 6px;
+  gap: 5px;
 }
 
 .crystal-project-design-canvas__start-action {
   display: grid;
   gap: 2px;
-  min-height: 52px;
-  padding: 9px 10px;
-  border: 1px solid rgba(255, 255, 255, 0.11);
-  background: rgba(255, 255, 255, 0.055);
-  color: rgba(255, 255, 255, 0.86);
+  min-height: 46px;
+  padding: 7px 8px;
+  border: 1px solid var(--crystal-color-control-border);
+  border-radius: var(--crystal-control-radius);
+  background: var(--crystal-color-control-bg);
+  color: var(--crystal-color-text);
   font: inherit;
   text-align: left;
   cursor: pointer;
 }
 
 .crystal-project-design-canvas__start-action:hover {
-  border-color: rgba(147, 197, 253, 0.32);
-  background: rgba(255, 255, 255, 0.085);
+  border-color: var(--crystal-color-control-hover-border);
+  background: var(--crystal-color-control-hover-bg);
+}
+
+.crystal-project-design-canvas__start-action:focus-visible {
+  border-color: var(--crystal-color-accent-border);
+  outline: 2px solid var(--crystal-focus-ring);
+  outline-offset: 1px;
 }
 
 .crystal-project-design-canvas__start-action span {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 650;
 }
 
 .crystal-project-design-canvas__start-action small {
-  color: rgba(255, 255, 255, 0.42);
-  font-size: 10px;
+  color: var(--crystal-color-text-subtle);
+  font-size: 9px;
 }
 
 .crystal-project-design-canvas__stage {
@@ -200,21 +220,21 @@
 .crystal-project-design-canvas__page-frame {
   width: 1280px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   background: #ffffff;
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.42);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.48);
 }
 
 .crystal-project-design-canvas__page-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 24px;
-  padding: 0 10px;
+  height: 22px;
+  padding: 0 9px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.1);
   background: #f3f4f6;
   color: rgba(17, 24, 39, 0.72);
-  font-size: 10px;
+  font-size: 9px;
 }
 
 .crystal-project-design-canvas .crystal-project-preview-panel__frame-wrap {
