@@ -252,8 +252,11 @@ function countToken(sourceText, token) {
 function extractBlock(sourceText, selector) {
   const start = sourceText.indexOf(selector);
   if (start === -1) return "";
-  const end = sourceText.indexOf("}\n", start);
-  return end === -1 ? sourceText.slice(start) : sourceText.slice(start, end + 1);
+
+  const closeMatch = /\}\r?\n/.exec(sourceText.slice(start));
+  if (!closeMatch) return sourceText.slice(start);
+
+  return sourceText.slice(start, start + closeMatch.index + 1);
 }
 
 function parsePackageJson(sourceText) {
