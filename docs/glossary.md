@@ -2,7 +2,7 @@
 
 [Docs index](./README.md)
 
-> **Read this first:** Terms in Crystal often encode a boundary. In particular, `Preview`, `Snapshot`, `Patch Preview`, `Transaction Preview`, `Refresh Boundary`, and `Write` are intentionally different concepts.
+> **Read this first:** Terms in Crystal often encode a boundary. In particular, `Preview`, `Snapshot`, `Patch Preview`, `Transaction Preview`, `Refresh Boundary`, `Dirty-State Preview`, `Source Conflict Preview`, `Write Runtime Capability Preview`, and `Write` are intentionally different concepts.
 
 ## At a glance
 
@@ -12,6 +12,7 @@
 | Preview and inspection | Separates rendered HTML from source-derived state. |
 | Commands and patch planning | Separates intent, dry-run preview, and future execution. |
 | History and refresh planning | Names Phase 6C contracts without claiming execution. |
+| Design editing preflight | Names Phase 6D readiness contracts without enabling Apply. |
 | Future write system | Names blocked capabilities without claiming implementation. |
 | Validation | Names the checks that keep boundaries visible. |
 
@@ -57,6 +58,17 @@
 | RefreshBoundaryPlan | Planning descriptor for derived state that would become stale after a future write. | Yes, planning-only | [Future write flow](./architecture/flows/future-write-flow.md) |
 | CommandTransactionPlanPreview | Preview-only bridge across command preview, Source Patch Preview, transaction preview, and refresh boundary. | Yes, preview-only | [Future command execution](./architecture/commands/future-command-execution.md) |
 
+## Design editing preflight
+
+| Term | Short meaning | Implemented today? | Related docs |
+| --- | --- | --- | --- |
+| DirtyStatePreview | Planning descriptor for future unsaved-change state. | Yes, preview-only | [Roadmap implementation](./roadmap-implementation.md) |
+| SourceConflictPreview | Planning descriptor for future source freshness/conflict checks. | Yes, preview-only | [Future write flow](./architecture/flows/future-write-flow.md) |
+| WriteRuntimeCapabilityPreview | Explicit model showing write runtime capability is unavailable. | Yes, blocked preview | [Future command execution](./architecture/commands/future-command-execution.md) |
+| DesignEditingReadinessPreview | Summary that combines transaction plan, dirty state, conflict preflight, and write runtime capability while keeping Apply blocked. | Yes, preview-only | [Future write flow](./architecture/flows/future-write-flow.md) |
+
+Phase 6D boundary: No source files are written. No patch apply is available. No write IPC exists. Apply remains unavailable. No undo/redo execution runs. Dirty-state is not persisted. No refresh execution runs. No Preview DOM mutation occurs.
+
 ## Future write system
 
 | Term | Short meaning | Implemented today? | Related docs |
@@ -74,8 +86,9 @@
 | Architecture docs validator | Checks docs shape, links, diagrams, tables, callouts, and safety language. | Yes | [Validation system](./architecture/validation-system.md) |
 | Feature validator | Script checking a specific runtime or source boundary. | Yes | [Validation flow](./architecture/flows/validation-flow.md) |
 | History foundation validator | Checks Phase 6C planning contracts and forbidden write behavior. | Yes | [Validation system](./architecture/validation-system.md) |
+| Design editing preflight validator | Checks Phase 6D preflight contracts and blocked Apply/write behavior. | Yes | [Validation system](./architecture/validation-system.md) |
 | Local quick validation | Installed-workspace aggregate gate. | Yes | [Validation gates](./architecture/diagrams/validation-gates.md) |
 
 ## Common misunderstanding
 
-> **Common misunderstanding:** `Preview`, `Source Patch Preview`, `HistoryTransactionPreview`, `RefreshBoundaryPlan`, and `Future write` are different states. Only the first two interact with existing UI, and none of them mutate project files.
+> **Common misunderstanding:** `Preview`, `Source Patch Preview`, `HistoryTransactionPreview`, `RefreshBoundaryPlan`, `DesignEditingReadinessPreview`, and `Future write` are different states. Current preflight models describe blocked future work; none of them mutate project files.
