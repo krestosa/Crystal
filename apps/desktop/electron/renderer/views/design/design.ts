@@ -7,6 +7,8 @@ const CRYSTAL_MIN_CANVAS_WIDTH = 560;
 const CRYSTAL_DIAGNOSTICS_PANEL_MIN_WIDTH = 320;
 const CRYSTAL_DIAGNOSTICS_PANEL_MIN_HEIGHT = 190;
 const CRYSTAL_DIAGNOSTICS_PANEL_MARGIN = 12;
+const CRYSTAL_DIAGNOSTICS_PANEL_RECOVERY_SIZE = 32;
+const CRYSTAL_DIAGNOSTICS_PANEL_MAX_VIEWPORT_RATIO = 1.5;
 const CRYSTAL_RESIZE_KEYBOARD_STEP = 12;
 
 type CrystalWorkspaceInteractionKind =
@@ -101,8 +103,12 @@ function initializeWorkspaceResize(): void {
   let interactionSession: CrystalWorkspaceInteractionSession | null = null;
 
   const getMaxRightWidth = (): number => Math.max(CRYSTAL_RIGHT_SIDEBAR_MIN_WIDTH, Math.min(CRYSTAL_RIGHT_SIDEBAR_MAX_WIDTH, workspace.getBoundingClientRect().width - CRYSTAL_MIN_CANVAS_WIDTH));
-  const getMaxDiagnosticsWidth = (): number => Math.max(CRYSTAL_DIAGNOSTICS_PANEL_MIN_WIDTH, window.innerWidth - CRYSTAL_DIAGNOSTICS_PANEL_MARGIN * 2);
-  const getMaxDiagnosticsHeight = (): number => Math.max(CRYSTAL_DIAGNOSTICS_PANEL_MIN_HEIGHT, window.innerHeight - CRYSTAL_DIAGNOSTICS_PANEL_MARGIN * 2);
+  const getMaxDiagnosticsWidth = (): number => Math.max(CRYSTAL_DIAGNOSTICS_PANEL_MIN_WIDTH, Math.round(window.innerWidth * CRYSTAL_DIAGNOSTICS_PANEL_MAX_VIEWPORT_RATIO));
+  const getMaxDiagnosticsHeight = (): number => Math.max(CRYSTAL_DIAGNOSTICS_PANEL_MIN_HEIGHT, Math.round(window.innerHeight * CRYSTAL_DIAGNOSTICS_PANEL_MAX_VIEWPORT_RATIO));
+  const getMinDiagnosticsLeft = (): number => Math.min(0, CRYSTAL_DIAGNOSTICS_PANEL_RECOVERY_SIZE - diagnosticsWidth);
+  const getMaxDiagnosticsLeft = (): number => Math.max(0, window.innerWidth - CRYSTAL_DIAGNOSTICS_PANEL_RECOVERY_SIZE);
+  const getMinDiagnosticsTop = (): number => Math.min(0, CRYSTAL_DIAGNOSTICS_PANEL_RECOVERY_SIZE - diagnosticsHeight);
+  const getMaxDiagnosticsTop = (): number => Math.max(0, window.innerHeight - CRYSTAL_DIAGNOSTICS_PANEL_RECOVERY_SIZE);
 
   const setRightWidth = (nextWidth: number): void => {
     rightWidth = clampResizeValue(nextWidth, CRYSTAL_RIGHT_SIDEBAR_MIN_WIDTH, getMaxRightWidth());
@@ -111,10 +117,8 @@ function initializeWorkspaceResize(): void {
   };
 
   const setDiagnosticsPosition = (nextLeft: number, nextTop: number): void => {
-    const maxLeft = Math.max(CRYSTAL_DIAGNOSTICS_PANEL_MARGIN, window.innerWidth - diagnosticsWidth - CRYSTAL_DIAGNOSTICS_PANEL_MARGIN);
-    const maxTop = Math.max(CRYSTAL_DIAGNOSTICS_PANEL_MARGIN, window.innerHeight - diagnosticsHeight - CRYSTAL_DIAGNOSTICS_PANEL_MARGIN);
-    diagnosticsLeft = clampResizeValue(nextLeft, CRYSTAL_DIAGNOSTICS_PANEL_MARGIN, maxLeft);
-    diagnosticsTop = clampResizeValue(nextTop, CRYSTAL_DIAGNOSTICS_PANEL_MARGIN, maxTop);
+    diagnosticsLeft = clampResizeValue(nextLeft, getMinDiagnosticsLeft(), getMaxDiagnosticsLeft());
+    diagnosticsTop = clampResizeValue(nextTop, getMinDiagnosticsTop(), getMaxDiagnosticsTop());
     workspace.style.setProperty("--crystal-diagnostics-panel-left", `${Math.round(diagnosticsLeft)}px`);
     workspace.style.setProperty("--crystal-diagnostics-panel-top", `${Math.round(diagnosticsTop)}px`);
   };
