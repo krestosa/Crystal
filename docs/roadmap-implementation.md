@@ -237,6 +237,33 @@ Still out of scope:
 - DOM mutation
 - Apply enablement
 
+### Phase 6D — Design Editing MVP preflight
+
+Covered:
+
+- `DirtyStatePreview` contracts under `packages/core/dirty-state/`
+- `SourceConflictPreview` contracts under `packages/core/source-conflict/`
+- `WriteRuntimeCapabilityPreview` contracts under `packages/core/write-runtime/`
+- `DesignEditingReadinessPreview` contracts under `packages/core/design-editing/`
+- preview-only linkage from CommandTransactionPlanPreview to DirtyStatePreview, SourceConflictPreview, and WriteRuntimeCapabilityPreview
+- validation guarding that Phase 6D remains preflight-only and Apply-blocked
+- `validate:design-editing-preflight` wired into `validate:local:quick:core`
+
+Phase 6D boundary: No source files are written. No patch apply is available. No write IPC exists. Apply remains unavailable. No undo/redo execution runs. Dirty-state is not persisted. No refresh execution runs. No Preview DOM mutation occurs.
+
+Still out of scope:
+
+- real source writes
+- patch apply
+- IPC write
+- save/apply workflow
+- real undo/redo execution
+- dirty-state persistence
+- conflict detection against real source files
+- refresh execution
+- DOM mutation
+- Apply enablement
+
 ### Cross-cutting shell, Diagnostics, and UI system polish
 
 Covered:
@@ -261,18 +288,16 @@ Still out of scope:
 
 ## Recommended next module
 
-### Design Editing MVP preflight
+### Editable Inspector MVP
 
 Recommended scope:
 
 - keep Apply unavailable until a real write runtime is explicitly introduced
-- define dirty-state models before persistence
-- define conflict detection before source mutation
-- define a write-capable command execution runtime behind main/core boundaries
-- connect refresh-boundary execution only after writes are real and validated
-- connect real undo/redo only after durable transaction records exist
+- use Phase 6D readiness output as a blocking preflight signal
+- keep source mutation, patch apply, write IPC, dirty-state persistence, refresh execution, and undo/redo execution future-only
+- avoid renderer filesystem authority and iframe DOM reads
 
-Phase 6C prepared history and refresh boundaries but did not make any write-capable command land.
+Phase 6D prepared editing readiness contracts but did not make any write-capable command land.
 
 ## Not implemented yet
 
@@ -320,7 +345,7 @@ The complete roadmap is documented in [`docs/full-product-roadmap.md`](./full-pr
 4. ~~HTML5 Element Library and safe insertion command foundation.~~ Implemented as read-only Phase 6A foundation.
 5. ~~Source Patch Preview and Command Bus Foundation.~~ Implemented as read-only Phase 6B foundation.
 6. ~~History/Undo transaction skeleton and refresh boundary planning.~~ Implemented as Phase 6C planning foundation.
-7. Design Editing MVP preflight with write-runtime and dirty-state contracts.
+7. ~~Design Editing MVP preflight with write-runtime and dirty-state contracts.~~ Implemented as Phase 6D preflight foundation.
 8. Editable Inspector MVP.
 9. Style Engine and CSS/Sass Inspector.
 10. Responsive Design and Layout Tools.
@@ -345,10 +370,10 @@ For iterative validation after dependencies are already installed, run:
 npm run validate:local:quick
 ```
 
-For Phase 6C-specific validation, run:
+For Phase 6D-specific validation, run:
 
 ```bash
-npm run validate:history-foundation
+npm run validate:design-editing-preflight
 ```
 
 For Electron launch checks, run manually:
@@ -362,7 +387,7 @@ Feature-specific scripts should be added as phases land, for example:
 - `validate:html-element-library`.
 - `validate:source-patch-preview`.
 - `validate:history-foundation`.
-- `validate:design-editing`.
+- `validate:design-editing-preflight`.
 - `validate:style-engine`.
 - `validate:webgpu-overlay`.
 - `validate:wasm-analyzer`.

@@ -10,11 +10,12 @@
 | Can validators patch files? | No. Validators read and fail; they do not mutate source. |
 | Runtime owner | npm scripts and Node validators. |
 | Phase 6C addition | `validate:history-foundation`. |
+| Phase 6D addition | `validate:design-editing-preflight`. |
 | Safety risk controlled | Prevents forbidden shortcuts and false write claims from entering unnoticed. |
 
 ## Purpose
 
-Crystal has several features whose safest behavior is the absence of a shortcut: no renderer filesystem access, no live iframe DOM reads, no write IPC, no patch application, no real undo/redo, and no hidden Apply behavior. The validation system makes those negative guarantees visible while the codebase changes.
+Crystal has several features whose safest behavior is the absence of a shortcut: no renderer filesystem access, no live iframe DOM reads, no write IPC, no patch application, no real undo/redo, no dirty-state persistence, no refresh execution, and no hidden Apply behavior. The validation system makes those negative guarantees visible while the codebase changes.
 
 ## Why this exists
 
@@ -26,6 +27,7 @@ A future visual editor can fail by doing too much too early. Validators keep blo
 | --- | --- |
 | Docs-only architecture check | `npm run validate:architecture-docs` |
 | Phase 6C planning safety | `npm run validate:history-foundation` |
+| Phase 6D preflight safety | `npm run validate:design-editing-preflight` |
 | Installed quick gate | `npm run validate:local:quick` |
 | Full local gate | `npm run validate:local` |
 | Preview safety | `npm run validate:preview` and related Preview validators. |
@@ -33,7 +35,9 @@ A future visual editor can fail by doing too much too early. Validators keep blo
 
 ## Current implementation
 
-Validation is script-based and uses the existing Node toolchain. The root scripts cover build, typecheck, structure, Project Graph, watcher behavior, Preview, DOM Snapshot, Preview Selection, Preview Inspector, Design Canvas, Visual Selection Overlay, HTML Element Library, Source Patch Preview, History Foundation, UI flow, Electron diagnostics, and architecture docs.
+Validation is script-based and uses the existing Node toolchain. The root scripts cover build, typecheck, structure, Project Graph, watcher behavior, Preview, DOM Snapshot, Preview Selection, Preview Inspector, Design Canvas, Visual Selection Overlay, HTML Element Library, Source Patch Preview, History Foundation, Design Editing Preflight, UI flow, Electron diagnostics, and architecture docs.
+
+Phase 6D boundary: No source files are written. No patch apply is available. No write IPC exists. Apply remains unavailable. No undo/redo execution runs. Dirty-state is not persisted. No refresh execution runs. No Preview DOM mutation occurs.
 
 | Implemented | Blocked | Future |
 | --- | --- | --- |
@@ -41,6 +45,7 @@ Validation is script-based and uses the existing Node toolchain. The root script
 | Docs validator. | Docs claiming future writes. | Write runtime safety checks. |
 | Local aggregate runners. | Hidden mutation during validation. | Transaction execution checks. |
 | History foundation validator. | Phase 6C write behavior. | Dirty-state validation. |
+| Design editing preflight validator. | Phase 6D Apply enablement. | Write-runtime validation. |
 
 ## Key files
 
@@ -55,6 +60,7 @@ Read `package.json` first to see the command graph. The scripts below are the fe
 | `scripts/validate-structure.mjs` | Checks source structure. | Source tree. | Rewrite modules. |
 | `scripts/validate-source-patch-preview.mjs` | Guards preview/write boundary. | Source and renderer files. | Permit patch apply. |
 | `scripts/validate-history-foundation.mjs` | Guards Phase 6C planning boundary. | History, refresh, transaction-planning, package scripts, docs. | Permit write execution. |
+| `scripts/validate-design-editing-preflight.mjs` | Guards Phase 6D readiness boundary. | Dirty-state, source-conflict, write-runtime, design-editing, package scripts, docs. | Permit Apply enablement. |
 | `scripts/validate-ui-flow.mjs` | Guards shell UI flow assumptions. | Renderer source. | Change runtime behavior. |
 | `scripts/validate-architecture-docs.mjs` | Checks docs shape and safety language. | Markdown docs. | Replace runtime validators. |
 
@@ -64,6 +70,7 @@ Read `package.json` first to see the command graph. The scripts below are the fe
 | --- | --- | --- |
 | Source files | Do feature constraints still hold? | Pass or explicit failure. |
 | Phase 6C modules | Are contracts present and still planning-only? | Pass or explicit failure. |
+| Phase 6D modules | Are preflight contracts present and still Apply-blocked? | Pass or explicit failure. |
 | Docs files | Are required maps, links, tables, diagrams, callouts, and safety phrases present? | Pass or explicit failure. |
 | Aggregate local command | Did each gate pass in order? | Non-zero exit on failure. |
 
@@ -81,6 +88,7 @@ flowchart TD
     Preview[Preview validators]
     SourcePatch[validate:source-patch-preview]
     History[validate:history-foundation]
+    DesignEditing[validate:design-editing-preflight]
     UI[UI flow validators]
   end
 
@@ -94,6 +102,7 @@ flowchart TD
   Claims --> Quick
   Structure --> QuickCore
   History --> QuickCore
+  DesignEditing --> QuickCore
   Build --> Quick
   Typecheck --> Quick
   Preview --> Quick
@@ -106,7 +115,7 @@ flowchart TD
 
 A passing documentation validator does not prove a feature works. It only proves that the docs set still carries the required map and safety language. A passing feature validator does not grant permission to claim future behavior as implemented.
 
-> **Implementation note:** Phase 6C validation proves the presence and safety of planning contracts; it does not prove execution because no execution path exists.
+> **Implementation note:** Phase 6D validation proves the presence and safety of preflight/readiness contracts; it does not prove execution because no execution path exists.
 
 ## What this does not do
 
@@ -114,6 +123,7 @@ A passing documentation validator does not prove a feature works. It only proves
 | --- | --- |
 | Runtime proof for future writes | No write runtime exists. |
 | Runtime proof for real undo/redo | No executed transaction log exists. |
+| Runtime proof for dirty-state persistence | No dirty-state store exists. |
 | Auto-formatting | Validators should not mutate docs. |
 | Complete import graph validation | Future work. |
 
@@ -127,6 +137,7 @@ Run:
 
 ```bash
 npm run validate:history-foundation
+npm run validate:design-editing-preflight
 npm run validate:architecture-docs
 npm run validate:local:quick
 ```
@@ -143,4 +154,4 @@ Use `validate:local` when the full install-backed path is needed.
 
 ## Future work
 
-The next validation improvements should check import boundaries and docs-to-source path drift. Write-capable phases will need additional gates for command execution, patch application, transaction records, refresh invalidation, dirty state, and undo/redo reversibility.
+The next validation improvements should check import boundaries and docs-to-source path drift. Write-capable phases will need additional gates for command execution, patch application, transaction records, refresh invalidation, dirty state, conflict detection, and undo/redo reversibility.
