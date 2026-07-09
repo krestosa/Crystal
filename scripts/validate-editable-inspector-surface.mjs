@@ -14,7 +14,9 @@ const requiredFiles = [
   "apps/desktop/electron/renderer/views/inspector/editable-inspector/index.ts",
   "apps/desktop/electron/renderer/components/project-preview-panel/inspector/project-preview-inspector-renderer.ts",
   "apps/desktop/electron/renderer/components/project-preview-panel/project-preview-panel.html",
-  "apps/desktop/electron/renderer/components/project-preview-panel/project-preview-panel.types.ts"
+  "apps/desktop/electron/renderer/components/project-preview-panel/project-preview-panel.ts",
+  "apps/desktop/electron/renderer/components/project-preview-panel/project-preview-panel.types.ts",
+  "apps/desktop/electron/renderer/components/project-preview-panel/project-preview-panel.scss"
 ];
 
 const forbiddenPatterns = [
@@ -72,6 +74,10 @@ function walk(dir) {
   return files;
 }
 
+function unique(files) {
+  return [...new Set(files)];
+}
+
 for (const file of requiredFiles) read(file);
 
 requireIncludes("packages/core/inspector-editing/inspector-editing.view-model.ts", [
@@ -95,7 +101,7 @@ requireIncludes("apps/desktop/electron/renderer/views/inspector/editable-inspect
   "InspectorEditDraftPreview",
   "InspectorEditIntentPreview",
   "InspectorEditingReadinessPreview",
-  "editableInspectorApply: HTMLElement",
+  "editableInspectorApplyUnavailableAffordance: HTMLElement",
   "controlReadOnly: true",
   "controlDisabled: true",
   "applyDisabled: true"
@@ -105,8 +111,8 @@ requireIncludes("apps/desktop/electron/renderer/views/inspector/editable-inspect
   "renderEditableInspectorSurface",
   "input.readOnly = true",
   "input.disabled = true",
-  "editableInspectorApply.setAttribute(\"aria-disabled\", \"true\")",
-  "editableInspectorApply.setAttribute(\"data-disabled\", \"true\")",
+  "editableInspectorApplyUnavailableAffordance.setAttribute(\"aria-disabled\", \"true\")",
+  "editableInspectorApplyUnavailableAffordance.setAttribute(\"data-disabled\", \"true\")",
   "replaceChildren"
 ]);
 
@@ -127,6 +133,14 @@ requireIncludes("apps/desktop/electron/renderer/components/project-preview-panel
   "Apply unavailable — write runtime not enabled"
 ]);
 
+requireIncludes("apps/desktop/electron/renderer/components/project-preview-panel/project-preview-panel.types.ts", [
+  "editableInspectorApplyUnavailableAffordance: HTMLElement"
+]);
+
+requireIncludes("apps/desktop/electron/renderer/components/project-preview-panel/project-preview-panel.ts", [
+  "editableInspectorApplyUnavailableAffordance: query(\"[data-editable-inspector-apply]\", HTMLElement)"
+]);
+
 requireIncludes("package.json", [
   "\"validate:editable-inspector-surface\"",
   "npm run validate:editable-inspector-surface",
@@ -145,10 +159,20 @@ if (!/<p\b[^>]*data-editable-inspector-apply/i.test(previewPanelHtml)) {
   errors.push("Editable Inspector Apply affordance must be rendered as a passive paragraph element.");
 }
 
-const guardedSourceFiles = [
-  ...walk("apps/desktop/electron/renderer").filter((file) => /\.(ts|html|scss)$/.test(file)),
-  ...walk("packages/core/inspector-editing").filter((file) => file.endsWith(".ts"))
+const editableInspectorSurfaceFiles = walk("apps/desktop/electron/renderer/views/inspector/editable-inspector").filter((file) => file.endsWith(".ts"));
+const projectPreviewPanelSurfaceFiles = [
+  "apps/desktop/electron/renderer/components/project-preview-panel/project-preview-panel.html",
+  "apps/desktop/electron/renderer/components/project-preview-panel/project-preview-panel.ts",
+  "apps/desktop/electron/renderer/components/project-preview-panel/project-preview-panel.types.ts",
+  "apps/desktop/electron/renderer/components/project-preview-panel/project-preview-panel.scss",
+  "apps/desktop/electron/renderer/components/project-preview-panel/inspector/project-preview-inspector-renderer.ts"
 ];
+const inspectorEditingCoreFiles = walk("packages/core/inspector-editing").filter((file) => file.endsWith(".ts"));
+const guardedSourceFiles = unique([
+  ...editableInspectorSurfaceFiles,
+  ...projectPreviewPanelSurfaceFiles,
+  ...inspectorEditingCoreFiles
+]);
 
 for (const file of guardedSourceFiles) {
   const content = read(file);
@@ -158,7 +182,7 @@ for (const file of guardedSourceFiles) {
   if (/Apply/.test(content) && !/(disabled|unavailable|blocked|applyDisabled|applyAvailable:\s*false)/i.test(content)) {
     errors.push(`${file} mentions Apply without disabled/unavailable/blocked context.`);
   }
-  if (/editableInspectorApply\.addEventListener|data-editable-inspector-apply[\s\S]{0,160}on(click|submit)/.test(content)) {
+  if (/editableInspectorApplyUnavailableAffordance\.addEventListener|data-editable-inspector-apply[\s\S]{0,160}on(click|submit)/.test(content)) {
     errors.push(`${file} appears to attach an enabled Apply handler.`);
   }
 }
