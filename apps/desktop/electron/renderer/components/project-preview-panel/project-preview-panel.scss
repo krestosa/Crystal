@@ -231,6 +231,7 @@
 .crystal-project-preview-panel__editable-intent-label,
 .crystal-css-sass-inspector__source-label,
 .crystal-css-sass-inspector__rule-label,
+.crystal-css-sass-inspector__authored-match-label,
 .crystal-css-sass-inspector__section-title {
   overflow: hidden;
   color: var(--crystal-color-text-muted);
@@ -260,8 +261,10 @@
 .crystal-project-preview-panel__editable-intents,
 .crystal-css-sass-inspector__sources,
 .crystal-css-sass-inspector__rules,
+.crystal-css-sass-inspector__authored-matches,
 .crystal-css-sass-inspector__selectors,
 .crystal-css-sass-inspector__declarations,
+.crystal-css-sass-inspector__authored-match-evidence,
 .crystal-css-sass-inspector__safety-list {
   display: grid;
   gap: var(--crystal-space-1);
@@ -274,6 +277,7 @@
 .crystal-project-preview-panel__editable-intent,
 .crystal-css-sass-inspector__source,
 .crystal-css-sass-inspector__rule,
+.crystal-css-sass-inspector__authored-match,
 .crystal-css-sass-inspector__declaration {
   display: grid;
   gap: var(--crystal-space-1);
@@ -301,6 +305,7 @@
 }
 
 .crystal-css-sass-inspector__declaration span,
+.crystal-css-sass-inspector__authored-match-evidence li,
 .crystal-css-sass-inspector__safety-list li {
   color: var(--crystal-color-text-subtle);
   font-size: var(--crystal-font-size-caption);

@@ -8,6 +8,8 @@ import {
 } from "./css-sass-inspector.constants";
 import type {
   CSSSassInspectorApplyAffordance,
+  CSSSassInspectorAuthoredMatchesSummary,
+  CSSSassInspectorAuthoredMatchSection,
   CSSSassInspectorRuleSection,
   CSSSassInspectorSourceSection,
   CSSSassInspectorSourceSummary,
@@ -16,6 +18,8 @@ import type {
   CSSSassInspectorSurfaceViewModel
 } from "./css-sass-inspector.types";
 import type {
+  AuthoredStyleRuleMatchCandidatePreview,
+  SelectedNodeAuthoredStyleMatchesPreview,
   SelectedNodeStyleReadinessPreview,
   StyleRulePreview,
   StyleSourceInventoryPreview,
@@ -25,26 +29,32 @@ import type {
 export function createCSSSassInspectorSurfaceViewModel(input: CSSSassInspectorSurfaceInput): CSSSassInspectorSurfaceViewModel {
   const readinessPreview = input.readinessPreview ?? null;
   const inventoryPreview = readinessPreview?.inventoryPreview ?? null;
+  const authoredMatchesPreview = input.authoredMatchesPreview ?? null;
   const sourceSummary = createSourceSummary(readinessPreview, inventoryPreview);
+  const authoredMatchesSummary = createAuthoredMatchesSummary(authoredMatchesPreview);
   const sourceSections = (inventoryPreview?.sources ?? []).map(createSourceSection);
   const ruleSections = (input.rulePreviews ?? []).map(createRuleSection);
-  const status = resolveSurfaceStatus(readinessPreview, inventoryPreview, sourceSummary);
+  const authoredMatchSections = (authoredMatchesPreview?.candidates ?? []).map(createAuthoredMatchSection);
+  const status = resolveSurfaceStatus(readinessPreview, inventoryPreview, sourceSummary, authoredMatchesPreview);
 
   return {
     surfaceId: CSS_SASS_INSPECTOR_SURFACE_ID,
     title: CSS_SASS_INSPECTOR_TITLE,
     status,
-    selectedNodePath: readinessPreview?.selectedNodePath || "none",
-    targetRelativePath: readinessPreview?.targetRelativePath || inventoryPreview?.targetRelativePath || "none",
+    selectedNodePath: authoredMatchesPreview?.selectedNodePath || readinessPreview?.selectedNodePath || "none",
+    targetRelativePath: authoredMatchesPreview?.targetRelativePath || readinessPreview?.targetRelativePath || inventoryPreview?.targetRelativePath || "none",
     sourceSummary,
+    authoredMatchesSummary,
     sourceSections,
     ruleSections,
-    safetyNotes: collectSafetyNotes(readinessPreview, inventoryPreview),
-    blockedReason: resolveBlockedReason(status, readinessPreview),
-    message: resolveMessage(status, readinessPreview),
+    authoredMatchSections,
+    safetyNotes: collectSafetyNotes(readinessPreview, inventoryPreview, authoredMatchesPreview),
+    blockedReason: resolveBlockedReason(status, readinessPreview, authoredMatchesPreview),
+    message: resolveMessage(status, readinessPreview, authoredMatchesPreview),
     applyAffordance: createApplyAffordance(),
     sourceInventoryPreview: inventoryPreview,
-    styleReadinessPreview: readinessPreview
+    styleReadinessPreview: readinessPreview,
+    authoredMatchesPreview
   };
 }
 
@@ -67,6 +77,20 @@ function createSourceSummary(
     canInspectAuthoredStyles: readinessPreview?.canInspectAuthoredStyles ?? false,
     canInspectComputedStyles: false,
     canEditStyles: false,
+    canApply: false
+  };
+}
+
+function createAuthoredMatchesSummary(
+  authoredMatchesPreview: SelectedNodeAuthoredStyleMatchesPreview | null
+): CSSSassInspectorAuthoredMatchesSummary {
+  return {
+    status: authoredMatchesPreview?.status ?? "empty",
+    matchedCandidateCount: authoredMatchesPreview?.matchedCandidateCount ?? 0,
+    unsupportedCandidateCount: authoredMatchesPreview?.unsupportedCandidateCount ?? 0,
+    notMatchedCandidateCount: authoredMatchesPreview?.notMatchedCandidateCount ?? 0,
+    totalCandidateCount: authoredMatchesPreview?.totalCandidateCount ?? 0,
+    canInspectComputedStyles: false,
     canApply: false
   };
 }
@@ -102,11 +126,34 @@ function createRuleSection(rule: StyleRulePreview): CSSSassInspectorRuleSection 
   };
 }
 
+function createAuthoredMatchSection(candidate: AuthoredStyleRuleMatchCandidatePreview): CSSSassInspectorAuthoredMatchSection {
+  const selectorLabels = candidate.selectorMatches.map((selector) => `${selector.selectorText} · ${selector.status}`);
+  const evidence = candidate.selectorMatches.flatMap((selector) => selector.evidence.length > 0 ? selector.evidence : [selector.unsupportedReason ?? selector.status]);
+  const declarationLabels = candidate.declarationPreviews.map((declaration) => `${declaration.propertyName}: ${declaration.propertyValue}`);
+
+  return {
+    candidateId: candidate.candidateId,
+    ruleId: candidate.ruleId,
+    sourceId: candidate.sourceId,
+    status: candidate.status,
+    selectorLabels,
+    declarationLabels,
+    declarations: candidate.declarationPreviews,
+    evidence,
+    blockedReason: candidate.blockedReason ?? "Candidate match only — no cascade; Apply unavailable.",
+    canEdit: false,
+    canApply: false
+  };
+}
+
 function resolveSurfaceStatus(
   readinessPreview: SelectedNodeStyleReadinessPreview | null,
   inventoryPreview: StyleSourceInventoryPreview | null,
-  sourceSummary: CSSSassInspectorSourceSummary
+  sourceSummary: CSSSassInspectorSourceSummary,
+  authoredMatchesPreview: SelectedNodeAuthoredStyleMatchesPreview | null
 ): CSSSassInspectorSurfaceStatus {
+  if (authoredMatchesPreview?.status === "blocked") return "blocked";
+  if (authoredMatchesPreview && authoredMatchesPreview.status !== "empty") return "authored-matching";
   if (!readinessPreview || !inventoryPreview || sourceSummary.totalSourceCount === 0 || inventoryPreview.status === "empty") return "empty";
   if (readinessPreview.status === "blocked" || inventoryPreview.status === "blocked") return "blocked";
   if (readinessPreview.status === "unsupported") return "unsupported";
@@ -114,28 +161,41 @@ function resolveSurfaceStatus(
   return "inventory-only";
 }
 
-function resolveBlockedReason(status: CSSSassInspectorSurfaceStatus, readinessPreview: SelectedNodeStyleReadinessPreview | null): string {
-  if (status === "empty") return CSS_SASS_INSPECTOR_EMPTY_MESSAGE;
-  if (status === "blocked") return readinessPreview?.blockedReason ?? CSS_SASS_INSPECTOR_BLOCKED_MESSAGE;
-  if (status === "unsupported") return "Unsupported source inventory; Sass/SCSS compilation, Sass import resolution, and non-parseable sources remain out of scope.";
+function resolveBlockedReason(
+  status: CSSSassInspectorSurfaceStatus,
+  readinessPreview: SelectedNodeStyleReadinessPreview | null,
+  authoredMatchesPreview: SelectedNodeAuthoredStyleMatchesPreview | null
+): string {
+  if (status === "empty") return authoredMatchesPreview?.blockedReason ?? CSS_SASS_INSPECTOR_EMPTY_MESSAGE;
+  if (status === "blocked") return authoredMatchesPreview?.blockedReason ?? readinessPreview?.blockedReason ?? CSS_SASS_INSPECTOR_BLOCKED_MESSAGE;
+  if (status === "unsupported") return "Unsupported selector — requires future selector engine.";
+  if (status === "authored-matching") return "Authored selector candidates from DOM Snapshot. Candidate match only — no cascade.";
   return readinessPreview?.blockedReason ?? "Inventory-only authored style inspection; Apply is unavailable.";
 }
 
-function resolveMessage(status: CSSSassInspectorSurfaceStatus, readinessPreview: SelectedNodeStyleReadinessPreview | null): string {
+function resolveMessage(
+  status: CSSSassInspectorSurfaceStatus,
+  readinessPreview: SelectedNodeStyleReadinessPreview | null,
+  authoredMatchesPreview: SelectedNodeAuthoredStyleMatchesPreview | null
+): string {
+  if (status === "authored-matching") return "Authored selector candidates from DOM Snapshot. Candidate match only — no cascade. Computed styles unavailable.";
+  if (authoredMatchesPreview?.status === "empty") return "No authored matches from DOM Snapshot.";
   if (status === "inventory-only") return "Authored style inventory is available as a read-only preview. Cascade and computed styles remain unavailable.";
-  if (status === "blocked") return readinessPreview?.blockedReason ?? CSS_SASS_INSPECTOR_BLOCKED_MESSAGE;
-  if (status === "unsupported") return "Unsupported style sources are present; Sass/SCSS compilation and non-parseable sources are not inspected in Phase 8B.";
+  if (status === "blocked") return authoredMatchesPreview?.blockedReason ?? readinessPreview?.blockedReason ?? CSS_SASS_INSPECTOR_BLOCKED_MESSAGE;
+  if (status === "unsupported") return "Unsupported style sources are present; Sass/SCSS compilation and non-parseable sources are not inspected in Phase 8C.";
   return CSS_SASS_INSPECTOR_EMPTY_MESSAGE;
 }
 
 function collectSafetyNotes(
   readinessPreview: SelectedNodeStyleReadinessPreview | null,
-  inventoryPreview: StyleSourceInventoryPreview | null
+  inventoryPreview: StyleSourceInventoryPreview | null,
+  authoredMatchesPreview: SelectedNodeAuthoredStyleMatchesPreview | null
 ): readonly string[] {
   const notes = [
     ...CSS_SASS_INSPECTOR_SAFETY_NOTES,
     ...(inventoryPreview?.safetyNotes ?? []),
-    ...(readinessPreview?.safetyNotes ?? [])
+    ...(readinessPreview?.safetyNotes ?? []),
+    ...(authoredMatchesPreview?.safetyNotes ?? [])
   ];
   return [...new Set(notes)];
 }

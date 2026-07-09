@@ -320,6 +320,8 @@ function getProjectPreviewPanelElements(panel: HTMLElement): ProjectPreviewPanel
     cssSassInspectorSourcesEmpty: query("[data-css-sass-inspector-sources-empty]", HTMLElement),
     cssSassInspectorRules: query("[data-css-sass-inspector-rules]", HTMLUListElement),
     cssSassInspectorRulesEmpty: query("[data-css-sass-inspector-rules-empty]", HTMLElement),
+    cssSassInspectorAuthoredMatches: query("[data-css-sass-inspector-authored-matches]", HTMLUListElement),
+    cssSassInspectorAuthoredMatchesEmpty: query("[data-css-sass-inspector-authored-matches-empty]", HTMLElement),
     cssSassInspectorSafety: query("[data-css-sass-inspector-safety]", HTMLUListElement),
     cssSassInspectorApplyUnavailableAffordance: query("[data-css-sass-inspector-apply-unavailable]", HTMLElement),
     issuesEmpty: query("[data-project-preview-issues-empty]", HTMLElement),

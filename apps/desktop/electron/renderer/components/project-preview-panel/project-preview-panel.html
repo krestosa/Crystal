@@ -83,11 +83,18 @@
           <p class="crystal-project-preview-panel__inspector-empty crystal-shell-empty-state" data-css-sass-inspector-rules-empty>Rule preview unavailable — source text not provided</p>
           <ul class="crystal-css-sass-inspector__rules" data-css-sass-inspector-rules></ul>
         </div>
+        <div class="crystal-css-sass-inspector__section">
+          <h5 class="crystal-css-sass-inspector__section-title">Authored matches</h5>
+          <p class="crystal-project-preview-panel__inspector-empty crystal-shell-empty-state" data-css-sass-inspector-authored-matches-empty>No authored matches from DOM Snapshot</p>
+          <ul class="crystal-css-sass-inspector__authored-matches" data-css-sass-inspector-authored-matches></ul>
+        </div>
         <div class="crystal-css-sass-inspector__section crystal-css-sass-inspector__safety">
           <h5 class="crystal-css-sass-inspector__section-title">Safety boundary</h5>
           <ul class="crystal-css-sass-inspector__safety-list" data-css-sass-inspector-safety>
             <li>No real cascade is calculated</li>
             <li>No computed styles are read</li>
+            <li>Candidate match only — no cascade</li>
+            <li>Computed styles unavailable</li>
             <li>No Preview DOM mutation occurs</li>
             <li>No write IPC exists</li>
             <li>Apply remains unavailable</li>
