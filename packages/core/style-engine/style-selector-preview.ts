@@ -1,4 +1,4 @@
-import { STYLE_ENGINE_READONLY_SAFETY_NOTE, STYLE_SELECTOR_NOT_EVALUATED_STATUS } from "./style-engine.constants";
+import { STYLE_ENGINE_READONLY_SAFETY_NOTE } from "./style-engine.constants";
 import type {
   StyleSelectorKind,
   StyleSelectorPreview,
@@ -15,7 +15,7 @@ export function createStyleSelectorPreview(input: StyleSelectorPreviewInput): St
     selectorText,
     selectorKind: input.selectorKind ?? inferSelectorKind(selectorText),
     specificityPreview: input.specificityPreview ?? createSpecificityPreview(selectorText),
-    matchStatus: input.matchStatus ?? STYLE_SELECTOR_NOT_EVALUATED_STATUS,
+    matchStatus: input.matchStatus ?? "not-evaluated",
     canEvaluateAgainstDomSnapshot: input.canEvaluateAgainstDomSnapshot ?? true,
     canEvaluateAgainstIframe: false,
     safetyNotes: [STYLE_ENGINE_READONLY_SAFETY_NOTE, ...(input.safetyNotes ?? [])]
