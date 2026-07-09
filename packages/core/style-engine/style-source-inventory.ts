@@ -32,8 +32,8 @@ export function createStyleSourceInventoryPreview(input: StyleSourceInventoryPre
     htmlSourceText: input.htmlSourceText
   });
   const sources = [...(input.sources ?? []), ...discoveredSources].sort((a, b) => a.loadOrder - b.loadOrder);
-  const inlineStyleBlockCount = countInlineStyleBlocks(input.htmlSourceText) + sources.filter((source) => source.sourceKind === "inline-style-block").length;
-  const inlineStyleAttributeCount = countInlineStyleAttributes(input.htmlSourceText) + sources.filter((source) => source.sourceKind === "inline-style-attribute").length;
+  const inlineStyleBlockCount = sources.filter((source) => source.sourceKind === "inline-style-block").length;
+  const inlineStyleAttributeCount = sources.filter((source) => source.sourceKind === "inline-style-attribute").length;
   const linkedStylesheetCount = sources.filter((source) => source.sourceKind === STYLE_SOURCE_KIND_LINKED_CSS || source.sourceKind === STYLE_SOURCE_KIND_LINKED_SCSS).length;
   const unsupportedSourceCount = sources.filter((source) => source.status === STYLE_SOURCE_UNSUPPORTED_STATUS).length;
   const missingSourceCount = sources.filter((source) => source.status === STYLE_SOURCE_UNAVAILABLE_STATUS).length;
