@@ -117,7 +117,7 @@ flowchart TD
 
 ## Boundaries
 
-Phase 6C models are planning-only. They must not write files, apply patches, add IPC write channels, enable Apply, mutate iframe DOM, reload Preview, clear actual selection state, persist dirty state, or claim actual insertion.
+- Phase 6C models are planning-only; they describe HistoryTransactionPreview, RefreshBoundaryPlan, and CommandTransactionPlanPreview without executing writes, refreshes, undo, or redo.
 
 Phase 8A models are inventory-only. They must not write files, apply patches, add IPC write channels, enable Apply, use contenteditable, mutate iframe DOM, reload Preview, clear actual selection state, persist dirty state, claim applied style editing, read computed styles, calculate real cascade, or expose a CSS/Sass Inspector visual surface. Any later write flow must not write files until persistence, conflict detection, history execution, refresh execution, and Apply UX are designed together.
 
