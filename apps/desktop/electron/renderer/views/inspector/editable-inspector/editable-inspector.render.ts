@@ -15,9 +15,9 @@ export function renderEditableInspectorSurface(elements: EditableInspectorSurfac
 
   elements.editableInspectorStatus.textContent = model.statusLabel;
   elements.editableInspectorMessage.textContent = validation.valid ? model.message : validation.errors.join(" · ");
-  elements.editableInspectorApply.textContent = EDITABLE_INSPECTOR_APPLY_LABEL;
-  elements.editableInspectorApply.setAttribute("aria-disabled", "true");
-  elements.editableInspectorApply.setAttribute("data-disabled", "true");
+  elements.editableInspectorApplyUnavailableAffordance.textContent = EDITABLE_INSPECTOR_APPLY_LABEL;
+  elements.editableInspectorApplyUnavailableAffordance.setAttribute("aria-disabled", "true");
+  elements.editableInspectorApplyUnavailableAffordance.setAttribute("data-disabled", "true");
 
   renderReadiness(elements.editableInspectorReadiness, model);
   renderFields(elements, model.fields);
