@@ -1,4 +1,5 @@
-import { CSS_SASS_INSPECTOR_RULES_UNAVAILABLE } from "./css-sass-inspector.constants";
+const CSS_SASS_INSPECTOR_RULE_PREVIEW_EMPTY_COPY = "Rule preview unavailable — source text not provided";
+
 import type {
   CSSSassInspectorRuleSection,
   CSSSassInspectorSourceSection,
@@ -66,7 +67,7 @@ function createSourceItem(source: CSSSassInspectorSourceSection): HTMLLIElement 
 
 function renderRules(elements: CSSSassInspectorSurfaceElements, rules: readonly CSSSassInspectorRuleSection[]): void {
   elements.cssSassInspectorRulesEmpty.hidden = rules.length > 0;
-  elements.cssSassInspectorRulesEmpty.textContent = CSS_SASS_INSPECTOR_RULES_UNAVAILABLE;
+  elements.cssSassInspectorRulesEmpty.textContent = CSS_SASS_INSPECTOR_RULE_PREVIEW_EMPTY_COPY;
   elements.cssSassInspectorRules.replaceChildren(...rules.map(createRuleItem));
 }
 
