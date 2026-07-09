@@ -49,7 +49,7 @@ export function extractIssueLines(output) {
   return output
     .split(/\r?\n/)
     .map((line) => line.trim())
-    .filter((line) => line.startsWith("-") || /^FAIL\b/.test(line) || /^Error:/i.test(line) || /^Missing npm script:/i.test(line));
+    .filter((line) => line.startsWith("-") || /^FAIL\b/.test(line) || /^Error:/i.test(line) || /^Missing npm script:/i.test(line) || /^Missing direct Node script:/i.test(line));
 }
 
 export function indentBlock(text, prefix = "  ") {

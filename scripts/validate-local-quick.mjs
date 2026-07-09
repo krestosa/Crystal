@@ -5,5 +5,6 @@ const flags = parseValidationRunnerFlags();
 
 runValidationSuite(localQuickValidationChecks, {
   title: "Crystal local quick validation",
+  suiteName: "local-quick",
   ...flags
 });

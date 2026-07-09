@@ -25,7 +25,12 @@ export function parseValidationRunnerFlags(argv = process.argv.slice(2)) {
     allowSkips: argv.includes("--allow-skips"),
     noProgress: argv.includes("--no-progress"),
     plain: argv.includes("--plain"),
-    compact: argv.includes("--compact")
+    ascii: argv.includes("--ascii"),
+    unicode: argv.includes("--unicode"),
+    raw: argv.includes("--raw"),
+    jsonSummary: argv.includes("--json-summary"),
+    compact: argv.includes("--compact"),
+    topSlowest: parseTopSlowest(argv)
   };
 }
 
@@ -35,8 +40,9 @@ export function runValidationSuite(checks, options = {}) {
   const cwd = options.cwd ?? process.cwd();
   const packageJson = readPackageJson(cwd);
   const suiteStart = performance.now();
+  const suiteName = options.suiteName ?? "local-quick";
 
-  reporter.startSuite(options.title ?? "Crystal validation", checks, options);
+  reporter.startSuite(options.title ?? "Crystal validation", checks, { ...options, suiteName });
 
   for (let index = 0; index < checks.length; index += 1) {
     const check = checks[index];
@@ -56,6 +62,7 @@ export function runValidationSuite(checks, options = {}) {
           durationMs: 0,
           command: formatValidationCommand(skippedCheck),
           executedCommand: formatExecutedCommand(skippedCheck),
+          executionMode: "skipped",
           exitCode: null,
           stdout: "",
           stderr: "",
@@ -71,7 +78,7 @@ export function runValidationSuite(checks, options = {}) {
   }
 
   const suiteDurationMs = performance.now() - suiteStart;
-  reporter.finalSummary(results, options, { durationMs: suiteDurationMs });
+  reporter.finalSummary(results, options, { durationMs: suiteDurationMs, suiteName });
 
   const hasFail = results.some((result) => result.status === VALIDATION_FAIL_STATUS);
   const hasSkipped = results.some((result) => result.status === VALIDATION_SKIPPED_STATUS);
@@ -95,6 +102,7 @@ function runValidationCheck(check, packageJson, options) {
       durationMs: performance.now() - start,
       command: commandText,
       executedCommand: executedCommandText,
+      executionMode: check.executionMode ?? inferExecutionMode(check),
       exitCode: null,
       stdout: "",
       stderr: `Missing npm script: ${check.npmScript}`,
@@ -113,6 +121,7 @@ function runValidationCheck(check, packageJson, options) {
       durationMs: performance.now() - start,
       command: commandText,
       executedCommand: executedCommandText,
+      executionMode: check.executionMode ?? inferExecutionMode(check),
       exitCode: null,
       stdout: "",
       stderr: `Missing direct Node script: ${check.directScriptPath}`,
@@ -140,6 +149,7 @@ function runValidationCheck(check, packageJson, options) {
       durationMs,
       command: commandText,
       executedCommand: formatCommand(invocation.command, invocation.args),
+      executionMode: check.executionMode ?? inferExecutionMode(check),
       exitCode: null,
       stdout: execution.stdout ?? "",
       stderr: `${execution.stderr ?? ""}\n${execution.error.message}`.trim(),
@@ -161,6 +171,7 @@ function runValidationCheck(check, packageJson, options) {
     durationMs,
     command: commandText,
     executedCommand: formatCommand(invocation.command, invocation.args),
+    executionMode: check.executionMode ?? inferExecutionMode(check),
     exitCode,
     stdout: execution.stdout ?? "",
     stderr: execution.stderr ?? "",
@@ -216,6 +227,21 @@ function formatExecutedCommand(check) {
     return formatCommand(invocation.command, invocation.args);
   }
   return formatCommand(check.command, check.args ?? []);
+}
+
+function inferExecutionMode(check) {
+  if (check.executionMode) return check.executionMode;
+  if (check.commandMode === "npm") return "npm";
+  if (check.command === process.execPath) return "direct-node";
+  return "custom";
+}
+
+function parseTopSlowest(argv) {
+  const flag = argv.find((item) => item.startsWith("--top-slowest="));
+  if (!flag) return 5;
+  const value = Number.parseInt(flag.slice("--top-slowest=".length), 10);
+  if (!Number.isFinite(value) || value < 0) return 5;
+  return value;
 }
 
 function readPackageJson(cwd = process.cwd()) {

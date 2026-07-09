@@ -9,18 +9,34 @@ import {
   VALIDATION_PASS_STATUS,
   VALIDATION_SKIPPED_STATUS
 } from "./validation-result.mjs";
-import { extractIssueLines, formatCommand, formatDuration, formatPercent, formatProgressBar, formatStatus, formatStepIndex, indentBlock, padRight } from "./validation-format.mjs";
+import { formatCommand, formatDuration, formatPercent, formatStatus, formatStepIndex, indentBlock, padRight } from "./validation-format.mjs";
+import { detectTerminalCapabilities, getTerminalWidth } from "./validation-terminal-capabilities.mjs";
+import { resolveRenderMode, shouldUseLiveProgress, VALIDATION_RENDER_ASCII, VALIDATION_RENDER_JSON_SUMMARY, VALIDATION_RENDER_PLAIN, VALIDATION_RENDER_RAW } from "./validation-render-mode.mjs";
+import { summarizePerformance } from "./validation-performance.mjs";
+import {
+  renderBox,
+  renderDurationBarChart,
+  renderKeyValueRows,
+  renderProgressBar,
+  renderStatus,
+  renderTable,
+  renderTree,
+  truncateText
+} from "./validation-terminal-components.mjs";
 
 const LABEL_WIDTH = 38;
 const SUMMARY_LABEL_WIDTH = 38;
+const OUTPUT_TRUNCATE_LIMIT = 12000;
 const SUMMARY_CATEGORY_NAMES = new Map([
   ["docs", "Docs"],
   ["build", "Build"],
+  ["typecheck", "Typecheck"],
   ["core", "Core"],
   ["preview", "Preview"],
   ["ui", "UI"],
   ["watch", "Watch"],
-  ["doctor", "Doctor"]
+  ["doctor", "Doctor"],
+  ["validation", "Validation"]
 ]);
 
 export class ValidationReporter {
@@ -28,31 +44,55 @@ export class ValidationReporter {
     this.verbose = Boolean(options.verbose);
     this.noProgress = Boolean(options.noProgress);
     this.compact = Boolean(options.compact);
-    this.plain = Boolean(options.plain) || process.stdout.isTTY !== true;
-    this.liveProgress = !this.noProgress && process.stdout.isTTY === true;
+    this.capabilities = detectTerminalCapabilities();
+    this.renderMode = resolveRenderMode(options, this.capabilities);
+    this.plain = this.renderMode === VALIDATION_RENDER_ASCII || this.renderMode === VALIDATION_RENDER_PLAIN || this.renderMode === VALIDATION_RENDER_RAW || this.renderMode === VALIDATION_RENDER_JSON_SUMMARY;
+    this.raw = this.renderMode === VALIDATION_RENDER_RAW;
+    this.jsonSummary = this.renderMode === VALIDATION_RENDER_JSON_SUMMARY;
+    this.liveProgress = shouldUseLiveProgress(this.renderMode, options, this.capabilities);
     this.liveLineActive = false;
+    this.width = getTerminalWidth(this.capabilities);
+    this.topSlowest = options.topSlowest ?? 5;
   }
 
   startSuite(title, checks = [], options = {}) {
+    if (this.jsonSummary) return;
+    if (this.raw) {
+      this.printRawEvent("VALIDATION_START", {
+        suite: options.suiteName ?? "local-quick",
+        checks: checks.length,
+        mode: options.failFast ? "strict-fail-fast" : "strict"
+      });
+      return;
+    }
+
     this.printTitle(title);
     this.printSuiteMetadata(checks, options);
     console.log("");
   }
 
   startStep(check, index, total) {
-    if (!this.liveProgress) return;
+    if (!this.liveProgress || this.raw || this.jsonSummary) return;
     const step = formatStepIndex(index, total);
-    const label = padRight(check.label, LABEL_WIDTH);
+    const label = truncateText(check.label, LABEL_WIDTH);
     const percent = formatPercent(index + 1, total);
-    const progress = formatProgressBar(index + 1, total, { plain: this.plain, width: 24 });
+    const progress = renderProgressBar(index + 1, total, { plain: this.plain, width: 24 });
     const line = this.plain
-      ? `> ${step} ${label} ${formatStatus("RUNNING")} [${progress}] ${percent}`
-      : `⏳ ${step} ${label} ${progress} ${percent} RUNNING`;
+      ? `${renderStatus("RUNNING", { plain: true })} ${step} ${padRight(label, LABEL_WIDTH)} ${formatStatus("RUNNING")} ${progress} ${percent}`
+      : `${renderStatus("RUNNING", { plain: false })} ${step} ${padRight(label, LABEL_WIDTH)} ${progress} ${percent} RUNNING`;
     this.writeLiveLine(line);
   }
 
   completeStep(result, index, total) {
     this.clearLiveLine();
+
+    if (this.jsonSummary) return;
+
+    if (this.raw) {
+      this.printRawStep(result);
+      return;
+    }
+
     console.log(this.formatResultLine(result, index, total));
 
     if (result.status === VALIDATION_FAIL_STATUS) {
@@ -62,7 +102,7 @@ export class ValidationReporter {
     } else if (this.verbose) {
       this.printCapturedOutput(result, "Captured output");
     } else if (!this.compact) {
-      const relevantLines = extractIssueLines(`${result.stdout}\n${result.stderr}`);
+      const relevantLines = result.errors?.length > 0 ? result.errors : [];
       if (relevantLines.length > 0) {
         console.log("Relevant output:");
         for (const line of relevantLines) console.log(`  ${line}`);
@@ -71,22 +111,10 @@ export class ValidationReporter {
   }
 
   formatResultLine(result, index, total) {
-    const statusIcon = this.statusIcon(result.status);
+    const icon = renderStatus(result.status, { plain: this.plain });
     const step = formatStepIndex(index, total);
-    const label = padRight(result.label, LABEL_WIDTH);
-    return `${statusIcon} ${step} ${label} ${formatStatus(result.status)} ${formatDuration(result.durationMs)}`;
-  }
-
-  statusIcon(status) {
-    if (this.plain) {
-      if (status === VALIDATION_PASS_STATUS) return "OK";
-      if (status === VALIDATION_FAIL_STATUS) return "X ";
-      return "- ";
-    }
-
-    if (status === VALIDATION_PASS_STATUS) return "✓";
-    if (status === VALIDATION_FAIL_STATUS) return "✕";
-    return "–";
+    const label = padRight(truncateText(result.label, LABEL_WIDTH), LABEL_WIDTH);
+    return `${padRight(icon, 2)} ${step} ${label} ${formatStatus(result.status)} ${formatDuration(result.durationMs)}`;
   }
 
   writeLiveLine(text) {
@@ -108,37 +136,39 @@ export class ValidationReporter {
       console.log(title);
       return;
     }
-
-    const width = Math.max(48, title.length + 4);
-    console.log(`╭${"─".repeat(width)}╮`);
-    console.log(`│ ${padRight(title, width - 2)} │`);
-    console.log(`╰${"─".repeat(width)}╯`);
+    console.log(renderBox(title, [], { plain: false, width: Math.min(this.width, 64) }));
   }
 
   printSuiteMetadata(checks, options) {
-    const mode = options.failFast ? "strict, fail-fast" : "strict";
-    const progress = this.liveProgress ? "live" : "off";
-    const lines = [
-      `Suite: local quick`,
-      `Checks: ${checks.length}`,
-      `Mode: ${mode}`,
-      `Fail fast: ${options.failFast ? "on" : "off"}`,
-      `Skips allowed: ${options.allowSkips ? "yes" : "no"}`,
-      `Progress: ${progress}`,
-      `Execution: direct-node where available, npm fallback for typecheck`
+    const rows = [
+      ["Suite", options.suiteName ?? "local quick"],
+      ["Checks", checks.length],
+      ["Mode", options.failFast ? "strict, fail-fast" : "strict"],
+      ["Fail fast", options.failFast ? "on" : "off"],
+      ["Skips allowed", options.allowSkips ? "yes" : "no"],
+      ["Render", this.renderMode],
+      ["Progress", this.liveProgress ? "live" : "off"],
+      ["Execution", "direct-node where available, npm fallback for typecheck"]
     ];
-
-    for (const line of lines) console.log(line);
+    console.log(renderKeyValueRows(rows, { plain: this.plain }));
   }
 
   printFailure(result) {
     console.log("");
-    this.printSection("Failure details");
-    console.log(`Validator: ${result.label}`);
-    console.log(`Type: ${result.failureType ?? VALIDATION_FAILURE_VALIDATOR}`);
-    console.log(`Command: ${result.command}`);
-    console.log(`Executed: ${result.executedCommand ?? result.command}`);
-    console.log(`Exit code: ${result.exitCode ?? "null"}`);
+    const detailRows = [
+      ["Validator", result.label],
+      ["Type", result.failureType ?? VALIDATION_FAILURE_VALIDATOR],
+      ["Command", result.command],
+      ["Executed", result.executedCommand ?? result.command],
+      ["Exit code", result.exitCode ?? "null"]
+    ];
+
+    if (this.plain) {
+      this.printSection("Failure details");
+      console.log(renderKeyValueRows(detailRows, { plain: true }));
+    } else {
+      console.log(renderBox("Failure details", detailRows.map(([key, value]) => `${padRight(key, 10)} ${value}`), { plain: false, width: Math.min(this.width, 80) }));
+    }
 
     if (result.errors.length > 0) {
       console.log("");
@@ -240,12 +270,17 @@ export class ValidationReporter {
     this.printSection(title);
     if (stdout) {
       console.log("stdout:");
-      console.log(indentBlock(stdout));
+      console.log(indentBlock(this.prepareOutput(stdout)));
     }
     if (stderr) {
       console.log("stderr:");
-      console.log(indentBlock(stderr));
+      console.log(indentBlock(this.prepareOutput(stderr)));
     }
+  }
+
+  prepareOutput(output) {
+    if (this.verbose || output.length <= OUTPUT_TRUNCATE_LIMIT) return output;
+    return `${output.slice(0, OUTPUT_TRUNCATE_LIMIT)}\nOutput truncated. Re-run with --verbose for full output.`;
   }
 
   finalSummary(results, options = {}, metrics = {}) {
@@ -254,21 +289,65 @@ export class ValidationReporter {
     const failed = results.filter((result) => result.status === VALIDATION_FAIL_STATUS).length;
     const skipped = results.filter((result) => result.status === VALIDATION_SKIPPED_STATUS).length;
     const overallStatus = failed > 0 || (skipped > 0 && !options.allowSkips) ? VALIDATION_FAIL_STATUS : VALIDATION_PASS_STATUS;
-    const totalDurationMs = metrics.durationMs ?? results.reduce((sum, result) => sum + result.durationMs, 0);
-    const slowest = [...results].sort((a, b) => b.durationMs - a.durationMs)[0];
+    const performance = summarizePerformance(results, { durationMs: metrics.durationMs, topSlowest: this.topSlowest });
+
+    if (this.jsonSummary) {
+      console.log(JSON.stringify(this.createJsonSummary(results, overallStatus, passed, failed, skipped, performance, metrics.suiteName), null, 2));
+      return;
+    }
+
+    if (this.raw) {
+      this.printRawEvent("VALIDATION_RESULT", {
+        status: overallStatus,
+        passed,
+        failed,
+        skipped,
+        duration_ms: Math.round(performance.durationMs)
+      });
+      return;
+    }
 
     console.log("");
-    this.printSummaryBox({ passed, failed, skipped, total: results.length, durationMs: totalDurationMs });
+    this.printSummaryBox({ passed, failed, skipped, total: results.length, durationMs: performance.durationMs });
     console.log("");
     this.printGroupedSummary(results);
     console.log("");
-    this.printSection("Performance");
-    console.log(`- Slowest check: ${slowest ? `${slowest.label} ${formatDuration(slowest.durationMs)}` : "n/a"}`);
-    console.log(`- Total duration: ${formatDuration(totalDurationMs)}`);
-    console.log("- Execution mode: direct-node where available, npm fallback for typecheck");
+    this.printTreeSummary(results);
+    console.log("");
+    this.printPerformance(performance);
     console.log("");
     console.log("Result:");
     console.log(`${overallStatus} — ${passed} passed, ${failed} failed, ${skipped} skipped.`);
+  }
+
+  createJsonSummary(results, status, passed, failed, skipped, performance, suiteName = "local-quick") {
+    return {
+      suite: suiteName,
+      status,
+      passed,
+      failed,
+      skipped,
+      durationMs: Math.round(performance.durationMs),
+      performance: {
+        slowestCheck: performance.slowestCheck
+          ? { id: performance.slowestCheck.id, label: performance.slowestCheck.label, durationMs: Math.round(performance.slowestCheck.durationMs) }
+          : null,
+        executionModes: performance.executionModes,
+        processLaunches: performance.processLaunches
+      },
+      results: results.map((result) => ({
+        id: result.id,
+        label: result.label,
+        category: result.category,
+        status: result.status,
+        durationMs: Math.round(result.durationMs),
+        command: result.command,
+        executed: result.executedCommand,
+        executionMode: result.executionMode,
+        failureType: result.failureType,
+        exitCode: result.exitCode
+      }))
+    };
   }
 
   printSummaryBox({ passed, failed, skipped, total, durationMs }) {
@@ -286,32 +365,87 @@ export class ValidationReporter {
       return;
     }
 
-    const width = 48;
-    console.log(`╭─ Summary ${"─".repeat(width - 11)}╮`);
-    for (const [label, value] of rows) {
-      const content = `${padRight(label, 8)} ${value}`;
-      console.log(`│ ${padRight(content, width - 2)} │`);
-    }
-    console.log(`╰${"─".repeat(width)}╯`);
+    console.log(renderBox("Validation status", rows.map(([label, value]) => `${padRight(label, 8)} ${value}`), { plain: false, width: Math.min(this.width, 58) }));
   }
 
   printGroupedSummary(results) {
-    console.log(`${padRight("Validator", SUMMARY_LABEL_WIDTH)} Status   Duration`);
-    console.log(this.plain ? "-".repeat(62) : "─".repeat(62));
+    const rows = [];
+    for (const result of results) {
+      rows.push([result.label, result.status, formatDuration(result.durationMs)]);
+    }
+    console.log(renderTable([
+      { label: "Validator", maxWidth: SUMMARY_LABEL_WIDTH },
+      { label: "Status", maxWidth: 8 },
+      { label: "Duration", maxWidth: 10 }
+    ], rows, { plain: this.plain }));
+  }
 
+  printTreeSummary(results) {
     const categories = [];
     for (const result of results) {
       if (!categories.includes(result.category)) categories.push(result.category);
     }
 
-    for (const category of categories) {
-      console.log(SUMMARY_CATEGORY_NAMES.get(category) ?? category);
-      for (const result of results.filter((item) => item.category === category)) {
-        console.log(`  ${padRight(result.label, SUMMARY_LABEL_WIDTH - 2)} ${formatStatus(result.status)} ${formatDuration(result.durationMs)}`);
-      }
-      console.log("");
-    }
+    const nodes = [{
+      label: "Validation suite",
+      children: categories.map((category) => ({
+        label: SUMMARY_CATEGORY_NAMES.get(category) ?? category,
+        children: results
+          .filter((result) => result.category === category)
+          .map((result) => ({ label: `${padRight(truncateText(result.label, 32), 32)} ${result.status} ${formatDuration(result.durationMs)}` }))
+      }))
+    }];
+    console.log(renderTree(nodes, { plain: this.plain }));
   }
+
+  printPerformance(performance) {
+    this.printSection("Performance");
+    console.log(`- Slowest check: ${performance.slowestCheck ? `${performance.slowestCheck.label} ${formatDuration(performance.slowestCheck.durationMs)}` : "n/a"}`);
+    console.log(`- Total duration: ${formatDuration(performance.durationMs)}`);
+    console.log(`- Process launches: ${performance.processLaunches}`);
+    console.log("- Execution modes:");
+    for (const [mode, count] of Object.entries(performance.executionModes)) console.log(`  ${padRight(mode, 12)} ${count}`);
+    if (performance.duplicateWarnings.length > 0) {
+      console.log("- Duplicate execution warnings:");
+      for (const warning of performance.duplicateWarnings) console.log(`  - ${warning}`);
+    }
+    console.log("");
+    console.log(renderDurationBarChart("Slowest checks", performance.slowestChecks, { plain: this.plain }));
+  }
+
+  printRawStep(result) {
+    const values = {
+      id: result.id,
+      label: result.label,
+      status: result.status,
+      duration_ms: Math.round(result.durationMs),
+      command: result.command,
+      executed: result.executedCommand,
+      execution_mode: result.executionMode,
+      failureType: result.failureType
+    };
+    if (result.status === VALIDATION_FAIL_STATUS) {
+      values.exitCode = result.exitCode ?? "null";
+    }
+    if (this.verbose) {
+      if (result.stdout) values.stdout = result.stdout;
+      if (result.stderr) values.stderr = result.stderr;
+    }
+    this.printRawEvent("VALIDATION_STEP", values);
+  }
+
+  printRawEvent(name, values) {
+    const parts = [name];
+    for (const [key, value] of Object.entries(values)) {
+      parts.push(`${key}=${formatRawValue(value)}`);
+    }
+    console.log(parts.join(" "));
+  }
+}
+
+function formatRawValue(value) {
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  return JSON.stringify(String(value));
 }
 
 export function formatValidationCommand(check) {

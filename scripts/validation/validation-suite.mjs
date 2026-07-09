@@ -21,6 +21,7 @@ function npmRun(scriptName) {
 }
 
 export const localQuickValidationChecks = [
+  { id: "validation-system", label: "Validation System", category: "validation", ...nodeScript("scripts/validate-validation-system.mjs", "validate:validation-system") },
   { id: "guided-docs", label: "Guided docs", category: "docs", ...nodeScript("scripts/validate-guided-docs.mjs", "validate:guided-docs") },
   { id: "architecture-docs", label: "Architecture docs", category: "docs", ...nodeScript("scripts/validate-architecture-docs.mjs", "validate:architecture-docs") },
   { id: "build-html", label: "Build HTML", category: "build", ...nodeScript("scripts/build-html.mjs", "build:html") },

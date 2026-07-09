@@ -36,6 +36,7 @@
     "validate:guided-docs": "node scripts/validate-guided-docs.mjs",
     "validate:architecture-docs": "npm run validate:guided-docs && node scripts/validate-architecture-docs.mjs",
     "validate:ui-flow": "node scripts/validate-ui-flow.mjs",
+    "validate:validation-system": "node scripts/validate-validation-system.mjs",
     "validate:local": "node scripts/validate-local.mjs",
     "validate:local:quick": "node scripts/validate-local-quick.mjs",
     "validate:local:quick:verbose": "node scripts/validate-local-quick.mjs --verbose",

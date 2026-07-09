@@ -19,6 +19,7 @@
 | Phase 8B addition | `validate:css-sass-inspector-surface`. |
 | Guided docs addition | `validate:guided-docs`. |
 | Strict reporter addition | `validate:local:quick` now runs through `scripts/validate-local-quick.mjs`. |
+| Meta validation addition | `validate:validation-system` validates the validation runner, reporter, suite metadata, render modes, failure types, and static wiring. |
 | Safety risk controlled | Prevents forbidden shortcuts and false write/edit/cascade claims from entering unnoticed. |
 
 ## Purpose
@@ -41,9 +42,33 @@ SKIPPED means a check did not run and must be visible in the final summary.
 
 Validators must not modify files, implement autofix behavior, or print wording that implies the script fixed, resolved, or corrected source. They may print how to inspect and likely resolution hints, but those hints are instructions for the developer, not actions performed by validation.
 
+## Strict terminal reporter modes
+
+`validate:local:quick` supports output modes without changing validation semantics or exit codes.
+
+| Mode | Intended target | Behavior |
+| --- | --- | --- |
+| `auto` | Default local usage. | Uses unicode rich output with live progress on interactive TTY, and plain/ascii compact output without live progress on CI, non-TTY, redirected output, or `TERM=dumb`. |
+| `unicode` | Human terminal. | Forces unicode boxes, symbols, progress bars, tables, trees, and failure panels. Live progress still requires TTY. |
+| `ascii` / `plain` | Conservative terminal or logs. | Uses `OK`, `X`, `-`, `>`, ASCII separators, and ASCII progress bars. |
+| `raw` | Stable parsing. | Prints one event per line: `VALIDATION_START`, `VALIDATION_STEP`, and `VALIDATION_RESULT`. No boxes, bars, unicode, colors, or PASS stdout/stderr unless `--verbose`. |
+| `json-summary` | Machine parsing. | Prints only valid JSON with suite status, counts, duration, performance data, and result rows. |
+
+Flags are presentation-only unless otherwise stated: `--unicode`, `--ascii`, `--plain`, `--raw`, `--json-summary`, `--no-progress`, `--compact`, `--verbose`, `--fail-fast`, and `--allow-skips`.
+
+`--no-progress` disables live progress even in TTY. `--compact` keeps failures complete but suppresses non-essential successful output. `--verbose` may print captured stdout/stderr and the internal `Executed:` command. `--raw` and `--json-summary` exist for stable CI/no-TTY consumption.
+
+## Strict validation meta hardening
+
+`validate:validation-system` is a static meta-validator for the validation system itself. It does not execute `validate:local:quick` and does not create a recursion cycle.
+
+It verifies that quick-suite checks have unique ids, labels, known categories, required status, public `npmScript` contracts, matching `displayCommand` values, no direct `npm.cmd`, and no ambiguous shell execution. It also verifies that direct Node scripts exist, that declared npm scripts exist in `package.json`, that failure types include `none`, `command-execution`, `missing-npm-script`, `missing-direct-script`, `validator-failure`, and `skipped`, and that critical validators use the shared assertions path that reports `checksExecuted` and fails when `checksExecuted === 0`.
+
+The meta-validator must print `Files checked`, `Checks executed`, and `Result`, and it must fail rather than warn when static validation-system wiring is broken.
+
 ## Current implementation
 
-Validation is script-based and uses the existing Node toolchain. The root scripts cover build, typecheck, structure, Project Graph, watcher behavior, Preview, DOM Snapshot, Preview Selection, Preview Inspector, Design Canvas, Visual Selection Overlay, HTML Element Library, Source Patch Preview, History Foundation, Design Editing Preflight, Inspector Editing Foundation, Editable Inspector Surface, Style Engine Foundation, CSS/Sass Inspector Surface, Guided Docs, UI flow, Electron diagnostics, and architecture docs.
+Validation is script-based and uses the existing Node toolchain. The root scripts cover build, typecheck, structure, Project Graph, watcher behavior, Preview, DOM Snapshot, Preview Selection, Preview Inspector, Design Canvas, Visual Selection Overlay, HTML Element Library, Source Patch Preview, History Foundation, Design Editing Preflight, Inspector Editing Foundation, Editable Inspector Surface, Style Engine Foundation, CSS/Sass Inspector Surface, Guided Docs, UI flow, Electron diagnostics, architecture docs, and validation-system meta checks.
 
 Phase 6C models are planning-only.
 
@@ -64,6 +89,8 @@ Phase 8B boundary: CSS/Sass Inspector read-only visual surface only. No real cas
 | Guided docs validator. | Broken read-next navigation. | Generated docs site navigation. |
 | Local aggregate runners. | Hidden mutation during validation. | Transaction execution checks. |
 | Strict local quick reporter. | Hidden skipped checks. | Machine-readable validation reports. |
+| Validation system meta-validator. | Validation-system self-checks silently drifting. | Deeper import-boundary validation. |
+| Terminal render modes. | CI logs polluted by live progress. | Optional report file export. |
 | History foundation validator. | Phase 6C write behavior. | Dirty-state validation. |
 | Design editing preflight validator. | Phase 6D Apply enablement. | Write-runtime validation. |
 | Inspector editing foundation validator. | Phase 7A applied Inspector editing. | Inspector Apply validation. |
@@ -81,10 +108,16 @@ Read `package.json` first to see the command graph. The scripts below are the fe
 | --- | --- | --- | --- |
 | `package.json` | Defines validation command graph. | Script names. | Add runtime dependencies for validation. |
 | `scripts/validate-local.mjs` | Runs aggregate local validation. | npm commands. | Hide failing steps. |
-| `scripts/validate-local-quick.mjs` | Runs strict granular quick validation with progress, captured output, summary, and explicit skipped handling. | Validation suite metadata and npm scripts. | Hide failures, skip silently, or stop before summary. |
-| `scripts/validation/validation-suite.mjs` | Lists required quick checks with labels, categories, npm commands, and required status. | Static check list. | Invent passing checks for missing scripts. |
-| `scripts/validation/validation-runner.mjs` | Executes checks sequentially and calculates PASS/FAIL/SKIPPED. | Child process status, stdout, stderr, package scripts. | Convert failed commands into warnings. |
-| `scripts/validation/validation-reporter.mjs` | Formats per-check output, progress bars, failure detail, and final summary. | Validation results. | Claim fixes or omit skipped checks. |
+| `scripts/validate-local-quick.mjs` | Runs strict granular quick validation with render modes, progress, captured output, summary, performance reporting, and explicit skipped handling. | Validation suite metadata and runner flags. | Hide failures, skip silently, or stop before summary. |
+| `scripts/validate-validation-system.mjs` | Runs static meta-validation for the validation system itself. | Suite metadata, package scripts, validation modules, docs. | Execute `validate:local:quick`, mutate files, or create recursion. |
+| `scripts/validation/validation-suite.mjs` | Lists required quick checks with labels, categories, public npm scripts, direct Node execution metadata, and required status. | Static check list. | Invent passing checks for missing scripts. |
+| `scripts/validation/validation-runner.mjs` | Executes checks sequentially and calculates PASS/FAIL/SKIPPED. | Child process status, stdout, stderr, package scripts, direct script existence. | Convert failed commands into warnings or exit zero on FAIL/SKIPPED. |
+| `scripts/validation/validation-reporter.mjs` | Formats render-mode-aware per-check output, raw events, JSON summary, failure detail, performance data, and final summary. | Validation results and terminal capabilities. | Claim fixes or omit skipped checks. |
+| `scripts/validation/validation-terminal-components.mjs` | Centralizes terminal UI primitives: boxes, tables, trees, progress bars, duration bars, status markers, wrapping, and truncation. | Pure inputs. | Change validation results. |
+| `scripts/validation/validation-terminal-capabilities.mjs` | Detects TTY, CI, TERM, width, and unicode capability. | Environment and stdout metadata. | Execute validators. |
+| `scripts/validation/validation-render-mode.mjs` | Resolves `auto`, `unicode`, `ascii`, `plain`, `raw`, and `json-summary`. | Flags and terminal capabilities. | Change exit codes. |
+| `scripts/validation/validation-performance.mjs` | Summarizes duration, slowest checks, execution modes, process launches, and duplicate execution warnings. | Validation results. | Fail performance thresholds in this phase. |
+| `scripts/validation/validation-meta.mjs` | Implements static hardening checks for validation suite and reporter wiring. | Package scripts, suite, runner, reporter, docs, critical validators. | Execute the local quick runner. |
 | `scripts/validation/validation-assertions.mjs` | Provides deterministic file, token, package script, and forbidden-token assertions. | Source files and package.json. | Mutate source files. |
 | `scripts/validate-structure.mjs` | Checks source structure. | Source tree. | Rewrite modules. |
 | `scripts/validate-source-patch-preview.mjs` | Guards preview/write boundary. | Source and renderer files. | Permit patch apply. |
@@ -104,7 +137,11 @@ Read `package.json` first to see the command graph. The scripts below are the fe
 | Source files | Do feature constraints still hold? | Pass or explicit failure. |
 | Required quick check | Does the npm script exist and execute? | PASS, FAIL, or visible SKIPPED. |
 | Missing required script | Is the check required? | FAIL. |
+| Missing direct Node script | Does the direct execution target exist? | FAIL. |
 | Optional skipped check | Was it explicitly optional? | SKIPPED in final summary. |
+| Render mode | Is the destination human TTY, CI/no-TTY, raw, or JSON? | Presentation changes only; result and exit code do not change. |
+| Performance summary | Which checks took longest and which execution modes launched processes? | Informational report only. |
+| Validation meta check | Is the validation system internally consistent? | Pass or explicit failure. |
 | Phase 6C modules | Are contracts present and still planning-only? | Pass or explicit failure. |
 | Phase 6D modules | Are preflight contracts present and still Apply-blocked? | Pass or explicit failure. |
 | Phase 7A modules | Are Inspector editing contracts present and still draft/intent-only? | Pass or explicit failure. |
@@ -137,9 +174,13 @@ flowchart TD
   end
 
   subgraph StrictReporter[Strict local quick reporter]
+    Meta[validate:validation-system]
     Suite[validation-suite]
     Runner[validation-runner]
+    RenderMode[validation-render-mode]
+    TerminalUI[validation-terminal-components]
     Reporter[validation-reporter]
+    Performance[validation-performance]
     Summary[final summary]
   end
 
@@ -152,6 +193,7 @@ flowchart TD
   Guided --> DocsShape
   DocsShape --> Quick
   Claims --> Quick
+  Meta --> Quick
   Structure --> QuickCore
   History --> QuickCore
   DesignEditing --> QuickCore
@@ -164,7 +206,10 @@ flowchart TD
   Build --> Quick
   Typecheck --> Quick
   Suite --> Runner
+  Runner --> RenderMode
+  RenderMode --> TerminalUI
   Runner --> Reporter
+  Reporter --> Performance
   Reporter --> Summary
   QuickCore --> Quick
   QuickUI --> Quick
@@ -204,6 +249,7 @@ Still out of scope for Phase 8B:
 | Runtime proof for real cascade | Phase 8B does not calculate cascade. |
 | Runtime proof for computed styles | Phase 8B forbids computed style reads. |
 | Runtime proof for style editing | Phase 8B keeps Apply unavailable and source writes unavailable. |
+| Performance gating | Performance is reported, not enforced, in this phase. |
 | Auto-formatting | Validators should not mutate docs. |
 | Auto-fixes | Validation reports likely resolution only; it does not apply changes. |
 | Complete import graph validation | Future work. |
@@ -214,11 +260,14 @@ Still out of scope for Phase 8B:
 
 > **Common misunderstanding:** `validate:local:quick` is not a chain that stops at the first failed npm command by default. It runs the strict suite, records each required check, prints the failure output, and still emits a final summary unless `--fail-fast` is passed.
 
+> **Common misunderstanding:** `--raw`, `--plain`, `--unicode`, and `--json-summary` change output only. They do not change what PASS, FAIL, or SKIPPED mean.
+
 ## Validation
 
 Run:
 
 ```bash
+npm run validate:validation-system
 npm run validate:guided-docs
 npm run validate:history-foundation
 npm run validate:design-editing-preflight
@@ -228,6 +277,11 @@ npm run validate:style-engine-foundation
 npm run validate:css-sass-inspector-surface
 npm run validate:architecture-docs
 npm run validate:local:quick
+npm run validate:local:quick -- --plain
+npm run validate:local:quick -- --raw
+npm run validate:local:quick -- --json-summary
+npm run validate:local:quick -- --no-progress
+npm run validate:local:quick -- --compact
 npm run validate:local:quick:verbose
 npm run validate:local:quick:fail-fast
 ```
@@ -265,7 +319,8 @@ Related:
 - Validator: [`validate:guided-docs`](../../scripts/validate-guided-docs.mjs)
 - Validator: [`validate:architecture-docs`](../../scripts/validate-architecture-docs.mjs)
 - Validator: [`validate:css-sass-inspector-surface`](../../scripts/validate-css-sass-inspector-surface.mjs)
+- Validator: [`validate:validation-system`](../../scripts/validate-validation-system.mjs)
 - Strict runner: [`validate:local:quick`](../../scripts/validate-local-quick.mjs)
 
 Why this matters:
-Validation is the enforcement layer for the documentation story. It keeps read-only Preview, dry-run commands, disabled Inspector surfaces, Style Engine inventory, CSS/Sass Inspector read-only UI, and future write language from collapsing into unsupported implementation claims.
+Validation is the enforcement layer for the documentation story. It keeps read-only Preview, dry-run commands, disabled Inspector surfaces, Style Engine inventory, CSS/Sass Inspector read-only UI, strict reporter output, meta-validation, and future write language from collapsing into unsupported implementation claims.
