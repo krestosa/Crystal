@@ -352,6 +352,66 @@ Still out of scope:
 - DOM mutation
 - Apply enablement
 
+### Phase 8B — CSS/Sass Inspector read-only visual surface
+
+Covered:
+
+- renderer CSS/Sass Inspector read-only surface integrated into the Preview Inspector
+- compact authored/computed/apply summary
+- selected DOM Snapshot path and target file context
+- source inventory display based on Phase 8A Style Engine inventory
+- compact source cards for linked/inline authored style references
+- rule preview empty state when source text is unavailable
+- compact Safety Boundary
+- passive Apply unavailable affordance
+- `validate:css-sass-inspector-surface` wired into quick UI validation
+- documentation of the Phase 8B boundary
+
+Phase 8B boundary: CSS/Sass Inspector read-only visual surface only. No real cascade is calculated. No computed styles are read. No document.styleSheets or CSSOM is used. No iframe internals are read. No source files are written. No patch apply is available. No write IPC exists. Apply remains unavailable. No contenteditable is used. No undo/redo execution runs. Dirty-state is not persisted. No refresh execution runs. No Preview DOM mutation occurs.
+
+Still out of scope:
+
+- authored style matching against selected DOM Snapshot nodes
+- real cascade calculation
+- specificity resolution beyond textual selector preview
+- computed style inspection
+- applied style matching against live Preview DOM
+- style editing
+- class management
+- source writes
+- patch apply
+- write IPC
+- save/apply workflow
+- undo/redo execution
+- dirty-state persistence
+- refresh execution
+- DOM mutation
+- Apply enablement
+
+### Cross-cutting validation hardening and strict reporter
+
+Covered:
+
+- strict local quick validation runner with granular per-check reporting
+- PASS/FAIL/SKIPPED final summary
+- 27-check suite including Validation System meta-validator
+- direct-node execution for known Node scripts while preserving npm script contracts
+- Windows-safe npm fallback and command-execution failure reporting
+- render modes for unicode, ascii/plain, raw, json-summary, compact, verbose, no-progress, color/no-color
+- ANSI-safe raw/json/no-color output contracts
+- parseable JSON invocation documented through Node direct or npm --silent
+- color-aware reporter rendering that remains decorative and not state-bearing
+- validation-system meta-validator for suite wiring, render modes, failure types, and critical validator check counts
+- hardening for guided docs and CSS/Sass Inspector validators
+
+PASS means executed and verified.
+
+FAIL means at least one required check failed.
+
+SKIPPED means a check did not run and must be visible in the final summary.
+
+Strict validation reporter boundary: validation reporting and validator hardening only. It does not modify runtime behavior, does not change Electron security, does not add dependencies, does not apply fixes automatically, does not convert failures into warnings, and does not hide skipped checks.
+
 ### Cross-cutting shell, Diagnostics, and UI system polish
 
 Covered:
@@ -376,22 +436,35 @@ Still out of scope:
 
 ## Recommended next module
 
-### CSS/Sass Inspector read-only visual surface
+### Authored Style Matching over DOM Snapshot
 
 Recommended scope:
 
-- keep Apply unavailable until a real write runtime is explicitly introduced
-- use Phase 8A source inventory as the only style input
-- use DOM Snapshot paths for future authored-style matching, not live iframe DOM
-- keep real cascade, computed styles, source mutation, patch apply, write IPC, dirty-state persistence, refresh execution, and undo/redo execution future-only
-- avoid renderer filesystem authority, iframe DOM reads, and contenteditable
+- use Phase 8A Style Engine source inventory and Phase 8B CSS/Sass Inspector surface as inputs
+- match selected DOM Snapshot nodes against authored selector previews using DOM Snapshot data only
+- add read-only candidate match models for authored rules
+- surface candidate authored-style matches in the CSS/Sass Inspector
+- classify unsupported selectors explicitly
+- keep unmatched and not-evaluated states visible
+- keep source-text-unavailable and inventory-unavailable states explicit
+- do not calculate real cascade
+- do not read computed styles
+- do not use document.styleSheets or CSSOM
+- do not read iframe internals
+- do not evaluate against live Preview DOM
+- do not mutate Preview DOM
+- do not write source files
+- do not apply patches
+- do not add write IPC
+- keep Apply unavailable
 
-Phase 8A created read-only Style Engine inventory contracts but did not make any CSS/Sass Inspector UI or write-capable command land.
+Phase 8C should move the CSS/Sass Inspector from inventory-only toward read-only authored-style candidate matching. It must use DOM Snapshot data and textual selector previews only. Real cascade, computed styles, live DOM inspection, style editing, patch application, write IPC, dirty-state persistence, refresh execution, and undo/redo execution remain future-only.
 
 ## Not implemented yet
 
 The following roadmap items remain intentionally pending:
 
+- authored style matching against DOM Snapshot nodes
 - real source mutation command runtime
 - source mutation service in main/core, not renderer
 - source patch application and reversible patch persistence
@@ -401,10 +474,10 @@ The following roadmap items remain intentionally pending:
 - editable attributes or text editing with Apply
 - moving/reordering DOM nodes
 - class management and Class Composer
-- real CSS cascade or specificity analysis beyond optional textual selector preview
-- CSS/Sass Inspector visual surface
+- real CSS cascade or specificity analysis beyond textual selector preview
 - computed style inspection
 - visual style editor categories
+- style editing and class management
 - responsive breakpoint tooling
 - component/snippet library
 - asset/font/SVG/media management UI
@@ -439,14 +512,15 @@ The complete roadmap is documented in [`docs/full-product-roadmap.md`](./full-pr
 8. ~~Editable Inspector draft/intent foundation.~~ Implemented as Phase 7A draft/intent foundation.
 9. ~~Editable Inspector read-only draft surface.~~ Implemented as Phase 7B disabled surface.
 10. ~~Style Engine source inventory foundation.~~ Implemented as Phase 8A read-only inventory foundation.
-11. CSS/Sass Inspector read-only visual surface.
-12. Responsive Design and Layout Tools.
-13. Components, snippets, and reusable blocks.
-14. Assets, fonts, SVG, and media management.
-15. Developer Mode and IDE tools.
-16. WebGPU Overlay Engine.
-17. Rust/WASM Analyzer.
-18. Automation, assistant workflows, packaging, testing, and product hardening.
+11. ~~CSS/Sass Inspector read-only visual surface.~~ Implemented as Phase 8B read-only surface.
+12. Authored Style Matching over DOM Snapshot.
+13. Responsive Design and Layout Tools.
+14. Components, snippets, and reusable blocks.
+15. Assets, fonts, SVG, and media management.
+16. Developer Mode and IDE tools.
+17. WebGPU Overlay Engine.
+18. Rust/WASM Analyzer.
+19. Automation, assistant workflows, packaging, testing, and product hardening.
 
 ## Required validation before PR merge
 
@@ -460,6 +534,27 @@ For iterative validation after dependencies are already installed, run:
 
 ```bash
 npm run validate:local:quick
+```
+
+For Phase 8B-specific validation, run:
+
+```bash
+npm run validate:css-sass-inspector-surface
+```
+
+For validation reporter/meta-validation, run:
+
+```bash
+npm run validate:validation-system
+npm run validate:local:quick
+npm --silent run validate:local:quick:json
+```
+
+For documentation validation, run:
+
+```bash
+npm run validate:guided-docs
+npm run validate:architecture-docs
 ```
 
 For Phase 8A-specific validation, run:
