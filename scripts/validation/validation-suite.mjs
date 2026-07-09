@@ -35,6 +35,7 @@ export const localQuickValidationChecks = [
   { id: "design-editing-preflight", label: "Design Editing Preflight", category: "core", ...nodeScript("scripts/validate-design-editing-preflight.mjs", "validate:design-editing-preflight") },
   { id: "inspector-editing-foundation", label: "Inspector Editing Foundation", category: "core", ...nodeScript("scripts/validate-inspector-editing-foundation.mjs", "validate:inspector-editing-foundation") },
   { id: "style-engine-foundation", label: "Style Engine Foundation", category: "core", ...nodeScript("scripts/validate-style-engine-foundation.mjs", "validate:style-engine-foundation") },
+  { id: "authored-style-matching", label: "Authored Style Matching", category: "core", ...nodeScript("scripts/validate-authored-style-matching.mjs", "validate:authored-style-matching") },
   { id: "preview", label: "Preview", category: "preview", ...nodeScript("scripts/validate-preview.mjs", "validate:preview") },
   { id: "dom-snapshot", label: "DOM Snapshot", category: "preview", ...nodeScript("scripts/validate-dom-snapshot.mjs", "validate:dom-snapshot") },
   { id: "preview-selection", label: "Preview Selection", category: "preview", ...nodeScript("scripts/validate-preview-selection.mjs", "validate:preview-selection") },
