@@ -18,6 +18,7 @@
 | Phase 8A addition | `validate:style-engine-foundation`. |
 | Phase 8B addition | `validate:css-sass-inspector-surface`. |
 | Guided docs addition | `validate:guided-docs`. |
+| Strict reporter addition | `validate:local:quick` now runs through `scripts/validate-local-quick.mjs`. |
 | Safety risk controlled | Prevents forbidden shortcuts and false write/edit/cascade claims from entering unnoticed. |
 
 ## Purpose
@@ -25,6 +26,20 @@
 Crystal uses validators to preserve negative guarantees: no renderer filesystem access, no live iframe DOM reads, no browser CSSOM shortcut, no computed style reads, no write IPC, no patch application, no real undo/redo execution, no dirty-state persistence, no refresh execution, no contenteditable path, no hidden Apply behavior, and no source mutation.
 
 The validation system makes feature phase boundaries explicit while the codebase evolves from read-only Preview and planning models toward later write-capable systems.
+
+## Strict validation reporting contract
+
+Validators must report only observed facts. They must not claim a fix was applied, must not hide skipped checks, and must not convert missing checks into PASS. A validation pass means every required check executed and passed.
+
+PASS means executed and verified.
+
+FAIL means at least one required check failed.
+
+SKIPPED means a check did not run and must be visible in the final summary.
+
+`validate:local:quick` must return a non-zero exit code when any required validator fails. It must also return a non-zero exit code when any check is SKIPPED unless the caller passes `--allow-skips`. The default mode is strict: missing npm scripts, unreadable required files, unresolved required checks, and failed child commands are failures, not successful validation.
+
+Validators must not modify files, implement autofix behavior, or print wording that implies the script fixed, resolved, or corrected source. They may print how to inspect and likely resolution hints, but those hints are instructions for the developer, not actions performed by validation.
 
 ## Current implementation
 
@@ -48,6 +63,7 @@ Phase 8B boundary: CSS/Sass Inspector read-only visual surface only. No real cas
 | Docs validator. | Docs claiming future writes. | Write runtime safety checks. |
 | Guided docs validator. | Broken read-next navigation. | Generated docs site navigation. |
 | Local aggregate runners. | Hidden mutation during validation. | Transaction execution checks. |
+| Strict local quick reporter. | Hidden skipped checks. | Machine-readable validation reports. |
 | History foundation validator. | Phase 6C write behavior. | Dirty-state validation. |
 | Design editing preflight validator. | Phase 6D Apply enablement. | Write-runtime validation. |
 | Inspector editing foundation validator. | Phase 7A applied Inspector editing. | Inspector Apply validation. |
@@ -65,6 +81,11 @@ Read `package.json` first to see the command graph. The scripts below are the fe
 | --- | --- | --- | --- |
 | `package.json` | Defines validation command graph. | Script names. | Add runtime dependencies for validation. |
 | `scripts/validate-local.mjs` | Runs aggregate local validation. | npm commands. | Hide failing steps. |
+| `scripts/validate-local-quick.mjs` | Runs strict granular quick validation with progress, captured output, summary, and explicit skipped handling. | Validation suite metadata and npm scripts. | Hide failures, skip silently, or stop before summary. |
+| `scripts/validation/validation-suite.mjs` | Lists required quick checks with labels, categories, npm commands, and required status. | Static check list. | Invent passing checks for missing scripts. |
+| `scripts/validation/validation-runner.mjs` | Executes checks sequentially and calculates PASS/FAIL/SKIPPED. | Child process status, stdout, stderr, package scripts. | Convert failed commands into warnings. |
+| `scripts/validation/validation-reporter.mjs` | Formats per-check output, progress bars, failure detail, and final summary. | Validation results. | Claim fixes or omit skipped checks. |
+| `scripts/validation/validation-assertions.mjs` | Provides deterministic file, token, package script, and forbidden-token assertions. | Source files and package.json. | Mutate source files. |
 | `scripts/validate-structure.mjs` | Checks source structure. | Source tree. | Rewrite modules. |
 | `scripts/validate-source-patch-preview.mjs` | Guards preview/write boundary. | Source and renderer files. | Permit patch apply. |
 | `scripts/validate-history-foundation.mjs` | Guards Phase 6C planning boundary. | History, refresh, transaction-planning, package scripts, docs. | Permit write execution. |
@@ -81,6 +102,9 @@ Read `package.json` first to see the command graph. The scripts below are the fe
 | Input | Decision | Output |
 | --- | --- | --- |
 | Source files | Do feature constraints still hold? | Pass or explicit failure. |
+| Required quick check | Does the npm script exist and execute? | PASS, FAIL, or visible SKIPPED. |
+| Missing required script | Is the check required? | FAIL. |
+| Optional skipped check | Was it explicitly optional? | SKIPPED in final summary. |
 | Phase 6C modules | Are contracts present and still planning-only? | Pass or explicit failure. |
 | Phase 6D modules | Are preflight contracts present and still Apply-blocked? | Pass or explicit failure. |
 | Phase 7A modules | Are Inspector editing contracts present and still draft/intent-only? | Pass or explicit failure. |
@@ -112,6 +136,13 @@ flowchart TD
     UI[UI flow validators]
   end
 
+  subgraph StrictReporter[Strict local quick reporter]
+    Suite[validation-suite]
+    Runner[validation-runner]
+    Reporter[validation-reporter]
+    Summary[final summary]
+  end
+
   subgraph Aggregate[Local aggregate]
     QuickCore[validate:local:quick:core]
     QuickUI[validate:local:quick:ui]
@@ -132,6 +163,9 @@ flowchart TD
   UI --> QuickUI
   Build --> Quick
   Typecheck --> Quick
+  Suite --> Runner
+  Runner --> Reporter
+  Reporter --> Summary
   QuickCore --> Quick
   QuickUI --> Quick
 ```
@@ -171,11 +205,14 @@ Still out of scope for Phase 8B:
 | Runtime proof for computed styles | Phase 8B forbids computed style reads. |
 | Runtime proof for style editing | Phase 8B keeps Apply unavailable and source writes unavailable. |
 | Auto-formatting | Validators should not mutate docs. |
+| Auto-fixes | Validation reports likely resolution only; it does not apply changes. |
 | Complete import graph validation | Future work. |
 
 ## Common misunderstanding
 
 > **Common misunderstanding:** `validate:css-sass-inspector-surface` means the CSS/Sass Inspector visual surface is present and read-only. It does not mean style editing exists, does not mean CSS/Sass sources can be written, and does not mean computed styles or real cascade are available.
+
+> **Common misunderstanding:** `validate:local:quick` is not a chain that stops at the first failed npm command by default. It runs the strict suite, records each required check, prints the failure output, and still emits a final summary unless `--fail-fast` is passed.
 
 ## Validation
 
@@ -191,6 +228,8 @@ npm run validate:style-engine-foundation
 npm run validate:css-sass-inspector-surface
 npm run validate:architecture-docs
 npm run validate:local:quick
+npm run validate:local:quick:verbose
+npm run validate:local:quick:fail-fast
 ```
 
 Use `validate:local` when the full install-backed path is needed.
@@ -226,6 +265,7 @@ Related:
 - Validator: [`validate:guided-docs`](../../scripts/validate-guided-docs.mjs)
 - Validator: [`validate:architecture-docs`](../../scripts/validate-architecture-docs.mjs)
 - Validator: [`validate:css-sass-inspector-surface`](../../scripts/validate-css-sass-inspector-surface.mjs)
+- Strict runner: [`validate:local:quick`](../../scripts/validate-local-quick.mjs)
 
 Why this matters:
 Validation is the enforcement layer for the documentation story. It keeps read-only Preview, dry-run commands, disabled Inspector surfaces, Style Engine inventory, CSS/Sass Inspector read-only UI, and future write language from collapsing into unsupported implementation claims.
