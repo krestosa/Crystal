@@ -2,6 +2,8 @@
 
 [Docs index](./README.md)
 
+> **Navigation:** [Start here](./README.md) → [Guided reading](./guided-reading.md) → Glossary → [Architecture overview](./architecture/README.md) → [Validation system](./architecture/validation-system.md)
+
 > **Read this first:** Terms in Crystal often encode a boundary. In particular, `Preview`, `Snapshot`, `Patch Preview`, `Transaction Preview`, `Refresh Boundary`, `Dirty-State Preview`, `Source Conflict Preview`, `Write Runtime Capability Preview`, `Inspector Edit Draft`, `Inspector Edit Intent`, `Editable Inspector Surface`, `Style Source Inventory`, `Selected Node Style Readiness`, and `Write` are intentionally different concepts.
 
 ## At a glance
@@ -118,6 +120,7 @@ Phase 8A boundary: Style Engine read-only source inventory foundation only. No C
 | Term | Short meaning | Implemented today? | Related docs |
 | --- | --- | --- | --- |
 | Architecture docs validator | Checks docs shape, links, diagrams, tables, callouts, and safety language. | Yes | [Validation system](./architecture/validation-system.md) |
+| Guided docs validator | Checks guided entrypoints, read-next blocks, internal links, and docs-only branch boundaries. | Yes | [Validation system](./architecture/validation-system.md) |
 | Feature validator | Script checking a specific runtime or source boundary. | Yes | [Validation flow](./architecture/flows/validation-flow.md) |
 | History foundation validator | Checks Phase 6C planning contracts and forbidden write behavior. | Yes | [Validation system](./architecture/validation-system.md) |
 | Design editing preflight validator | Checks Phase 6D preflight contracts and blocked Apply/write behavior. | Yes | [Validation system](./architecture/validation-system.md) |
@@ -129,3 +132,23 @@ Phase 8A boundary: Style Engine read-only source inventory foundation only. No C
 ## Common misunderstanding
 
 > **Common misunderstanding:** `Preview`, `Source Patch Preview`, `HistoryTransactionPreview`, `RefreshBoundaryPlan`, `DesignEditingReadinessPreview`, `InspectorEditIntentPreview`, `Editable Inspector Surface`, `StyleSourceInventoryPreview`, `SelectedNodeStyleReadinessPreview`, and `Future write` are different states. Current preflight, draft/intent, disabled-surface, and inventory models describe blocked future work; none of them mutate project files.
+
+## Read next
+
+You are here: Glossary.
+
+Before this:
+- [Docs index](./README.md) explains how to choose a reading path.
+
+Next:
+- [Architecture overview](./architecture/README.md) shows how these terms connect at system level.
+
+Related:
+- [Guided reading](./guided-reading.md)
+- [Preview architecture](./architecture/preview/README.md)
+- [Future write flow](./architecture/flows/future-write-flow.md)
+- [Validation system](./architecture/validation-system.md)
+- Validator: [`validate:guided-docs`](../scripts/validate-guided-docs.mjs)
+
+Why this matters:
+Crystal terms are not cosmetic labels. They mark whether a concept is rendered, source-derived, preview-only, planning-only, disabled, inventory-only, blocked, or write-capable in a future phase.

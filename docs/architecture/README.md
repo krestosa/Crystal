@@ -2,6 +2,8 @@
 
 [Docs index](../README.md)
 
+> **Navigation:** [Start here](../README.md) → [Guided reading](../guided-reading.md) → Architecture overview → [Runtime boundaries](./runtime-boundaries.md) → [Preview pipeline](./preview/README.md) → [Validation system](./validation-system.md)
+
 ## At a glance
 
 | Question | Answer |
@@ -128,10 +130,11 @@ Renderer UI may present intent, but it must not own project mutation. Preview ca
 
 ## Validation
 
-`npm run validate:local:quick` runs the installed quick gate. `npm run validate:architecture-docs` checks this documentation set for required pages, root links, required section headings, tables, callouts, Mermaid coverage, roadmap links, and explicit blocked-write language.
+`npm run validate:local:quick` runs the installed quick gate. `npm run validate:architecture-docs` checks this documentation set for required pages, root links, required section headings, tables, callouts, Mermaid coverage, roadmap links, and explicit blocked-write language. `npm run validate:guided-docs` checks the guided entrypoints, read-next blocks, internal links, and docs-only branch boundary.
 
 ## Related docs
 
+- [Guided reading](../guided-reading.md)
 - [System overview](./system-overview.md)
 - [Runtime boundaries](./runtime-boundaries.md)
 - [Security model](./security-model.md)
@@ -142,3 +145,24 @@ Renderer UI may present intent, but it must not own project mutation. Preview ca
 ## Future work
 
 Phase 6C is the next architectural step because it can define transaction and refresh-boundary contracts without enabling writes. Actual source mutation should wait until command execution, patch application, undo/redo records, dirty-state handling, and validators are designed together.
+
+## Read next
+
+You are here: Architecture overview.
+
+Before this:
+- [Guided reading](../guided-reading.md) establishes the recommended documentation route.
+
+Next:
+- [Runtime boundaries](./runtime-boundaries.md) explains which runtime context owns each authority.
+
+Related:
+- [System overview](./system-overview.md)
+- [Preview architecture](./preview/README.md)
+- [Commands overview](./commands/README.md)
+- [Validation system](./validation-system.md)
+- Validator: [`validate:architecture-docs`](../../scripts/validate-architecture-docs.mjs)
+- Validator: [`validate:guided-docs`](../../scripts/validate-guided-docs.mjs)
+
+Why this matters:
+This page is the hub between product status and implementation-specific pages. It prevents contributors from reading Preview, command previews, or Style Engine inventory as isolated systems instead of constrained parts of the same read-only architecture.

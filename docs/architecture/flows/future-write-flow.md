@@ -2,6 +2,8 @@
 
 [Docs index](../../README.md)
 
+> **Navigation:** [Start here](../../README.md) → [Guided reading](../../guided-reading.md) → [Commands Architecture](../commands/README.md) → [Source Patch Preview](../commands/source-patch-preview.md) → Future Write Flow → [Validation System](../validation-system.md)
+
 ## At a glance
 
 | Question | Answer |
@@ -146,10 +148,11 @@ Phase 8A models are inventory-only. They must not write files, apply patches, ad
 
 ## Validation
 
-Current validation must keep failing if write behavior appears in preview-only, planning-only, preflight-only, draft/intent-only, disabled-surface, or inventory-only modules. `validate:style-engine-foundation` adds Phase 8A checks for read-only style source models, `canWriteSource: false`, `canApply: false`, `canInspectComputedStyles: false`, no browser stylesheet object usage, no iframe internals, no write IPC, no patch apply, no refresh execution, and no Preview DOM mutation.
+Current validation must keep failing if write behavior appears in preview-only, planning-only, preflight-only, draft/intent-only, disabled-surface, or inventory-only modules. `validate:style-engine-foundation` adds Phase 8A checks for read-only style source models, `canWriteSource: false`, `canApply: false`, `canInspectComputedStyles: false`, no browser stylesheet object usage, no iframe internals, no write IPC, no patch apply, no refresh execution, and no Preview DOM mutation. `validate:guided-docs` keeps this page in the editing and Style Engine reading paths.
 
 ## Related docs
 
+- [Guided reading](../../guided-reading.md)
 - [Future command execution](../commands/future-command-execution.md)
 - [Command Preview Bus](../commands/command-preview-bus.md)
 - [Source Patch Preview](../commands/source-patch-preview.md)
@@ -160,3 +163,24 @@ Current validation must keep failing if write behavior appears in preview-only, 
 ## Future work
 
 Later phases can introduce controlled CSS/Sass Inspector UI and write execution only when persistence, history, dirty state, refresh execution, conflict detection, Inspector Apply UX, style source ownership, authored/computed style correlation, and validation are designed together.
+
+## Read next
+
+You are here: Future Write Flow.
+
+Before this:
+- [Source Patch Preview](../commands/source-patch-preview.md) explains the current patch-like output that still does not apply anything.
+- [Future command execution](../commands/future-command-execution.md) maps future execution concepts without enabling them.
+
+Next:
+- [Validation System](../validation-system.md) shows how these blocked states are enforced by scripts.
+
+Related:
+- [Guided reading](../../guided-reading.md)
+- [Roadmap implementation status](../../roadmap-implementation.md)
+- [ADR 0003](../../decisions/0003-command-preview-before-write.md)
+- Validator: [`validate:history-foundation`](../../../scripts/validate-history-foundation.mjs)
+- Validator: [`validate:style-engine-foundation`](../../../scripts/validate-style-engine-foundation.mjs)
+
+Why this matters:
+This page is the hard boundary between preview/planning/readiness/inventory models and real mutation. It keeps Phase 6C, 6D, 7A, 7B, and 8A language from being mistaken for source write support.

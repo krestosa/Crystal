@@ -2,6 +2,8 @@
 
 [Docs index](../../README.md)
 
+> **Navigation:** [Start here](../../README.md) → [Guided reading](../../guided-reading.md) → [Preview Pipeline](../preview/README.md) → Commands Architecture → [Source Patch Preview](./source-patch-preview.md) → [Future write flow](../flows/future-write-flow.md)
+
 ## At a glance
 
 | Question | Answer |
@@ -115,10 +117,11 @@ Command preview is not command execution. A `preview-ready` result means the sys
 
 ## Validation
 
-`validate:html-element-library` and `validate:source-patch-preview` guard command preview boundaries, disabled apply behavior, and forbidden write paths.
+`validate:html-element-library` and `validate:source-patch-preview` guard command preview boundaries, disabled apply behavior, and forbidden write paths. `validate:guided-docs` keeps this page linked into the editing foundation path.
 
 ## Related docs
 
+- [Guided reading](../../guided-reading.md)
 - [HTML Element Library](./html-element-library.md)
 - [Source Patch Preview](./source-patch-preview.md)
 - [Command Preview Bus](./command-preview-bus.md)
@@ -127,3 +130,23 @@ Command preview is not command execution. A `preview-ready` result means the sys
 ## Future work
 
 Phase 6C should introduce transaction and refresh-boundary contracts. Actual execution should remain future until writes are reversible, refreshes are planned, and validators can prove that mutation is explicit rather than accidental.
+
+## Read next
+
+You are here: Editing Foundations / Commands Architecture.
+
+Before this:
+- [Preview Inspector](../preview/preview-inspector.md) shows how a source-mapped selection becomes the read-only context that future edits must respect.
+
+Next:
+- [Source Patch Preview](./source-patch-preview.md) explains how command intent becomes patch-like preview text without applying it.
+
+Related:
+- [Command Preview Bus](./command-preview-bus.md)
+- [Future command execution](./future-command-execution.md)
+- [Future write flow](../flows/future-write-flow.md)
+- Validator: [`validate:html-element-library`](../../../scripts/validate-html-element-library.mjs)
+- Validator: [`validate:source-patch-preview`](../../../scripts/validate-source-patch-preview.mjs)
+
+Why this matters:
+Commands are the architectural seam between user intent and future mutation. Keeping this page in the reading path prevents dry-run preview objects from being treated as executable write commands.

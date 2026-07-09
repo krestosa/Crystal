@@ -2,6 +2,8 @@
 
 [Docs index](../README.md)
 
+> **Navigation:** [Start here](../README.md) → [Guided reading](../guided-reading.md) → [Architecture overview](./README.md) → Validation System → [Roadmap implementation status](../roadmap-implementation.md)
+
 ## At a glance
 
 | Question | Answer |
@@ -14,6 +16,7 @@
 | Phase 7A addition | `validate:inspector-editing-foundation`. |
 | Phase 7B addition | `validate:editable-inspector-surface`. |
 | Phase 8A addition | `validate:style-engine-foundation`. |
+| Guided docs addition | `validate:guided-docs`. |
 | Safety risk controlled | Prevents forbidden shortcuts and false write/edit/cascade claims from entering unnoticed. |
 
 ## Purpose
@@ -22,7 +25,7 @@ Crystal has several features whose safest behavior is the absence of a shortcut:
 
 ## Current implementation
 
-Validation is script-based and uses the existing Node toolchain. The root scripts cover build, typecheck, structure, Project Graph, watcher behavior, Preview, DOM Snapshot, Preview Selection, Preview Inspector, Design Canvas, Visual Selection Overlay, HTML Element Library, Source Patch Preview, History Foundation, Design Editing Preflight, Inspector Editing Foundation, Editable Inspector Surface, Style Engine Foundation, UI flow, Electron diagnostics, and architecture docs.
+Validation is script-based and uses the existing Node toolchain. The root scripts cover build, typecheck, structure, Project Graph, watcher behavior, Preview, DOM Snapshot, Preview Selection, Preview Inspector, Design Canvas, Visual Selection Overlay, HTML Element Library, Source Patch Preview, History Foundation, Design Editing Preflight, Inspector Editing Foundation, Editable Inspector Surface, Style Engine Foundation, Guided Docs, UI flow, Electron diagnostics, and architecture docs.
 
 - Phase 7A — Editable Inspector draft/intent foundation: validates draft and intent contracts only; Apply remains blocked and no write runtime, patch apply, dirty persistence, refresh execution, undo/redo execution, DOM mutation, or contenteditable behavior is introduced.
 - Phase 7B — Editable Inspector read-only draft surface: validates that the renderer surface remains read-only/disabled, Apply remains unavailable, and no Preview DOM mutation or write IPC is introduced.
@@ -33,6 +36,7 @@ Phase 8A boundary: Style Engine read-only source inventory foundation only. No C
 | --- | --- | --- |
 | Feature validators. | Validators applying source changes. | Import-boundary checks. |
 | Docs validator. | Docs claiming future writes. | Write runtime safety checks. |
+| Guided docs validator. | Broken read-next navigation. | Generated docs site navigation. |
 | Local aggregate runners. | Hidden mutation during validation. | Transaction execution checks. |
 | History foundation validator. | Phase 6C write behavior. | Dirty-state validation. |
 | Design editing preflight validator. | Phase 6D Apply enablement. | Write-runtime validation. |
@@ -57,6 +61,7 @@ Read `package.json` first to see the command graph. The scripts below are the fe
 | `scripts/validate-inspector-editing-foundation.mjs` | Guards Phase 7A Inspector draft/intent boundary. | Inspector editing contracts, package scripts, docs, runtime UI source. | Permit applied Inspector editing. |
 | `scripts/validate-editable-inspector-surface.mjs` | Guards Phase 7B disabled/read-only surface boundary. | Editable Inspector renderer, core view model, package scripts, docs. | Permit enabled editing, Apply, write IPC, contenteditable, refresh execution, or DOM mutation. |
 | `scripts/validate-style-engine-foundation.mjs` | Guards Phase 8A Style Engine source inventory boundary. | Style Engine contracts, package scripts, docs, and any runtime wiring that mentions Style Engine. | Permit CSS/Sass editing, real cascade, computed style reads, iframe internals, writes, patch apply, write IPC, Apply, contenteditable, refresh, dirty persistence, undo/redo execution, or DOM mutation. |
+| `scripts/validate-guided-docs.mjs` | Guards guided reading entrypoints and read-next navigation. | Markdown docs, package scripts, git diff metadata when available. | Modify docs, create images, or excuse runtime changes. |
 | `scripts/validate-ui-flow.mjs` | Guards shell UI flow assumptions. | Renderer source. | Change runtime behavior. |
 | `scripts/validate-architecture-docs.mjs` | Checks docs shape and safety language. | Markdown docs. | Replace runtime validators. |
 
@@ -70,12 +75,14 @@ Read `package.json` first to see the command graph. The scripts below are the fe
 | Phase 7A modules | Are Inspector editing contracts present and still draft/intent-only? | Pass or explicit failure. |
 | Phase 7B renderer integration | Are controls disabled/read-only with no Apply handler? | Pass or explicit failure. |
 | Phase 8A Style Engine modules | Are source inventory contracts present with no style editing, real cascade, computed style reads, iframe internals, or writes? | Pass or explicit failure. |
+| Guided docs | Do entrypoints, read-next blocks, and internal links still form a path? | Pass or explicit failure. |
 | Docs files | Are required maps, links, tables, diagrams, callouts, and safety phrases present? | Pass or explicit failure. |
 | Aggregate local command | Did each gate pass in order? | Non-zero exit on failure. |
 
 ```mermaid
 flowchart TD
   subgraph Docs[Documentation checks]
+    Guided[Guided reading navigation]
     DocsShape[Required docs and links]
     Claims[Forbidden write/edit claims]
   end
@@ -99,6 +106,7 @@ flowchart TD
     Quick[validate:local:quick]
   end
 
+  Guided --> DocsShape
   DocsShape --> Quick
   Claims --> Quick
   Structure --> QuickCore
@@ -144,6 +152,7 @@ A passing documentation validator does not prove a feature works. It only proves
 Run:
 
 ```bash
+npm run validate:guided-docs
 npm run validate:history-foundation
 npm run validate:design-editing-preflight
 npm run validate:inspector-editing-foundation
@@ -157,6 +166,7 @@ Use `validate:local` when the full install-backed path is needed.
 
 ## Related docs
 
+- [Guided reading](../guided-reading.md)
 - [Validation flow](./flows/validation-flow.md)
 - [Validation gates diagram](./diagrams/validation-gates.md)
 - [Repository map](./repository-map.md)
@@ -166,3 +176,23 @@ Use `validate:local` when the full install-backed path is needed.
 ## Future work
 
 The next validation improvements should check import boundaries and docs-to-source path drift. Write-capable phases will need additional gates for command execution, patch application, transaction records, refresh invalidation, dirty state, conflict detection, Inspector Apply UX, CSS/Sass Inspector UI, authored/computed style correlation, and undo/redo reversibility.
+
+## Read next
+
+You are here: Validation System.
+
+Before this:
+- [Future write flow](./flows/future-write-flow.md) explains the blocked capabilities that validators must preserve.
+
+Next:
+- [Roadmap implementation status](../roadmap-implementation.md) shows which phase boundaries validators must not erase.
+
+Related:
+- [Guided reading](../guided-reading.md)
+- [Validation flow](./flows/validation-flow.md)
+- [Validation gates diagram](./diagrams/validation-gates.md)
+- Validator: [`validate:guided-docs`](../../scripts/validate-guided-docs.mjs)
+- Validator: [`validate:architecture-docs`](../../scripts/validate-architecture-docs.mjs)
+
+Why this matters:
+Validation is the enforcement layer for the documentation story. It keeps read-only Preview, dry-run commands, disabled Inspector surfaces, Style Engine inventory, and future write language from collapsing into unsupported implementation claims.
