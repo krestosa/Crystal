@@ -45,9 +45,9 @@ Primary references:
 
 ## Install
 
-`ash
+```bash
 npm ci
-`
+```
 
 Use `npm ci` for reproducible installs from the committed `package-lock.json`. Use `npm install` only when intentionally updating dependencies. `package-lock.json` must remain versioned and must not be ignored.
 
@@ -70,7 +70,7 @@ The development command builds the current source and opens the Electron shell f
 
 Manual sequence:
 
-`ash
+```bash
 npm ci
 npm run build
 npm run typecheck
