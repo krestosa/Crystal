@@ -48,21 +48,21 @@ Validators must not modify files, implement autofix behavior, or print wording t
 
 | Mode | Intended target | Behavior |
 | --- | --- | --- |
-| `auto` | Default local usage. | Uses unicode rich output with live progress on interactive TTY, and plain/ascii compact output without live progress on CI, non-TTY, redirected output, or `TERM=dumb`. |
-| `unicode` | Human terminal. | Forces unicode boxes, symbols, progress bars, tables, trees, and failure panels. Live progress still requires TTY. |
-| `ascii` / `plain` | Conservative terminal or logs. | Uses `OK`, `X`, `-`, `>`, ASCII separators, and ASCII progress bars. |
-| `raw` | Stable parsing. | Prints one event per line: `VALIDATION_START`, `VALIDATION_STEP`, and `VALIDATION_RESULT`. No boxes, bars, unicode, colors, or PASS stdout/stderr unless `--verbose`. |
-| `json-summary` | Machine parsing. | Prints only valid JSON with suite status, counts, duration, performance data, and result rows. |
+| `auto` | Default local usage. | Uses unicode rich output with live progress and ANSI color on interactive TTY when allowed, and plain/ascii compact output without live progress or ANSI on CI, non-TTY, redirected output, `TERM=dumb`, or `NO_COLOR`. |
+| `unicode` | Human terminal. | Forces unicode boxes, symbols, progress bars, tables, trees, and failure panels. Live progress still requires TTY; ANSI color is decorative and only enabled when allowed. |
+| `ascii` / `plain` | Conservative terminal or logs. | Uses `OK`, `X`, `-`, `>`, ASCII separators, and ASCII progress bars. These modes never emit ANSI color. |
+| `raw` | Stable parsing. | Prints one event per line: `VALIDATION_START`, `VALIDATION_STEP`, and `VALIDATION_RESULT`. No boxes, bars, unicode, ANSI color, or PASS stdout/stderr unless `--verbose`. |
+| `json-summary` | Machine parsing. | Prints only valid JSON with suite status, counts, duration, performance data, and result rows. It never emits ANSI color or terminal decoration. |
 
-Flags are presentation-only unless otherwise stated: `--unicode`, `--ascii`, `--plain`, `--raw`, `--json-summary`, `--no-progress`, `--compact`, `--verbose`, `--fail-fast`, and `--allow-skips`.
+Flags are presentation-only unless otherwise stated: `--unicode`, `--ascii`, `--plain`, `--raw`, `--json-summary`, `--color`, `--no-color`, `--no-progress`, `--compact`, `--verbose`, `--fail-fast`, and `--allow-skips`.
 
-`--no-progress` disables live progress even in TTY. `--compact` keeps failures complete but suppresses non-essential successful output. `--verbose` may print captured stdout/stderr and the internal `Executed:` command. `--raw` and `--json-summary` exist for stable CI/no-TTY consumption.
+`--no-progress` disables live progress even in TTY. `--color` requests ANSI color when the selected render mode allows it. `--no-color` disables ANSI color always. `NO_COLOR` also disables ANSI by default. `--plain`, `--ascii`, `--raw`, and `--json-summary` take priority over color and remain copyable/parseable. Color is decorative: PASS, FAIL, SKIPPED, icons, labels, rankings, durations, and failure sections remain readable without color. `--compact` keeps failures complete but suppresses non-essential successful output. `--verbose` may print captured stdout/stderr and the internal `Executed:` command. `--raw` and `--json-summary` exist for stable CI/no-TTY consumption.
 
 ## Strict validation meta hardening
 
 `validate:validation-system` is a static meta-validator for the validation system itself. It does not execute `validate:local:quick` and does not create a recursion cycle.
 
-It verifies that quick-suite checks have unique ids, labels, known categories, required status, public `npmScript` contracts, matching `displayCommand` values, no direct `npm.cmd`, and no ambiguous shell execution. It also verifies that direct Node scripts exist, that declared npm scripts exist in `package.json`, that failure types include `none`, `command-execution`, `missing-npm-script`, `missing-direct-script`, `validator-failure`, and `skipped`, and that critical validators use the shared assertions path that reports `checksExecuted` and fails when `checksExecuted === 0`.
+It verifies that quick-suite checks have unique ids, labels, known categories, required status, public `npmScript` contracts, matching `displayCommand` values, no direct `npm.cmd`, and no ambiguous shell execution. It also verifies that direct Node scripts exist, that declared npm scripts exist in `package.json`, that failure types include `none`, `command-execution`, `missing-npm-script`, `missing-direct-script`, `validator-failure`, and `skipped`, that ANSI rendering is dependency-free, that `stripAnsi`/visible-length helpers keep alignment stable, that `--color`/`--no-color`/`NO_COLOR` are wired, and that critical validators use the shared assertions path that reports `checksExecuted` and fails when `checksExecuted === 0`.
 
 The meta-validator must print `Files checked`, `Checks executed`, and `Result`, and it must fail rather than warn when static validation-system wiring is broken.
 
@@ -113,9 +113,9 @@ Read `package.json` first to see the command graph. The scripts below are the fe
 | `scripts/validation/validation-suite.mjs` | Lists required quick checks with labels, categories, public npm scripts, direct Node execution metadata, and required status. | Static check list. | Invent passing checks for missing scripts. |
 | `scripts/validation/validation-runner.mjs` | Executes checks sequentially and calculates PASS/FAIL/SKIPPED. | Child process status, stdout, stderr, package scripts, direct script existence. | Convert failed commands into warnings or exit zero on FAIL/SKIPPED. |
 | `scripts/validation/validation-reporter.mjs` | Formats render-mode-aware per-check output, raw events, JSON summary, failure detail, performance data, and final summary. | Validation results and terminal capabilities. | Claim fixes or omit skipped checks. |
-| `scripts/validation/validation-terminal-components.mjs` | Centralizes terminal UI primitives: boxes, tables, trees, progress bars, duration bars, status markers, wrapping, and truncation. | Pure inputs. | Change validation results. |
-| `scripts/validation/validation-terminal-capabilities.mjs` | Detects TTY, CI, TERM, width, and unicode capability. | Environment and stdout metadata. | Execute validators. |
-| `scripts/validation/validation-render-mode.mjs` | Resolves `auto`, `unicode`, `ascii`, `plain`, `raw`, and `json-summary`. | Flags and terminal capabilities. | Change exit codes. |
+| `scripts/validation/validation-terminal-components.mjs` | Centralizes terminal UI primitives: boxes, tables, trees, progress bars, duration bars, status markers, ANSI color, ANSI stripping, visible-length padding, wrapping, and truncation. | Pure inputs. | Change validation results. |
+| `scripts/validation/validation-terminal-capabilities.mjs` | Detects TTY, CI, TERM, width, unicode capability, `NO_COLOR`, and default ANSI color capability. | Environment and stdout metadata. | Execute validators. |
+| `scripts/validation/validation-render-mode.mjs` | Resolves `auto`, `unicode`, `ascii`, `plain`, `raw`, `json-summary`, and whether ANSI color is allowed. | Flags and terminal capabilities. | Change exit codes. |
 | `scripts/validation/validation-performance.mjs` | Summarizes duration, slowest checks, execution modes, process launches, and duplicate execution warnings. | Validation results. | Fail performance thresholds in this phase. |
 | `scripts/validation/validation-meta.mjs` | Implements static hardening checks for validation suite and reporter wiring. | Package scripts, suite, runner, reporter, docs, critical validators. | Execute the local quick runner. |
 | `scripts/validation/validation-assertions.mjs` | Provides deterministic file, token, package script, and forbidden-token assertions. | Source files and package.json. | Mutate source files. |

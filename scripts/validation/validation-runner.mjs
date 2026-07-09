@@ -29,6 +29,8 @@ export function parseValidationRunnerFlags(argv = process.argv.slice(2)) {
     unicode: argv.includes("--unicode"),
     raw: argv.includes("--raw"),
     jsonSummary: argv.includes("--json-summary"),
+    color: argv.includes("--color"),
+    noColor: argv.includes("--no-color"),
     compact: argv.includes("--compact"),
     topSlowest: parseTopSlowest(argv)
   };

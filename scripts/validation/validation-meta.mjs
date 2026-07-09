@@ -42,6 +42,9 @@ export function runValidationSystemMetaChecks(options = {}) {
   const reporterText = readFile("scripts/validation/validation-reporter.mjs");
   const resultText = readFile("scripts/validation/validation-result.mjs");
   const assertionsText = readFile("scripts/validation/validation-assertions.mjs");
+  const componentsText = readFile("scripts/validation/validation-terminal-components.mjs");
+  const capabilitiesText = readFile("scripts/validation/validation-terminal-capabilities.mjs");
+  const renderModeText = readFile("scripts/validation/validation-render-mode.mjs");
   const validationSystemDocs = readFile("docs/architecture/validation-system.md");
 
   for (const filePath of [
@@ -63,6 +66,11 @@ export function runValidationSystemMetaChecks(options = {}) {
     "validate:validation-system"
   ]) {
     check(Boolean(packageJson.scripts?.[scriptName]), `package.json must include script: ${scriptName}`);
+  }
+
+  const dependencyText = `${packageText}\n${componentsText}\n${reporterText}`;
+  for (const dependencyName of ["chalk", "ora", "cli-progress", "kleur", "picocolors"]) {
+    check(!dependencyText.includes(dependencyName), `Validation color rendering must not depend on ${dependencyName}.`);
   }
 
   const ids = new Set();
@@ -107,11 +115,26 @@ export function runValidationSystemMetaChecks(options = {}) {
     check(resultText.includes(token) || runnerText.includes(token), `validation failure type must be implemented: ${token}`);
   }
 
-  for (const token of ["raw", "plain", "unicode", "noProgress", "verbose", "compact", "jsonSummary"]) {
-    check(runnerText.includes(token) || reporterText.includes(token), `runner/reporter must implement output mode or flag: ${token}`);
+  for (const token of ["raw", "plain", "unicode", "ascii", "noProgress", "verbose", "compact", "jsonSummary", "color", "noColor"]) {
+    check(runnerText.includes(token) || reporterText.includes(token) || renderModeText.includes(token), `runner/reporter must implement output mode or flag: ${token}`);
   }
 
-  for (const token of ["PASS", "FAIL", "SKIPPED", "raw", "plain", "unicode"]) {
+  for (const token of ["--color", "--no-color", "NO_COLOR", "canUseColor"]) {
+    check(runnerText.includes(token) || capabilitiesText.includes(token) || renderModeText.includes(token) || validationSystemDocs.includes(token), `color support must include token: ${token}`);
+  }
+
+  for (const token of ["stripAnsi", "visibleLength", "padEndVisible", "truncateVisible", "colorize"]) {
+    check(componentsText.includes(token), `terminal components must implement ANSI-safe helper: ${token}`);
+  }
+
+  for (const token of ["renderDurationBarChart", "slowest", "rank", "░", "-"]) {
+    check(componentsText.includes(token) || reporterText.includes(token), `performance bars must include ranking/remainder token: ${token}`);
+  }
+
+  check(renderModeText.includes("VALIDATION_RENDER_RAW") && renderModeText.includes("VALIDATION_RENDER_JSON_SUMMARY"), "render mode must isolate raw and json-summary.");
+  check(renderModeText.includes("return false") && renderModeText.includes("VALIDATION_RENDER_RAW") && renderModeText.includes("VALIDATION_RENDER_JSON_SUMMARY"), "raw/json-summary must not enable ANSI color.");
+
+  for (const token of ["PASS", "FAIL", "SKIPPED", "raw", "plain", "unicode", "NO_COLOR", "ANSI", "decorative"]) {
     check(validationSystemDocs.includes(token), `validation-system.md must document token: ${token}`);
   }
 

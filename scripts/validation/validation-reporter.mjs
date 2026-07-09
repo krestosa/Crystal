@@ -11,17 +11,18 @@ import {
 } from "./validation-result.mjs";
 import { formatCommand, formatDuration, formatPercent, formatStatus, formatStepIndex, indentBlock, padRight } from "./validation-format.mjs";
 import { detectTerminalCapabilities, getTerminalWidth } from "./validation-terminal-capabilities.mjs";
-import { resolveRenderMode, shouldUseLiveProgress, VALIDATION_RENDER_ASCII, VALIDATION_RENDER_JSON_SUMMARY, VALIDATION_RENDER_PLAIN, VALIDATION_RENDER_RAW } from "./validation-render-mode.mjs";
+import { resolveColorEnabled, resolveRenderMode, shouldUseLiveProgress, VALIDATION_RENDER_ASCII, VALIDATION_RENDER_JSON_SUMMARY, VALIDATION_RENDER_PLAIN, VALIDATION_RENDER_RAW } from "./validation-render-mode.mjs";
 import { summarizePerformance } from "./validation-performance.mjs";
 import {
+  colorize,
   renderBox,
   renderDurationBarChart,
   renderKeyValueRows,
   renderProgressBar,
   renderStatus,
-  renderTable,
   renderTree,
-  truncateText
+  truncateVisible,
+  padEndVisible
 } from "./validation-terminal-components.mjs";
 
 const LABEL_WIDTH = 38;
@@ -49,6 +50,7 @@ export class ValidationReporter {
     this.plain = this.renderMode === VALIDATION_RENDER_ASCII || this.renderMode === VALIDATION_RENDER_PLAIN || this.renderMode === VALIDATION_RENDER_RAW || this.renderMode === VALIDATION_RENDER_JSON_SUMMARY;
     this.raw = this.renderMode === VALIDATION_RENDER_RAW;
     this.jsonSummary = this.renderMode === VALIDATION_RENDER_JSON_SUMMARY;
+    this.color = resolveColorEnabled(this.renderMode, options, this.capabilities);
     this.liveProgress = shouldUseLiveProgress(this.renderMode, options, this.capabilities);
     this.liveLineActive = false;
     this.width = getTerminalWidth(this.capabilities);
@@ -73,13 +75,14 @@ export class ValidationReporter {
 
   startStep(check, index, total) {
     if (!this.liveProgress || this.raw || this.jsonSummary) return;
-    const step = formatStepIndex(index, total);
-    const label = truncateText(check.label, LABEL_WIDTH);
-    const percent = formatPercent(index + 1, total);
-    const progress = renderProgressBar(index + 1, total, { plain: this.plain, width: 24 });
+    const step = colorize(formatStepIndex(index, total), "gray", { color: this.color });
+    const label = colorize(padEndVisible(truncateVisible(check.label, LABEL_WIDTH), LABEL_WIDTH), "cyan", { color: this.color });
+    const percent = colorize(formatPercent(index + 1, total), "cyan", { color: this.color });
+    const progress = renderProgressBar(index + 1, total, { plain: this.plain, color: this.color, width: 24, fillColor: "cyan" });
+    const running = colorize("RUNNING", "cyan", { color: this.color });
     const line = this.plain
-      ? `${renderStatus("RUNNING", { plain: true })} ${step} ${padRight(label, LABEL_WIDTH)} ${formatStatus("RUNNING")} ${progress} ${percent}`
-      : `${renderStatus("RUNNING", { plain: false })} ${step} ${padRight(label, LABEL_WIDTH)} ${progress} ${percent} RUNNING`;
+      ? `${renderStatus("RUNNING", { plain: true })} ${step} ${label} ${formatStatus("RUNNING")} ${progress} ${percent}`
+      : `${renderStatus("RUNNING", { plain: false, color: this.color })} ${step} ${label} ${progress} ${percent} ${running}`;
     this.writeLiveLine(line);
   }
 
@@ -111,10 +114,19 @@ export class ValidationReporter {
   }
 
   formatResultLine(result, index, total) {
-    const icon = renderStatus(result.status, { plain: this.plain });
-    const step = formatStepIndex(index, total);
-    const label = padRight(truncateText(result.label, LABEL_WIDTH), LABEL_WIDTH);
-    return `${padRight(icon, 2)} ${step} ${label} ${formatStatus(result.status)} ${formatDuration(result.durationMs)}`;
+    const icon = renderStatus(result.status, { plain: this.plain, color: this.color });
+    const step = colorize(formatStepIndex(index, total), "gray", { color: this.color });
+    const label = padEndVisible(truncateVisible(result.label, LABEL_WIDTH), LABEL_WIDTH);
+    const status = this.colorStatus(formatStatus(result.status), result.status);
+    const duration = colorize(formatDuration(result.durationMs), "gray", { color: this.color });
+    return `${padEndVisible(icon, 2)} ${step} ${label} ${status} ${duration}`;
+  }
+
+  colorStatus(value, status) {
+    if (status === VALIDATION_PASS_STATUS) return colorize(value, "green", { color: this.color });
+    if (status === VALIDATION_FAIL_STATUS) return colorize(value, "red", { color: this.color });
+    if (status === VALIDATION_SKIPPED_STATUS) return colorize(value, "yellow", { color: this.color });
+    return value;
   }
 
   writeLiveLine(text) {
@@ -136,7 +148,7 @@ export class ValidationReporter {
       console.log(title);
       return;
     }
-    console.log(renderBox(title, [], { plain: false, width: Math.min(this.width, 64) }));
+    console.log(renderBox(colorize(title, "bold", { color: this.color }), [], { plain: false, width: Math.min(this.width, 64), color: this.color }));
   }
 
   printSuiteMetadata(checks, options) {
@@ -147,32 +159,34 @@ export class ValidationReporter {
       ["Fail fast", options.failFast ? "on" : "off"],
       ["Skips allowed", options.allowSkips ? "yes" : "no"],
       ["Render", this.renderMode],
+      ["Color", this.color ? "on" : "off"],
       ["Progress", this.liveProgress ? "live" : "off"],
       ["Execution", "direct-node where available, npm fallback for typecheck"]
     ];
-    console.log(renderKeyValueRows(rows, { plain: this.plain }));
+    console.log(renderKeyValueRows(rows, { plain: this.plain, color: this.color }));
   }
 
   printFailure(result) {
     console.log("");
+    const failureTitle = colorize("Failure details", "red", { color: this.color });
     const detailRows = [
       ["Validator", result.label],
-      ["Type", result.failureType ?? VALIDATION_FAILURE_VALIDATOR],
-      ["Command", result.command],
-      ["Executed", result.executedCommand ?? result.command],
-      ["Exit code", result.exitCode ?? "null"]
+      ["Type", this.colorFailureType(result.failureType ?? VALIDATION_FAILURE_VALIDATOR)],
+      ["Command", colorize(result.command, "gray", { color: this.color })],
+      ["Executed", colorize(result.executedCommand ?? result.command, "gray", { color: this.color })],
+      ["Exit code", colorize(result.exitCode ?? "null", result.exitCode === 0 ? "gray" : "red", { color: this.color })]
     ];
 
     if (this.plain) {
-      this.printSection("Failure details");
-      console.log(renderKeyValueRows(detailRows, { plain: true }));
+      this.printSection("Failure details", "red");
+      console.log(renderKeyValueRows(detailRows, { plain: true, color: false }));
     } else {
-      console.log(renderBox("Failure details", detailRows.map(([key, value]) => `${padRight(key, 10)} ${value}`), { plain: false, width: Math.min(this.width, 80) }));
+      console.log(renderBox(failureTitle, detailRows.map(([key, value]) => `${padRight(key, 10)} ${value}`), { plain: false, width: Math.min(this.width, 80), color: this.color }));
     }
 
     if (result.errors.length > 0) {
       console.log("");
-      this.printSection("Errors");
+      this.printSection("Errors", "red");
       for (const error of result.errors) console.log(`- ${error}`);
     }
 
@@ -196,62 +210,67 @@ export class ValidationReporter {
     this.printValidatorFailureGuidance(result);
   }
 
-  printSection(title) {
-    console.log(title);
-    console.log(this.plain ? "-".repeat(title.length) : "─".repeat(title.length));
+  colorFailureType(failureType) {
+    const color = failureType === VALIDATION_FAILURE_COMMAND_EXECUTION || failureType === VALIDATION_FAILURE_MISSING_NPM_SCRIPT || failureType === VALIDATION_FAILURE_MISSING_DIRECT_SCRIPT ? "yellow" : "red";
+    return colorize(failureType, color, { color: this.color });
+  }
+
+  printSection(title, color = null) {
+    console.log(color ? colorize(title, color, { color: this.color }) : title);
+    console.log(this.plain ? "-".repeat(title.length) : colorize("─".repeat(title.length), "gray", { color: this.color }));
   }
 
   printCommandExecutionGuidance(result) {
     console.log("");
-    this.printSection("How to inspect");
+    this.printSection("How to inspect", "cyan");
     console.log(`- Re-run ${result.command} directly.`);
     console.log(`- Check Node can spawn ${result.executedCommand ?? "the configured command"} from this shell.`);
     console.log("- Run: node -e \"console.log(process.platform, process.execPath, process.env.npm_execpath)\"");
     console.log("");
-    this.printSection("Likely resolution");
+    this.printSection("Likely resolution", "yellow");
     console.log("- Fix the validation runner command invocation for this platform.");
     console.log("- Do not change the validator contract unless the command actually runs and reports a contract failure.");
   }
 
   printMissingNpmScriptGuidance(result) {
     console.log("");
-    this.printSection("How to inspect");
+    this.printSection("How to inspect", "cyan");
     console.log("- Open package.json.");
     console.log(`- Search for the script used by ${result.command}.`);
     console.log("- Re-run validate:local:quick after restoring package script wiring.");
     console.log("");
-    this.printSection("Likely resolution");
+    this.printSection("Likely resolution", "yellow");
     console.log("- Restore the missing npm script or mark the check optional explicitly in the suite if it is intentionally optional.");
     console.log("- Do not mark a required check as PASS when package.json does not expose it.");
   }
 
   printMissingDirectScriptGuidance(result) {
     console.log("");
-    this.printSection("How to inspect");
+    this.printSection("How to inspect", "cyan");
     console.log("- Open scripts/validation/validation-suite.mjs.");
     console.log(`- Check the direct command recorded as ${result.executedCommand ?? result.command}.`);
     console.log(`- Re-run ${result.command} after restoring the referenced Node script.`);
     console.log("");
-    this.printSection("Likely resolution");
+    this.printSection("Likely resolution", "yellow");
     console.log("- Restore the missing direct Node script file or route that check through npm fallback intentionally.");
     console.log("- Do not relax the public npm script contract.");
   }
 
   printValidatorFailureGuidance(result) {
     console.log("");
-    this.printSection("How to inspect");
+    this.printSection("How to inspect", "cyan");
     console.log(`- Re-run ${result.command}`);
     console.log("- Read the reported file and search for the exact token or condition.");
     console.log("- Compare against the phase boundary documented in docs/architecture/validation-system.md.");
     console.log("");
-    this.printSection("Likely resolution");
+    this.printSection("Likely resolution", "yellow");
     console.log("- Restore the missing contract, token, file, package script, or docs boundary reported above.");
     console.log("- Keep the validator strict; do not convert this failure into a warning.");
   }
 
   printSkipped(result) {
     console.log("");
-    this.printSection("Skipped");
+    this.printSection("Skipped", "yellow");
     console.log(`Validator: ${result.label}`);
     console.log(`Command: ${result.command}`);
     console.log(`Executed: ${result.executedCommand ?? result.command}`);
@@ -263,17 +282,17 @@ export class ValidationReporter {
     const stdout = result.stdout.trim();
     const stderr = result.stderr.trim();
     if (this.verbose && result.executedCommand && result.executedCommand !== result.command) {
-      console.log(`Executed: ${result.executedCommand}`);
+      console.log(`${colorize("Executed:", "gray", { color: this.color })} ${result.executedCommand}`);
     }
     if (!stdout && !stderr) return;
     console.log("");
-    this.printSection(title);
+    this.printSection(title, title === "Output" ? "red" : "cyan");
     if (stdout) {
-      console.log("stdout:");
+      console.log(colorize("stdout:", "gray", { color: this.color }));
       console.log(indentBlock(this.prepareOutput(stdout)));
     }
     if (stderr) {
-      console.log("stderr:");
+      console.log(colorize("stderr:", "gray", { color: this.color }));
       console.log(indentBlock(this.prepareOutput(stderr)));
     }
   }
@@ -317,7 +336,7 @@ export class ValidationReporter {
     this.printPerformance(performance);
     console.log("");
     console.log("Result:");
-    console.log(`${overallStatus} — ${passed} passed, ${failed} failed, ${skipped} skipped.`);
+    console.log(`${this.colorStatus(overallStatus, overallStatus)} — ${passed} passed, ${failed} failed, ${skipped} skipped.`);
   }
 
   createJsonSummary(results, status, passed, failed, skipped, performance, suiteName = "local-quick") {
@@ -352,32 +371,38 @@ export class ValidationReporter {
 
   printSummaryBox({ passed, failed, skipped, total, durationMs }) {
     const rows = [
-      ["PASS", passed],
-      ["FAIL", failed],
-      ["SKIPPED", skipped],
+      [colorize("PASS", "green", { color: this.color }), passed],
+      [colorize("FAIL", failed > 0 ? "red" : "gray", { color: this.color }), failed],
+      [colorize("SKIPPED", skipped > 0 ? "yellow" : "gray", { color: this.color }), skipped],
       ["Total", total],
-      ["Duration", formatDuration(durationMs)]
+      [colorize("Duration", "cyan", { color: this.color }), formatDuration(durationMs)]
     ];
 
     if (this.plain) {
-      console.log("Summary:");
-      for (const [label, value] of rows) console.log(`${padRight(label, 8)} ${value}`);
+      console.log("Validation status");
+      console.log("-".repeat(52));
+      for (const [label, value] of rows) console.log(`${padEndVisible(label, 8)} ${value}`);
       return;
     }
 
-    console.log(renderBox("Validation status", rows.map(([label, value]) => `${padRight(label, 8)} ${value}`), { plain: false, width: Math.min(this.width, 58) }));
+    console.log(renderBox(colorize("Validation status", "bold", { color: this.color }), rows.map(([label, value]) => `${padEndVisible(label, 8)} ${value}`), { plain: false, width: Math.min(this.width, 58), color: this.color }));
   }
 
   printGroupedSummary(results) {
-    const rows = [];
+    const categories = [];
     for (const result of results) {
-      rows.push([result.label, result.status, formatDuration(result.durationMs)]);
+      if (!categories.includes(result.category)) categories.push(result.category);
     }
-    console.log(renderTable([
-      { label: "Validator", maxWidth: SUMMARY_LABEL_WIDTH },
-      { label: "Status", maxWidth: 8 },
-      { label: "Duration", maxWidth: 10 }
-    ], rows, { plain: this.plain }));
+
+    for (const category of categories) {
+      const title = SUMMARY_CATEGORY_NAMES.get(category) ?? category;
+      console.log(colorize(title, "bold", { color: this.color }));
+      console.log(this.plain ? "-".repeat(title.length) : colorize("─".repeat(title.length), "gray", { color: this.color }));
+      for (const result of results.filter((item) => item.category === category)) {
+        console.log(`  ${padEndVisible(truncateVisible(result.label, SUMMARY_LABEL_WIDTH - 2), SUMMARY_LABEL_WIDTH - 2)} ${this.colorStatus(formatStatus(result.status), result.status)} ${colorize(formatDuration(result.durationMs), "gray", { color: this.color })}`);
+      }
+      console.log("");
+    }
   }
 
   printTreeSummary(results) {
@@ -392,25 +417,25 @@ export class ValidationReporter {
         label: SUMMARY_CATEGORY_NAMES.get(category) ?? category,
         children: results
           .filter((result) => result.category === category)
-          .map((result) => ({ label: `${padRight(truncateText(result.label, 32), 32)} ${result.status} ${formatDuration(result.durationMs)}` }))
+          .map((result) => ({ label: `${padEndVisible(truncateVisible(result.label, 32), 32)} ${result.status} ${formatDuration(result.durationMs)}` }))
       }))
     }];
     console.log(renderTree(nodes, { plain: this.plain }));
   }
 
   printPerformance(performance) {
-    this.printSection("Performance");
-    console.log(`- Slowest check: ${performance.slowestCheck ? `${performance.slowestCheck.label} ${formatDuration(performance.slowestCheck.durationMs)}` : "n/a"}`);
-    console.log(`- Total duration: ${formatDuration(performance.durationMs)}`);
+    this.printSection("Performance", "cyan");
+    console.log(`- Slowest check: ${performance.slowestCheck ? `${performance.slowestCheck.label} ${colorize(formatDuration(performance.slowestCheck.durationMs), "yellow", { color: this.color })}` : "n/a"}`);
+    console.log(`- Total duration: ${colorize(formatDuration(performance.durationMs), "cyan", { color: this.color })}`);
     console.log(`- Process launches: ${performance.processLaunches}`);
     console.log("- Execution modes:");
-    for (const [mode, count] of Object.entries(performance.executionModes)) console.log(`  ${padRight(mode, 12)} ${count}`);
+    for (const [mode, count] of Object.entries(performance.executionModes)) console.log(`  ${padEndVisible(mode, 12)} ${count}`);
     if (performance.duplicateWarnings.length > 0) {
-      console.log("- Duplicate execution warnings:");
+      console.log(colorize("- Duplicate execution warnings:", "yellow", { color: this.color }));
       for (const warning of performance.duplicateWarnings) console.log(`  - ${warning}`);
     }
     console.log("");
-    console.log(renderDurationBarChart("Slowest checks", performance.slowestChecks, { plain: this.plain }));
+    console.log(renderDurationBarChart("Slowest checks", performance.slowestChecks, { plain: this.plain, color: this.color, labelWidth: this.width < 90 ? 20 : 24, barWidth: this.width < 90 ? 16 : 20 }));
   }
 
   printRawStep(result) {

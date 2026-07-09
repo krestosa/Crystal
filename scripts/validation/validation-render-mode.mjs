@@ -34,6 +34,14 @@ export function isPlainRenderMode(renderMode) {
   return renderMode === VALIDATION_RENDER_ASCII || renderMode === VALIDATION_RENDER_PLAIN || renderMode === VALIDATION_RENDER_RAW || renderMode === VALIDATION_RENDER_JSON_SUMMARY;
 }
 
+export function resolveColorEnabled(renderMode, flags = {}, capabilities = {}) {
+  if (flags.noColor) return false;
+  if (renderMode === VALIDATION_RENDER_RAW || renderMode === VALIDATION_RENDER_JSON_SUMMARY) return false;
+  if (renderMode === VALIDATION_RENDER_ASCII || renderMode === VALIDATION_RENDER_PLAIN) return false;
+  if (flags.color) return true;
+  return capabilities.canUseColor === true;
+}
+
 export function shouldUseLiveProgress(renderMode, flags = {}, capabilities = {}) {
   if (flags.noProgress) return false;
   if (!isHumanRenderMode(renderMode)) return false;
