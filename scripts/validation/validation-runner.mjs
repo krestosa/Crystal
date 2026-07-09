@@ -34,6 +34,7 @@ export function runValidationSuite(checks, options = {}) {
 
   for (let index = 0; index < checks.length; index += 1) {
     const check = checks[index];
+    reporter.startStep(check, index, checks.length);
     const result = runValidationCheck(check, packageJson, options);
     results.push(result);
     reporter.completeStep(result, index, checks.length);

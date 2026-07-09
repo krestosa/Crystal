@@ -1,3 +1,4 @@
+import readline from "node:readline";
 import {
   VALIDATION_FAIL_STATUS,
   VALIDATION_FAILURE_COMMAND_EXECUTION,
@@ -16,6 +17,8 @@ export class ValidationReporter {
   constructor(options = {}) {
     this.verbose = Boolean(options.verbose);
     this.noProgress = Boolean(options.noProgress);
+    this.liveProgress = !this.noProgress && process.stdout.isTTY === true;
+    this.liveLineActive = false;
   }
 
   startSuite(title) {
@@ -23,15 +26,22 @@ export class ValidationReporter {
     console.log("");
   }
 
-  completeStep(result, index, total) {
+  startStep(check, index, total) {
+    if (!this.liveProgress) return;
     const step = formatStepIndex(index, total);
-    const label = padRight(result.label, LABEL_WIDTH);
-    console.log(`${step} ${label} ${formatStatus(result.status)} ${formatDuration(result.durationMs)}`);
+    const label = padRight(check.label, LABEL_WIDTH);
+    const progress = formatProgressBar(index + 1, total, { ascii: false });
+    this.writeLiveLine(`${step} ${label} ${formatStatus("RUNNING")} ${progress}`);
+  }
+
+  completeStep(result, index, total) {
+    this.clearLiveLine();
+    console.log(this.formatResultLine(result, index, total));
 
     if (result.status === VALIDATION_FAIL_STATUS) {
       this.printFailure(result);
     } else if (result.status === VALIDATION_SKIPPED_STATUS) {
-      this.printSkipped(result);
+      if (this.verbose) this.printSkipped(result);
     } else if (this.verbose) {
       this.printCapturedOutput(result, "Captured output");
     } else {
@@ -41,11 +51,26 @@ export class ValidationReporter {
         for (const line of relevantLines) console.log(`  ${line}`);
       }
     }
+  }
 
-    if (!this.noProgress) {
-      console.log(`Progress: ${formatProgressBar(index + 1, total)}`);
-    }
-    console.log("");
+  formatResultLine(result, index, total) {
+    const step = formatStepIndex(index, total);
+    const label = padRight(result.label, LABEL_WIDTH);
+    return `${step} ${label} ${formatStatus(result.status)} ${formatDuration(result.durationMs)}`;
+  }
+
+  writeLiveLine(text) {
+    readline.clearLine(process.stdout, 0);
+    readline.cursorTo(process.stdout, 0);
+    process.stdout.write(text);
+    this.liveLineActive = true;
+  }
+
+  clearLiveLine() {
+    if (!this.liveLineActive) return;
+    readline.clearLine(process.stdout, 0);
+    readline.cursorTo(process.stdout, 0);
+    this.liveLineActive = false;
   }
 
   printFailure(result) {
@@ -137,11 +162,13 @@ export class ValidationReporter {
   }
 
   finalSummary(results, options = {}) {
+    this.clearLiveLine();
     const passed = results.filter((result) => result.status === VALIDATION_PASS_STATUS).length;
     const failed = results.filter((result) => result.status === VALIDATION_FAIL_STATUS).length;
     const skipped = results.filter((result) => result.status === VALIDATION_SKIPPED_STATUS).length;
     const overallStatus = failed > 0 || (skipped > 0 && !options.allowSkips) ? VALIDATION_FAIL_STATUS : VALIDATION_PASS_STATUS;
 
+    console.log("");
     console.log("Summary:");
     console.log(`${padRight("Validator", SUMMARY_LABEL_WIDTH)} Status   Duration`);
     for (const result of results) {
