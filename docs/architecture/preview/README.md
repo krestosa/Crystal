@@ -2,6 +2,8 @@
 
 [Docs index](../../README.md)
 
+> **Navigation:** [Start here](../../README.md) → [Guided reading](../../guided-reading.md) → [Architecture overview](../README.md) → Preview Pipeline → [DOM Snapshot](./dom-snapshot.md) → [Preview Selection](./preview-selection.md) → [Preview Inspector](./preview-inspector.md)
+
 ## At a glance
 
 | Question | Answer |
@@ -130,10 +132,11 @@ Preview does not mutate files or DOM. Renderer does not receive absolute filesys
 
 ## Validation
 
-`validate:preview`, `validate:dom-snapshot`, `validate:preview-selection`, `validate:preview-inspector`, and `validate:visual-selection-overlay` cover this subsystem.
+`validate:preview`, `validate:dom-snapshot`, `validate:preview-selection`, `validate:preview-inspector`, and `validate:visual-selection-overlay` cover this subsystem. `validate:guided-docs` verifies that this Preview entrypoint remains connected to the guided route and internal links stay valid.
 
 ## Related docs
 
+- [Guided reading](../../guided-reading.md)
 - [Project Preview](./project-preview.md)
 - [DOM Snapshot](./dom-snapshot.md)
 - [Preview Selection](./preview-selection.md)
@@ -144,3 +147,24 @@ Preview does not mutate files or DOM. Renderer does not receive absolute filesys
 ## Future work
 
 Preview hardening should continue before writes are enabled. Phase 6C should define refresh-boundary planning so future source changes can invalidate graph, snapshot, selection, overlay, and iframe state deliberately rather than by accident.
+
+## Read next
+
+You are here: Preview Pipeline.
+
+Before this:
+- [Architecture overview](../README.md) explains where Preview sits inside the full Electron/core architecture.
+
+Next:
+- [Project Preview](./project-preview.md) explains safe project-relative serving.
+- [DOM Snapshot](./dom-snapshot.md) explains the stable source-derived tree used for later selection mapping.
+
+Related:
+- [Preview safety](./preview-safety.md)
+- [Preview Selection](./preview-selection.md)
+- [Preview Inspector](./preview-inspector.md)
+- Validator: [`validate:preview`](../../../scripts/validate-preview.mjs)
+- Validator: [`validate:dom-snapshot`](../../../scripts/validate-dom-snapshot.mjs)
+
+Why this matters:
+Preview is the first point where untrusted project HTML appears inside Crystal. The page keeps rendering, snapshotting, selection, Inspector state, and overlay projection separate so future editing cannot bypass the trusted source model.
