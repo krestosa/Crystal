@@ -1,4 +1,6 @@
-export interface ProjectPreviewPanelElements {
+import type { CSSSassInspectorSurfaceElements } from "../../views/inspector/css-sass-inspector";
+
+export interface ProjectPreviewPanelElements extends CSSSassInspectorSurfaceElements {
   readonly status: HTMLElement;
   readonly target: HTMLSelectElement;
   readonly page: HTMLElement;

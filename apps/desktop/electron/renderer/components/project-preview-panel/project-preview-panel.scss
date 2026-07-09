@@ -188,13 +188,16 @@
 
 .crystal-project-preview-panel__editable-inspector,
 .crystal-project-preview-panel__editable-fields,
-.crystal-project-preview-panel__editable-intents {
+.crystal-project-preview-panel__editable-intents,
+.crystal-css-sass-inspector,
+.crystal-css-sass-inspector__section {
   display: grid;
   gap: var(--crystal-space-2);
   min-width: 0;
 }
 
-.crystal-project-preview-panel__editable-header {
+.crystal-project-preview-panel__editable-header,
+.crystal-css-sass-inspector__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -205,7 +208,10 @@
 .crystal-project-preview-panel__editable-status,
 .crystal-project-preview-panel__editable-message,
 .crystal-project-preview-panel__editable-field-meta,
-.crystal-project-preview-panel__editable-intent-status {
+.crystal-project-preview-panel__editable-intent-status,
+.crystal-css-sass-inspector__status,
+.crystal-css-sass-inspector__message,
+.crystal-css-sass-inspector__blocked {
   margin: 0;
   color: var(--crystal-color-text-subtle);
   font-size: var(--crystal-font-size-caption);
@@ -222,7 +228,10 @@
 }
 
 .crystal-project-preview-panel__editable-field-label,
-.crystal-project-preview-panel__editable-intent-label {
+.crystal-project-preview-panel__editable-intent-label,
+.crystal-css-sass-inspector__source-label,
+.crystal-css-sass-inspector__rule-label,
+.crystal-css-sass-inspector__section-title {
   overflow: hidden;
   color: var(--crystal-color-text-muted);
   font-size: var(--crystal-font-size-caption);
@@ -248,13 +257,24 @@
   opacity: var(--crystal-control-disabled-opacity);
 }
 
-.crystal-project-preview-panel__editable-intents {
+.crystal-project-preview-panel__editable-intents,
+.crystal-css-sass-inspector__sources,
+.crystal-css-sass-inspector__rules,
+.crystal-css-sass-inspector__selectors,
+.crystal-css-sass-inspector__declarations,
+.crystal-css-sass-inspector__safety-list {
+  display: grid;
+  gap: var(--crystal-space-1);
+  min-width: 0;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.crystal-project-preview-panel__editable-intent {
+.crystal-project-preview-panel__editable-intent,
+.crystal-css-sass-inspector__source,
+.crystal-css-sass-inspector__rule,
+.crystal-css-sass-inspector__declaration {
   display: grid;
   gap: var(--crystal-space-1);
   min-width: 0;
@@ -262,12 +282,39 @@
   background: rgba(255, 255, 255, 0.032);
 }
 
-.crystal-project-preview-panel__editable-apply {
+.crystal-css-sass-inspector__source-details {
+  display: grid;
+  gap: var(--crystal-space-1);
+}
+
+.crystal-css-sass-inspector__declaration {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.crystal-css-sass-inspector__declaration code,
+.crystal-css-sass-inspector__selectors code {
+  overflow: hidden;
+  color: var(--crystal-color-text-dim);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crystal-css-sass-inspector__declaration span,
+.crystal-css-sass-inspector__safety-list li {
+  color: var(--crystal-color-text-subtle);
+  font-size: var(--crystal-font-size-caption);
+}
+
+.crystal-project-preview-panel__editable-apply,
+.crystal-css-sass-inspector__apply-unavailable {
   width: 100%;
 }
 
 .crystal-project-preview-panel__button.crystal-project-preview-panel__editable-apply[data-disabled="true"],
-.crystal-project-preview-panel__button.crystal-project-preview-panel__editable-apply[data-disabled="true"]:hover {
+.crystal-project-preview-panel__button.crystal-project-preview-panel__editable-apply[data-disabled="true"]:hover,
+.crystal-css-sass-inspector__apply-unavailable[data-disabled="true"],
+.crystal-css-sass-inspector__apply-unavailable[data-disabled="true"]:hover {
   border-color: var(--crystal-control-border);
   background: var(--crystal-control-bg);
   color: var(--crystal-control-text);
