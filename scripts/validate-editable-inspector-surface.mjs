@@ -95,6 +95,7 @@ requireIncludes("apps/desktop/electron/renderer/views/inspector/editable-inspect
   "InspectorEditDraftPreview",
   "InspectorEditIntentPreview",
   "InspectorEditingReadinessPreview",
+  "editableInspectorApply: HTMLElement",
   "controlReadOnly: true",
   "controlDisabled: true",
   "applyDisabled: true"
@@ -104,8 +105,8 @@ requireIncludes("apps/desktop/electron/renderer/views/inspector/editable-inspect
   "renderEditableInspectorSurface",
   "input.readOnly = true",
   "input.disabled = true",
-  "editableInspectorApply.disabled = true",
-  "aria-disabled",
+  "editableInspectorApply.setAttribute(\"aria-disabled\", \"true\")",
+  "editableInspectorApply.setAttribute(\"data-disabled\", \"true\")",
   "replaceChildren"
 ]);
 
@@ -120,7 +121,9 @@ requireIncludes("apps/desktop/electron/renderer/components/project-preview-panel
   "data-editable-inspector-fields",
   "data-editable-inspector-intents",
   "data-editable-inspector-apply",
-  "disabled aria-disabled=\"true\"",
+  "<p class=\"crystal-project-preview-panel__button crystal-project-preview-panel__editable-apply crystal-shell-compact-button\"",
+  "aria-disabled=\"true\"",
+  "data-disabled=\"true\"",
   "Apply unavailable — write runtime not enabled"
 ]);
 
@@ -129,6 +132,18 @@ requireIncludes("package.json", [
   "npm run validate:editable-inspector-surface",
   "npm run validate:inspector-editing-foundation"
 ]);
+
+const previewPanelHtml = read("apps/desktop/electron/renderer/components/project-preview-panel/project-preview-panel.html");
+const inspectorSection = previewPanelHtml.match(/<section[^>]*data-project-preview-inspector[\s\S]*?<\/section>/)?.[0] ?? "";
+if (/<button\b/i.test(inspectorSection)) {
+  errors.push("Preview Inspector section must not contain a button, including disabled Apply affordances.");
+}
+if (/<button\b[^>]*data-editable-inspector-apply/i.test(previewPanelHtml)) {
+  errors.push("Editable Inspector Apply affordance must not be a button.");
+}
+if (!/<p\b[^>]*data-editable-inspector-apply/i.test(previewPanelHtml)) {
+  errors.push("Editable Inspector Apply affordance must be rendered as a passive paragraph element.");
+}
 
 const guardedSourceFiles = [
   ...walk("apps/desktop/electron/renderer").filter((file) => /\.(ts|html|scss)$/.test(file)),
