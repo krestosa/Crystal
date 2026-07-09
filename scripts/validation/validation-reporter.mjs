@@ -1,4 +1,12 @@
-import { VALIDATION_FAIL_STATUS, VALIDATION_PASS_STATUS, VALIDATION_SKIPPED_STATUS } from "./validation-result.mjs";
+import {
+  VALIDATION_FAIL_STATUS,
+  VALIDATION_FAILURE_COMMAND_EXECUTION,
+  VALIDATION_FAILURE_MISSING_NPM_SCRIPT,
+  VALIDATION_FAILURE_SKIPPED,
+  VALIDATION_FAILURE_VALIDATOR,
+  VALIDATION_PASS_STATUS,
+  VALIDATION_SKIPPED_STATUS
+} from "./validation-result.mjs";
 import { extractIssueLines, formatCommand, formatDuration, formatProgressBar, formatStatus, formatStepIndex, indentBlock, padRight } from "./validation-format.mjs";
 
 const LABEL_WIDTH = 42;
@@ -20,12 +28,12 @@ export class ValidationReporter {
     const label = padRight(result.label, LABEL_WIDTH);
     console.log(`${step} ${label} ${formatStatus(result.status)} ${formatDuration(result.durationMs)}`);
 
-    if (this.verbose) {
-      this.printCapturedOutput(result, "Captured output");
-    } else if (result.status === VALIDATION_FAIL_STATUS) {
+    if (result.status === VALIDATION_FAIL_STATUS) {
       this.printFailure(result);
     } else if (result.status === VALIDATION_SKIPPED_STATUS) {
       this.printSkipped(result);
+    } else if (this.verbose) {
+      this.printCapturedOutput(result, "Captured output");
     } else {
       const relevantLines = extractIssueLines(`${result.stdout}\n${result.stderr}`);
       if (relevantLines.length > 0) {
@@ -46,6 +54,7 @@ export class ValidationReporter {
     console.log(`Validator: ${result.label}`);
     console.log(`Command: ${result.command}`);
     console.log(`Exit code: ${result.exitCode ?? "null"}`);
+    console.log(`Failure type: ${result.failureType ?? VALIDATION_FAILURE_VALIDATOR}`);
     console.log("");
 
     if (result.errors.length > 0) {
@@ -56,6 +65,42 @@ export class ValidationReporter {
 
     this.printCapturedOutput(result, "Output");
 
+    if (result.failureType === VALIDATION_FAILURE_COMMAND_EXECUTION) {
+      this.printCommandExecutionGuidance(result);
+      return;
+    }
+
+    if (result.failureType === VALIDATION_FAILURE_MISSING_NPM_SCRIPT) {
+      this.printMissingNpmScriptGuidance(result);
+      return;
+    }
+
+    this.printValidatorFailureGuidance(result);
+  }
+
+  printCommandExecutionGuidance(result) {
+    console.log("How to inspect:");
+    console.log(`- Re-run ${result.command} directly.`);
+    console.log("- Check Node can spawn npm from this shell.");
+    console.log("- Run: node -e \"console.log(process.platform, process.execPath, process.env.npm_execpath)\"");
+    console.log("");
+    console.log("Likely resolution:");
+    console.log("- Fix the validation runner npm invocation for this platform.");
+    console.log("- Do not change the validator contract unless the command actually runs and reports a contract failure.");
+  }
+
+  printMissingNpmScriptGuidance(result) {
+    console.log("How to inspect:");
+    console.log("- Open package.json.");
+    console.log(`- Search for the script used by ${result.command}.`);
+    console.log("- Re-run validate:local:quick after restoring package script wiring.");
+    console.log("");
+    console.log("Likely resolution:");
+    console.log("- Restore the missing npm script or mark the check optional explicitly in the suite if it is intentionally optional.");
+    console.log("- Do not mark a required check as PASS when package.json does not expose it.");
+  }
+
+  printValidatorFailureGuidance(result) {
     console.log("How to inspect:");
     console.log(`- Re-run ${result.command}`);
     console.log("- Read the reported file and search for the exact token or condition.");
@@ -71,6 +116,7 @@ export class ValidationReporter {
     console.log("Skipped:");
     console.log(`Validator: ${result.label}`);
     console.log(`Command: ${result.command}`);
+    console.log(`Failure type: ${result.failureType ?? VALIDATION_FAILURE_SKIPPED}`);
     for (const hint of result.hints) console.log(`- ${hint}`);
   }
 

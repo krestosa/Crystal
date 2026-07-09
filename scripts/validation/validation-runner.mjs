@@ -1,7 +1,18 @@
 import fs from "node:fs";
 import { spawnSync } from "node:child_process";
 import { performance } from "node:perf_hooks";
-import { createValidationResult, isFailingValidationResult, VALIDATION_FAIL_STATUS, VALIDATION_PASS_STATUS, VALIDATION_SKIPPED_STATUS } from "./validation-result.mjs";
+import {
+  createValidationResult,
+  isFailingValidationResult,
+  VALIDATION_FAIL_STATUS,
+  VALIDATION_FAILURE_COMMAND_EXECUTION,
+  VALIDATION_FAILURE_MISSING_NPM_SCRIPT,
+  VALIDATION_FAILURE_NONE,
+  VALIDATION_FAILURE_SKIPPED,
+  VALIDATION_FAILURE_VALIDATOR,
+  VALIDATION_PASS_STATUS,
+  VALIDATION_SKIPPED_STATUS
+} from "./validation-result.mjs";
 import { extractIssueLines } from "./validation-format.mjs";
 import { formatValidationCommand, ValidationReporter } from "./validation-reporter.mjs";
 
@@ -41,7 +52,8 @@ export function runValidationSuite(checks, options = {}) {
           stdout: "",
           stderr: "",
           errors: [],
-          hints: ["Skipped because --fail-fast stopped the suite after an earlier failure."]
+          hints: ["Skipped because --fail-fast stopped the suite after an earlier failure."],
+          failureType: VALIDATION_FAILURE_SKIPPED
         });
         results.push(skippedResult);
         reporter.completeStep(skippedResult, skippedIndex, checks.length);
@@ -76,11 +88,13 @@ function runValidationCheck(check, packageJson, options) {
       stdout: "",
       stderr: `Missing npm script: ${check.npmScript}`,
       errors: [`Missing npm script: ${check.npmScript}`],
-      hints: ["Add the script to package.json or mark this check optional explicitly."]
+      hints: ["Add the script to package.json or mark this check optional explicitly."],
+      failureType: check.required === false ? VALIDATION_FAILURE_SKIPPED : VALIDATION_FAILURE_MISSING_NPM_SCRIPT
     });
   }
 
-  const execution = spawnSync(check.command, check.args ?? [], {
+  const invocation = resolveCheckInvocation(check);
+  const execution = spawnSync(invocation.command, invocation.args, {
     cwd: options.cwd ?? process.cwd(),
     encoding: "utf8",
     shell: false,
@@ -100,7 +114,8 @@ function runValidationCheck(check, packageJson, options) {
       stdout: execution.stdout ?? "",
       stderr: `${execution.stderr ?? ""}\n${execution.error.message}`.trim(),
       errors: [execution.error.message],
-      hints: ["Confirm the command exists and can be executed in this checkout."]
+      hints: ["Confirm Node can spawn npm from this shell."],
+      failureType: VALIDATION_FAILURE_COMMAND_EXECUTION
     });
   }
 
@@ -118,9 +133,41 @@ function runValidationCheck(check, packageJson, options) {
     exitCode,
     stdout: execution.stdout ?? "",
     stderr: execution.stderr ?? "",
-    errors: errors.length > 0 ? errors : [`${commandText} exited with code ${exitCode}`],
-    hints: []
+    errors: exitCode === 0 ? [] : errors.length > 0 ? errors : [`${commandText} exited with code ${exitCode}`],
+    hints: [],
+    failureType: exitCode === 0 ? VALIDATION_FAILURE_NONE : VALIDATION_FAILURE_VALIDATOR
   });
+}
+
+function resolveCheckInvocation(check) {
+  if (check.npmScript) return resolveNpmInvocation(check.npmScript);
+  return {
+    command: check.command,
+    args: check.args ?? []
+  };
+}
+
+function resolveNpmInvocation(scriptName) {
+  const npmExecPath = process.env.npm_execpath;
+
+  if (npmExecPath) {
+    return {
+      command: process.execPath,
+      args: [npmExecPath, "run", scriptName]
+    };
+  }
+
+  if (process.platform === "win32") {
+    return {
+      command: "cmd.exe",
+      args: ["/d", "/s", "/c", "npm", "run", scriptName]
+    };
+  }
+
+  return {
+    command: "npm",
+    args: ["run", scriptName]
+  };
 }
 
 function readPackageJson() {

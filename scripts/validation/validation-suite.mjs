@@ -1,9 +1,5 @@
-const npmCommand = process.platform === "win32" ? "npm.cmd" : "npm";
-
 function npmRun(scriptName) {
   return {
-    command: npmCommand,
-    args: ["run", scriptName],
     npmScript: scriptName,
     required: true
   };
