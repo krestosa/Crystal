@@ -14,7 +14,7 @@ export interface EditableInspectorSurfaceElements {
   readonly editableInspectorFieldsEmpty: HTMLElement;
   readonly editableInspectorIntents: HTMLUListElement;
   readonly editableInspectorIntentsEmpty: HTMLElement;
-  readonly editableInspectorApply: HTMLElement;
+  readonly editableInspectorApplyUnavailableAffordance: HTMLElement;
 }
 
 export interface EditableInspectorFieldSurfaceModel {
