@@ -2,7 +2,7 @@
 
 [Docs index](../README.md)
 
-> **Navigation:** [Start here](../README.md) → [Guided reading](../guided-reading.md) → [Architecture overview](./README.md) → Validation System → [Roadmap implementation status](../roadmap-implementation.md)
+> **Navigation:** [Start here](../README.md) → [Guided reading](../guided-reading.md) → [Architecture overview](./README.md) → Validation System → [CSS/Sass Inspector read-only visual surface](./css-sass-inspector-readonly-surface.md)
 
 ## At a glance
 
@@ -16,21 +16,31 @@
 | Phase 7A addition | `validate:inspector-editing-foundation`. |
 | Phase 7B addition | `validate:editable-inspector-surface`. |
 | Phase 8A addition | `validate:style-engine-foundation`. |
+| Phase 8B addition | `validate:css-sass-inspector-surface`. |
 | Guided docs addition | `validate:guided-docs`. |
 | Safety risk controlled | Prevents forbidden shortcuts and false write/edit/cascade claims from entering unnoticed. |
 
 ## Purpose
 
-Crystal has several features whose safest behavior is the absence of a shortcut: no renderer filesystem access, no live iframe DOM reads, no write IPC, no patch application, no real undo/redo, no dirty-state persistence, no refresh execution, no contenteditable path, no hidden Apply behavior, no enabled editing handler behind disabled Inspector affordances, and no Style Engine path that reads computed styles or calculates real cascade in Phase 8A. The validation system makes those negative guarantees visible while the codebase changes.
+Crystal uses validators to preserve negative guarantees: no renderer filesystem access, no live iframe DOM reads, no browser CSSOM shortcut, no computed style reads, no write IPC, no patch application, no real undo/redo execution, no dirty-state persistence, no refresh execution, no contenteditable path, no hidden Apply behavior, and no source mutation.
+
+The validation system makes feature phase boundaries explicit while the codebase evolves from read-only Preview and planning models toward later write-capable systems.
 
 ## Current implementation
 
-Validation is script-based and uses the existing Node toolchain. The root scripts cover build, typecheck, structure, Project Graph, watcher behavior, Preview, DOM Snapshot, Preview Selection, Preview Inspector, Design Canvas, Visual Selection Overlay, HTML Element Library, Source Patch Preview, History Foundation, Design Editing Preflight, Inspector Editing Foundation, Editable Inspector Surface, Style Engine Foundation, Guided Docs, UI flow, Electron diagnostics, and architecture docs.
+Validation is script-based and uses the existing Node toolchain. The root scripts cover build, typecheck, structure, Project Graph, watcher behavior, Preview, DOM Snapshot, Preview Selection, Preview Inspector, Design Canvas, Visual Selection Overlay, HTML Element Library, Source Patch Preview, History Foundation, Design Editing Preflight, Inspector Editing Foundation, Editable Inspector Surface, Style Engine Foundation, CSS/Sass Inspector Surface, Guided Docs, UI flow, Electron diagnostics, and architecture docs.
 
-- Phase 7A — Editable Inspector draft/intent foundation: validates draft and intent contracts only; Apply remains blocked and no write runtime, patch apply, dirty persistence, refresh execution, undo/redo execution, DOM mutation, or contenteditable behavior is introduced.
-- Phase 7B — Editable Inspector read-only draft surface: validates that the renderer surface remains read-only/disabled, Apply remains unavailable, and no Preview DOM mutation or write IPC is introduced.
+Phase 6C models are planning-only.
+
+Phase 7A boundary: Editable Inspector draft/intent foundation only. No source files are written. No patch apply is available. No write IPC exists. Apply remains unavailable. No contenteditable is used. No undo/redo execution runs. Dirty-state is not persisted. No refresh execution runs. No Preview DOM mutation occurs.
+
+Phase 7B boundary: Editable Inspector read-only draft surface only. No source files are written. No patch apply is available. No write IPC exists. Apply remains unavailable. No contenteditable is used. No undo/redo execution runs. Dirty-state is not persisted. No refresh execution runs. No Preview DOM mutation occurs.
 
 Phase 8A boundary: Style Engine read-only source inventory foundation only. No CSS/Sass Inspector visual surface is added. No real cascade is calculated. No computed styles are read. No style editing is implemented. No source files are written. No patch apply is available. No write IPC exists. Apply remains unavailable. No contenteditable is used. No undo/redo execution runs. Dirty-state is not persisted. No refresh execution runs. No Preview DOM mutation occurs.
+
+Phase 8B — CSS/Sass Inspector read-only visual surface
+
+Phase 8B boundary: CSS/Sass Inspector read-only visual surface only. No real cascade is calculated. No computed styles are read. No style editing is implemented. No source files are written. No patch apply is available. No write IPC exists. Apply remains unavailable. No contenteditable is used. No undo/redo execution runs. Dirty-state is not persisted. No refresh execution runs. No Preview DOM mutation occurs.
 
 | Implemented | Blocked | Future |
 | --- | --- | --- |
@@ -42,7 +52,8 @@ Phase 8A boundary: Style Engine read-only source inventory foundation only. No C
 | Design editing preflight validator. | Phase 6D Apply enablement. | Write-runtime validation. |
 | Inspector editing foundation validator. | Phase 7A applied Inspector editing. | Inspector Apply validation. |
 | Editable Inspector surface validator. | Phase 7B enabled editing controls. | Write-capable Inspector validation. |
-| Style Engine foundation validator. | Phase 8A style editing, real cascade, computed style reads, and iframe internals. | CSS/Sass Inspector validation. |
+| Style Engine foundation validator. | Phase 8A style editing, real cascade, computed style reads, and iframe internals. | Authored/computed style correlation. |
+| CSS/Sass Inspector surface validator. | Phase 8B cascade, computed styles, style editing, writes, and Apply. | CSS/Sass editing validation. |
 
 ## Key files
 
@@ -60,9 +71,9 @@ Read `package.json` first to see the command graph. The scripts below are the fe
 | `scripts/validate-design-editing-preflight.mjs` | Guards Phase 6D readiness boundary. | Dirty-state, source-conflict, write-runtime, design-editing, package scripts, docs. | Permit Apply enablement. |
 | `scripts/validate-inspector-editing-foundation.mjs` | Guards Phase 7A Inspector draft/intent boundary. | Inspector editing contracts, package scripts, docs, runtime UI source. | Permit applied Inspector editing. |
 | `scripts/validate-editable-inspector-surface.mjs` | Guards Phase 7B disabled/read-only surface boundary. | Editable Inspector renderer, core view model, package scripts, docs. | Permit enabled editing, Apply, write IPC, contenteditable, refresh execution, or DOM mutation. |
-| `scripts/validate-style-engine-foundation.mjs` | Guards Phase 8A Style Engine source inventory boundary. | Style Engine contracts, package scripts, docs, and any runtime wiring that mentions Style Engine. | Permit CSS/Sass editing, real cascade, computed style reads, iframe internals, writes, patch apply, write IPC, Apply, contenteditable, refresh, dirty persistence, undo/redo execution, or DOM mutation. |
-| `scripts/validate-guided-docs.mjs` | Guards guided reading entrypoints and read-next navigation. | Markdown docs, package scripts, git diff metadata when available. | Modify docs, create images, or excuse runtime changes. |
-| `scripts/validate-ui-flow.mjs` | Guards shell UI flow assumptions. | Renderer source. | Change runtime behavior. |
+| `scripts/validate-style-engine-foundation.mjs` | Guards Phase 8A Style Engine source inventory boundary. | Style Engine contracts, package scripts, docs, and runtime wiring that mentions Style Engine. | Permit CSS/Sass editing, real cascade, computed style reads, iframe internals, writes, patch apply, write IPC, Apply, contenteditable, refresh, dirty persistence, undo/redo execution, or DOM mutation. |
+| `scripts/validate-css-sass-inspector-surface.mjs` | Guards Phase 8B read-only visual surface boundary. | CSS/Sass Inspector renderer files, Preview panel integration, package scripts, and docs. | Permit cascade, computed style reads, browser CSSOM, iframe internals, editable controls, Apply buttons, write IPC, filesystem writes, or Preview DOM mutation. |
+| `scripts/validate-guided-docs.mjs` | Guards guided reading entrypoints and read-next navigation. | Markdown docs, package scripts, branch-aware git diff metadata. | Treat runtime feature branches as docs-only passes. |
 | `scripts/validate-architecture-docs.mjs` | Checks docs shape and safety language. | Markdown docs. | Replace runtime validators. |
 
 ## Data flow
@@ -75,8 +86,8 @@ Read `package.json` first to see the command graph. The scripts below are the fe
 | Phase 7A modules | Are Inspector editing contracts present and still draft/intent-only? | Pass or explicit failure. |
 | Phase 7B renderer integration | Are controls disabled/read-only with no Apply handler? | Pass or explicit failure. |
 | Phase 8A Style Engine modules | Are source inventory contracts present with no style editing, real cascade, computed style reads, iframe internals, or writes? | Pass or explicit failure. |
+| Phase 8B CSS/Sass Inspector surface | Is the visual surface passive, read-only, and disconnected from CSSOM, iframe DOM, computed styles, cascade, Apply, and writes? | Pass or explicit failure. |
 | Guided docs | Do entrypoints, read-next blocks, and internal links still form a path? | Pass or explicit failure. |
-| Docs files | Are required maps, links, tables, diagrams, callouts, and safety phrases present? | Pass or explicit failure. |
 | Aggregate local command | Did each gate pass in order? | Non-zero exit on failure. |
 
 ```mermaid
@@ -97,6 +108,7 @@ flowchart TD
     InspectorEditing[validate:inspector-editing-foundation]
     EditableSurface[validate:editable-inspector-surface]
     StyleEngine[validate:style-engine-foundation]
+    CSSSassSurface[validate:css-sass-inspector-surface]
     UI[UI flow validators]
   end
 
@@ -115,6 +127,7 @@ flowchart TD
   InspectorEditing --> QuickCore
   StyleEngine --> QuickCore
   EditableSurface --> QuickUI
+  CSSSassSurface --> QuickUI
   SourcePatch --> QuickUI
   UI --> QuickUI
   Build --> Quick
@@ -127,7 +140,24 @@ flowchart TD
 
 A passing documentation validator does not prove a feature works. It only proves that the docs set still carries the required map and safety language. A passing feature validator does not grant permission to claim future behavior as implemented.
 
-> **Implementation note:** Phase 8A validation proves the presence and safety of Style Engine source inventory contracts; it does not prove CSS/Sass Inspector behavior because no visual surface, real cascade, computed style read path, style editing path, source write path, patch application, refresh execution, dirty-state persistence, or undo/redo execution exists.
+Still out of scope for Phase 8B:
+
+- real cascade calculation
+- computed style inspection
+- style editing
+- CSS/Sass source writes
+- Sass compilation
+- Sass import resolution
+- patch apply
+- IPC write
+- save/apply workflow
+- real undo/redo execution
+- dirty-state persistence
+- refresh execution
+- DOM mutation
+- Apply enablement
+
+> **Implementation note:** Phase 8B validation proves the presence and safety of the CSS/Sass Inspector read-only visual surface; it does not prove Cascade Map behavior, computed style inspection, CSS/Sass source writes, Sass compilation, Sass import resolution, patch apply, write IPC, save/apply workflow, refresh execution, dirty-state persistence, or undo/redo execution.
 
 ## What this does not do
 
@@ -137,15 +167,15 @@ A passing documentation validator does not prove a feature works. It only proves
 | Runtime proof for real undo/redo | No executed transaction log exists. |
 | Runtime proof for dirty-state persistence | No dirty-state store exists. |
 | Runtime proof for applied Inspector edits | Phase 7A defines draft and intent previews; Phase 7B renders them disabled. |
-| Runtime proof for CSS/Sass Inspector | Phase 8A defines source inventory only. |
-| Runtime proof for real cascade | Phase 8A does not calculate cascade. |
-| Runtime proof for computed styles | Phase 8A forbids computed style reads. |
+| Runtime proof for real cascade | Phase 8B does not calculate cascade. |
+| Runtime proof for computed styles | Phase 8B forbids computed style reads. |
+| Runtime proof for style editing | Phase 8B keeps Apply unavailable and source writes unavailable. |
 | Auto-formatting | Validators should not mutate docs. |
 | Complete import graph validation | Future work. |
 
 ## Common misunderstanding
 
-> **Common misunderstanding:** Documentation validation, feature validation, and typecheck are complementary. `validate:style-engine-foundation` does not mean style editing exists; it means style inventory contracts stay blocked, read-only, and disconnected from iframe internals, computed style reads, real cascade, writes, Apply, refresh, dirty persistence, and undo/redo execution.
+> **Common misunderstanding:** `validate:css-sass-inspector-surface` means the CSS/Sass Inspector visual surface is present and read-only. It does not mean style editing exists, does not mean CSS/Sass sources can be written, and does not mean computed styles or real cascade are available.
 
 ## Validation
 
@@ -158,6 +188,7 @@ npm run validate:design-editing-preflight
 npm run validate:inspector-editing-foundation
 npm run validate:editable-inspector-surface
 npm run validate:style-engine-foundation
+npm run validate:css-sass-inspector-surface
 npm run validate:architecture-docs
 npm run validate:local:quick
 ```
@@ -167,6 +198,7 @@ Use `validate:local` when the full install-backed path is needed.
 ## Related docs
 
 - [Guided reading](../guided-reading.md)
+- [CSS/Sass Inspector read-only visual surface](./css-sass-inspector-readonly-surface.md)
 - [Validation flow](./flows/validation-flow.md)
 - [Validation gates diagram](./diagrams/validation-gates.md)
 - [Repository map](./repository-map.md)
@@ -175,7 +207,7 @@ Use `validate:local` when the full install-backed path is needed.
 
 ## Future work
 
-The next validation improvements should check import boundaries and docs-to-source path drift. Write-capable phases will need additional gates for command execution, patch application, transaction records, refresh invalidation, dirty state, conflict detection, Inspector Apply UX, CSS/Sass Inspector UI, authored/computed style correlation, and undo/redo reversibility.
+The next validation improvements should check import boundaries and docs-to-source path drift. Write-capable phases will need additional gates for command execution, patch application, transaction records, refresh invalidation, dirty state, conflict detection, Inspector Apply UX, CSS/Sass style editing, authored/computed style correlation, and undo/redo reversibility.
 
 ## Read next
 
@@ -185,7 +217,7 @@ Before this:
 - [Future write flow](./flows/future-write-flow.md) explains the blocked capabilities that validators must preserve.
 
 Next:
-- [Roadmap implementation status](../roadmap-implementation.md) shows which phase boundaries validators must not erase.
+- [CSS/Sass Inspector read-only visual surface](./css-sass-inspector-readonly-surface.md) documents the Phase 8B boundary.
 
 Related:
 - [Guided reading](../guided-reading.md)
@@ -193,6 +225,7 @@ Related:
 - [Validation gates diagram](./diagrams/validation-gates.md)
 - Validator: [`validate:guided-docs`](../../scripts/validate-guided-docs.mjs)
 - Validator: [`validate:architecture-docs`](../../scripts/validate-architecture-docs.mjs)
+- Validator: [`validate:css-sass-inspector-surface`](../../scripts/validate-css-sass-inspector-surface.mjs)
 
 Why this matters:
-Validation is the enforcement layer for the documentation story. It keeps read-only Preview, dry-run commands, disabled Inspector surfaces, Style Engine inventory, and future write language from collapsing into unsupported implementation claims.
+Validation is the enforcement layer for the documentation story. It keeps read-only Preview, dry-run commands, disabled Inspector surfaces, Style Engine inventory, CSS/Sass Inspector read-only UI, and future write language from collapsing into unsupported implementation claims.
