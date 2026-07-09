@@ -124,7 +124,8 @@
 }
 
 .crystal-project-preview-panel__button:disabled,
-.crystal-project-preview-panel__target:disabled {
+.crystal-project-preview-panel__target:disabled,
+.crystal-project-preview-panel__button[data-disabled="true"] {
   cursor: not-allowed;
   opacity: var(--crystal-control-disabled-opacity);
 }
@@ -263,6 +264,14 @@
 
 .crystal-project-preview-panel__editable-apply {
   width: 100%;
+}
+
+.crystal-project-preview-panel__button.crystal-project-preview-panel__editable-apply[data-disabled="true"],
+.crystal-project-preview-panel__button.crystal-project-preview-panel__editable-apply[data-disabled="true"]:hover {
+  border-color: var(--crystal-control-border);
+  background: var(--crystal-control-bg);
+  color: var(--crystal-control-text);
+  pointer-events: none;
 }
 
 .crystal-project-preview-panel__frame-wrap {
