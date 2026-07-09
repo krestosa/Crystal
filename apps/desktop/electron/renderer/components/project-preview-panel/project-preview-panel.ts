@@ -312,7 +312,7 @@ function getProjectPreviewPanelElements(panel: HTMLElement): ProjectPreviewPanel
     editableInspectorFieldsEmpty: query("[data-editable-inspector-fields-empty]", HTMLElement),
     editableInspectorIntents: query("[data-editable-inspector-intents]", HTMLUListElement),
     editableInspectorIntentsEmpty: query("[data-editable-inspector-intents-empty]", HTMLElement),
-    editableInspectorApply: query("[data-editable-inspector-apply]", HTMLElement),
+    editableInspectorApplyUnavailableAffordance: query("[data-editable-inspector-apply]", HTMLElement),
     issuesEmpty: query("[data-project-preview-issues-empty]", HTMLElement),
     issuesList: query("[data-project-preview-issues-list]", HTMLUListElement),
     frame: query("[data-project-preview-frame]", HTMLIFrameElement),
