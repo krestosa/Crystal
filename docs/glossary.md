@@ -2,7 +2,7 @@
 
 [Docs index](./README.md)
 
-> **Read this first:** Terms in Crystal often encode a boundary. In particular, `Preview`, `Snapshot`, `Patch Preview`, `Transaction Preview`, `Refresh Boundary`, `Dirty-State Preview`, `Source Conflict Preview`, `Write Runtime Capability Preview`, `Inspector Edit Draft`, `Inspector Edit Intent`, and `Write` are intentionally different concepts.
+> **Read this first:** Terms in Crystal often encode a boundary. In particular, `Preview`, `Snapshot`, `Patch Preview`, `Transaction Preview`, `Refresh Boundary`, `Dirty-State Preview`, `Source Conflict Preview`, `Write Runtime Capability Preview`, `Inspector Edit Draft`, `Inspector Edit Intent`, `Editable Inspector Surface`, and `Write` are intentionally different concepts.
 
 ## At a glance
 
@@ -14,6 +14,7 @@
 | History and refresh planning | Names Phase 6C contracts without claiming execution. |
 | Design editing preflight | Names Phase 6D readiness contracts without enabling Apply. |
 | Editable Inspector draft/intent foundation | Names Phase 7A Inspector editing contracts without applying edits. |
+| Editable Inspector read-only draft surface | Names Phase 7B disabled Inspector UI without enabling editing. |
 | Future write system | Names blocked capabilities without claiming implementation. |
 | Validation | Names the checks that keep boundaries visible. |
 
@@ -81,6 +82,17 @@ Phase 6D boundary: No source files are written. No patch apply is available. No 
 
 Phase 7A boundary: Editable Inspector draft/intent foundation only. No source files are written. No patch apply is available. No write IPC exists. Apply remains unavailable. No contenteditable is used. No undo/redo execution runs. Dirty-state is not persisted. No refresh execution runs. No Preview DOM mutation occurs.
 
+## Editable Inspector read-only draft surface
+
+| Term | Short meaning | Implemented today? | Related docs |
+| --- | --- | --- | --- |
+| Editable Inspector Surface | Disabled/read-only renderer surface showing future Inspector editing fields. | Yes, disabled only | [Roadmap implementation](./roadmap-implementation.md) |
+| InspectorEditingReadOnlySurfaceViewModel | Core view model that derives the disabled surface from Preview Inspector state and Phase 7A models. | Yes, preview-only | [Future command execution](./architecture/commands/future-command-execution.md) |
+| Disabled Inspector field control | Readonly and disabled input representing a future text-content or attribute field. | Yes, disabled only | [Validation system](./architecture/validation-system.md) |
+| Apply unavailable affordance | Visual Apply copy that remains disabled because write runtime is absent. | Yes, disabled only | [Future write flow](./architecture/flows/future-write-flow.md) |
+
+Phase 7B boundary: Editable Inspector read-only draft surface only. No source files are written. No patch apply is available. No write IPC exists. Apply remains unavailable. No contenteditable is used. No undo/redo execution runs. Dirty-state is not persisted. No refresh execution runs. No Preview DOM mutation occurs.
+
 ## Future write system
 
 | Term | Short meaning | Implemented today? | Related docs |
@@ -101,8 +113,9 @@ Phase 7A boundary: Editable Inspector draft/intent foundation only. No source fi
 | History foundation validator | Checks Phase 6C planning contracts and forbidden write behavior. | Yes | [Validation system](./architecture/validation-system.md) |
 | Design editing preflight validator | Checks Phase 6D preflight contracts and blocked Apply/write behavior. | Yes | [Validation system](./architecture/validation-system.md) |
 | Inspector editing foundation validator | Checks Phase 7A Inspector draft/intent contracts and blocked Apply/write behavior. | Yes | [Validation system](./architecture/validation-system.md) |
+| Editable Inspector surface validator | Checks Phase 7B renderer surface, disabled controls, unavailable Apply, and blocked write behavior. | Yes | [Validation system](./architecture/validation-system.md) |
 | Local quick validation | Installed-workspace aggregate gate. | Yes | [Validation gates](./architecture/diagrams/validation-gates.md) |
 
 ## Common misunderstanding
 
-> **Common misunderstanding:** `Preview`, `Source Patch Preview`, `HistoryTransactionPreview`, `RefreshBoundaryPlan`, `DesignEditingReadinessPreview`, `InspectorEditIntentPreview`, and `Future write` are different states. Current preflight and draft/intent models describe blocked future work; none of them mutate project files.
+> **Common misunderstanding:** `Preview`, `Source Patch Preview`, `HistoryTransactionPreview`, `RefreshBoundaryPlan`, `DesignEditingReadinessPreview`, `InspectorEditIntentPreview`, `Editable Inspector Surface`, and `Future write` are different states. Current preflight, draft/intent, and disabled-surface models describe blocked future work; none of them mutate project files.

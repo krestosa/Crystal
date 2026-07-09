@@ -1,10 +1,12 @@
 import type { ProjectPreviewInspectorInput } from "../../../../../../../packages/core/project/preview-inspector/project-preview-inspector-selector";
 import { selectProjectPreviewInspectorViewModel } from "../../../../../../../packages/core/project/preview-inspector/project-preview-inspector-selector";
+import { selectInspectorEditingReadOnlySurfaceViewModel } from "../../../../../../../packages/core/inspector-editing";
 import type { ProjectPreviewInspectorSelectedNodeDetails, ProjectPreviewInspectorSnapshotNodeDetails } from "../../../../../../../packages/core/project/preview-inspector/project-preview-inspector.types";
 import type { ProjectDomAttribute, ProjectDomSourceLocation } from "../../../../../../../packages/core/project/dom/project-dom-snapshot.types";
 import type { ProjectPreviewSelectedNodeAttribute } from "../../../../../../../packages/core/project/preview-selection/project-preview-selection.types";
+import { renderEditableInspectorSurface, type EditableInspectorSurfaceElements } from "../../../views/inspector/editable-inspector";
 
-export interface ProjectPreviewInspectorRendererElements {
+export interface ProjectPreviewInspectorRendererElements extends EditableInspectorSurfaceElements {
   readonly inspectorStatus: HTMLElement;
   readonly inspectorMessage: HTMLElement;
   readonly inspectorSelectedDetails: HTMLDListElement;
@@ -14,10 +16,15 @@ export interface ProjectPreviewInspectorRendererElements {
 
 export function renderProjectPreviewInspector(elements: ProjectPreviewInspectorRendererElements, input: ProjectPreviewInspectorInput): void {
   const viewModel = selectProjectPreviewInspectorViewModel(input);
+  const editableInspectorViewModel = selectInspectorEditingReadOnlySurfaceViewModel({
+    inspector: viewModel,
+    snapshotVersion: input.domSnapshot.currentDomSnapshot?.id ?? "unknown"
+  });
   elements.inspectorStatus.textContent = viewModel.status;
   elements.inspectorMessage.textContent = viewModel.message;
   renderSelectedDetails(elements.inspectorSelectedDetails, viewModel.selectedNode);
   renderSnapshotDetails(elements.inspectorSnapshotDetails, elements.inspectorSnapshotEmpty, viewModel.snapshotNode);
+  renderEditableInspectorSurface(elements, editableInspectorViewModel);
 }
 
 function renderSelectedDetails(container: HTMLDListElement, selectedNode: ProjectPreviewInspectorSelectedNodeDetails | null): void {
