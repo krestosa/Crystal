@@ -42,6 +42,7 @@ dist
 
 # npm / pnpm / yarn
 .npm
+package-lock.json
 .pnpm-store
 .yarn-integrity
 .pnp.*
