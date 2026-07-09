@@ -1,9 +1,20 @@
 import fs from "node:fs";
 import path from "node:path";
 import { execSync } from "node:child_process";
+import {
+  assertFileIncludes,
+  assertPackageScript,
+  createValidationContext,
+  finishValidation,
+  parsePackageJson,
+  pushValidationError,
+  pushValidationWarning,
+  readRequiredFile,
+  recordCheck
+} from "./validation/validation-assertions.mjs";
 
+const context = createValidationContext("Guided documentation validation");
 const repoRoot = process.cwd();
-const errors = [];
 const readCache = new Map();
 
 const requiredFiles = [
@@ -14,10 +25,12 @@ const requiredFiles = [
   "docs/architecture/preview/README.md",
   "docs/architecture/commands/README.md",
   "docs/architecture/validation-system.md",
-  "docs/architecture/flows/future-write-flow.md"
+  "docs/architecture/flows/future-write-flow.md",
+  "docs/roadmap-implementation.md",
+  "package.json"
 ];
 
-const readNextDocs = [...requiredFiles];
+const readNextDocs = requiredFiles.filter((file) => file !== "package.json" && file !== "docs/roadmap-implementation.md");
 
 const guidedEntrypointPhrases = [
   "## What Crystal is",
@@ -61,22 +74,119 @@ const expectedReadingNodes = [
   "Roadmap"
 ];
 
+for (const file of requiredFiles) read(file);
+
+requireIncludes("docs/README.md", guidedEntrypointPhrases);
+requireIncludes("docs/guided-reading.md", guidedReadingPhrases);
+
+for (const node of expectedReadingNodes) {
+  recordCheck(context, `guided docs mention reading node: ${node}`);
+  if (!read("docs/README.md").includes(node) && !read("docs/guided-reading.md").includes(node)) {
+    pushValidationError(context, `Guided documentation must mention reading node: ${node}`);
+  }
+}
+
+for (const file of readNextDocs) {
+  const content = read(file);
+  assertFileIncludes(context, file, content, "## Read next", "read-next block");
+  assertFileIncludes(context, file, content, "You are here:", "current reading position");
+  assertFileIncludes(context, file, content, "Why this matters:", "reading flow rationale");
+}
+
+const combinedGuides = `${read("docs/README.md")}\n${read("docs/guided-reading.md")}`;
+recordCheck(context, "guided docs include at least three Mermaid diagrams");
+if (countMatches(combinedGuides, /```mermaid/g) < 3) {
+  pushValidationError(context, "Guided docs must include at least three Mermaid diagrams.");
+}
+
+for (const phrase of [
+  "Phase 7B",
+  "Editable Inspector read-only draft surface",
+  "Phase 8A",
+  "Style Engine read-only source inventory foundation",
+  "CSS/Sass Inspector read-only visual surface"
+]) {
+  assertFileIncludes(context, "docs/roadmap-implementation.md", read("docs/roadmap-implementation.md"), phrase, "roadmap historical phrase");
+}
+
+const packageJson = parsePackageJson(context, read("package.json"));
+assertPackageScript(context, packageJson, "validate:guided-docs");
+assertPackageScript(context, packageJson, "validate:architecture-docs");
+recordCheck(context, "validate:architecture-docs integrates guided docs");
+if (!packageJson.scripts?.["validate:architecture-docs"]?.includes("validate:guided-docs")) {
+  pushValidationError(context, "validate:architecture-docs must integrate validate:guided-docs.");
+}
+
+for (const file of readNextDocs) {
+  checkRelativeLinks(file);
+  checkNoImageReferences(file);
+}
+
+const branchInfo = getCurrentBranchInfo();
+const docsOnlyEnabled = branchInfo.branch?.startsWith("docs/") ?? false;
+const changedFilesInfo = getChangedFiles();
+
+console.log(`Current branch: ${branchInfo.branch || "unknown"}`);
+console.log(`Docs-only restriction: ${docsOnlyEnabled ? "enabled" : "disabled"}`);
+console.log(`Changed files checked: ${changedFilesInfo.files ? changedFilesInfo.files.length : "not available"}`);
+if (changedFilesInfo.ref) console.log(`Changed files ref: ${changedFilesInfo.ref}`);
+
+recordCheck(context, "current branch detection is explicit");
+if (!branchInfo.detected) {
+  pushValidationWarning(context, "Current branch could not be detected from git or CI environment; docs-only restriction is disabled explicitly.");
+}
+
+recordCheck(context, "changed files comparison is explicit");
+if (!changedFilesInfo.files) {
+  if (docsOnlyEnabled) {
+    pushValidationError(context, "Docs-only branch could not compare changed files against main or origin/main.");
+  } else {
+    pushValidationWarning(context, "Changed files could not be compared against main or origin/main; runtime branch docs-only blocking is disabled explicitly.");
+  }
+}
+
+if (changedFilesInfo.files) {
+  for (const file of changedFilesInfo.files) {
+    recordCheck(context, `changed file policy: ${file}`);
+    if (file === "package-lock.json") pushValidationError(context, "package-lock.json must not be modified.");
+    if (/\.(png|jpe?g|svg)$/i.test(file)) pushValidationError(context, `PNG/JPG/SVG files must not be added or modified: ${file}`);
+    if (
+      docsOnlyEnabled &&
+      (file.startsWith("apps/desktop/electron/main/") ||
+        file.startsWith("apps/desktop/electron/preload/") ||
+        file.startsWith("apps/desktop/electron/renderer/") ||
+        file.startsWith("packages/core/"))
+    ) {
+      pushValidationError(context, `Runtime functional source must not be modified by guided docs pass: ${file}`);
+    }
+  }
+}
+
+finishValidation(context, {
+  inspectHints: [
+    "Open the reported documentation file.",
+    "Search for the exact required heading, reading node, historical phrase, or link target.",
+    "Run git branch --show-current and git diff --name-only origin/main...HEAD to inspect branch-aware docs-only enforcement.",
+    "Re-run npm run validate:guided-docs."
+  ],
+  resolutionHints: [
+    "Restore the guided reading path, Read next block, internal link, package script, or preserved roadmap phrase.",
+    "For docs/* branches, keep changed files scoped to docs and allowed package validation wiring only."
+  ],
+  doNotHints: [
+    "Do not invent the current branch when git or CI branch metadata is unavailable.",
+    "Do not move historical phase phrases out of docs guarded by older validators.",
+    "Do not relax docs-only checks for docs/* branches."
+  ]
+});
+
 function absolute(relativePath) {
   return path.join(repoRoot, relativePath);
 }
 
-function exists(relativePath) {
-  return fs.existsSync(absolute(relativePath));
-}
-
 function read(relativePath) {
   if (readCache.has(relativePath)) return readCache.get(relativePath);
-  if (!exists(relativePath)) {
-    errors.push(`Missing required guided documentation file: ${relativePath}`);
-    readCache.set(relativePath, "");
-    return "";
-  }
-  const content = fs.readFileSync(absolute(relativePath), "utf8");
+  const content = readRequiredFile(context, relativePath);
   readCache.set(relativePath, content);
   return content;
 }
@@ -88,7 +198,7 @@ function countMatches(content, pattern) {
 function requireIncludes(relativePath, phrases) {
   const content = read(relativePath);
   for (const phrase of phrases) {
-    if (!content.includes(phrase)) errors.push(`${relativePath} must include: ${phrase}`);
+    assertFileIncludes(context, relativePath, content, phrase, "required guided docs phrase");
   }
 }
 
@@ -109,6 +219,7 @@ function isInsideRepo(resolvedPath) {
 }
 
 function checkRelativeLinks(relativePath) {
+  recordCheck(context, `relative links valid: ${relativePath}`);
   const content = read(relativePath);
   const directory = path.dirname(absolute(relativePath));
   const linkPattern = /(?<!!)\[[^\]]+\]\(([^)]+)\)/g;
@@ -120,113 +231,48 @@ function checkRelativeLinks(relativePath) {
     if (target === "") continue;
     const resolvedPath = path.resolve(directory, target);
     if (!isInsideRepo(resolvedPath)) {
-      errors.push(`${relativePath} contains an out-of-repo link: ${rawTarget}`);
+      pushValidationError(context, `${relativePath} contains an out-of-repo link: ${rawTarget}`);
       continue;
     }
-    if (!fs.existsSync(resolvedPath)) errors.push(`${relativePath} contains a broken internal link: ${rawTarget}`);
+    if (!fs.existsSync(resolvedPath)) pushValidationError(context, `${relativePath} contains a broken internal link: ${rawTarget}`);
   }
 }
 
 function checkNoImageReferences(relativePath) {
+  recordCheck(context, `no PNG/JPG/SVG markdown images: ${relativePath}`);
   const content = read(relativePath);
   const imagePattern = /!\[[^\]]*\]\(([^)]+)\)/g;
   let match;
   while ((match = imagePattern.exec(content)) !== null) {
     const target = stripAnchorAndQuery(match[1].trim()).toLowerCase();
-    if (/\.(png|jpe?g|svg)$/.test(target)) errors.push(`${relativePath} must not add PNG/JPG/SVG image references: ${match[1]}`);
+    if (/\.(png|jpe?g|svg)$/.test(target)) pushValidationError(context, `${relativePath} must not add PNG/JPG/SVG image references: ${match[1]}`);
   }
 }
 
 function getChangedFiles() {
   const candidates = [
-    "git diff --name-only --diff-filter=ACMR main...HEAD",
-    "git diff --name-only --diff-filter=ACMR origin/main...HEAD"
+    { ref: "origin/main...HEAD", command: "git diff --name-only --diff-filter=ACMR origin/main...HEAD" },
+    { ref: "main...HEAD", command: "git diff --name-only --diff-filter=ACMR main...HEAD" }
   ];
-  for (const command of candidates) {
+  for (const candidate of candidates) {
     try {
-      const output = execSync(command, { cwd: repoRoot, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
-      return output.split("\n").map((entry) => entry.trim()).filter(Boolean);
+      const output = execSync(candidate.command, { cwd: repoRoot, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+      return { files: output.split("\n").map((entry) => entry.trim()).filter(Boolean), ref: candidate.ref };
     } catch {
-      // Try the next ref form. Some local checkouts have only main, some have only origin/main.
+      // Try the next deterministic ref form.
     }
   }
-  return [];
+  return { files: null, ref: null };
 }
 
-function getCurrentBranchName() {
+function getCurrentBranchInfo() {
   try {
-    return execSync("git branch --show-current", { cwd: repoRoot, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+    const branch = execSync("git branch --show-current", { cwd: repoRoot, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
+    if (branch) return { branch, detected: true, source: "git" };
   } catch {
-    return "";
+    // Fall back to CI metadata below.
   }
+  const envBranch = process.env.GITHUB_HEAD_REF || process.env.GITHUB_REF_NAME || "";
+  if (envBranch) return { branch: envBranch, detected: true, source: "env" };
+  return { branch: "", detected: false, source: "unknown" };
 }
-
-function shouldEnforceDocsOnlyChangedFiles() {
-  return getCurrentBranchName().startsWith("docs/");
-}
-
-for (const file of requiredFiles) read(file);
-
-requireIncludes("docs/README.md", guidedEntrypointPhrases);
-requireIncludes("docs/guided-reading.md", guidedReadingPhrases);
-
-for (const node of expectedReadingNodes) {
-  if (!read("docs/README.md").includes(node) && !read("docs/guided-reading.md").includes(node)) {
-    errors.push(`Guided documentation must mention reading node: ${node}`);
-  }
-}
-
-for (const file of readNextDocs) {
-  const content = read(file);
-  if (!content.includes("## Read next")) errors.push(`${file} must include a Read next block.`);
-  if (!content.includes("You are here:")) errors.push(`${file} must identify the current reading position.`);
-  if (!content.includes("Why this matters:")) errors.push(`${file} must explain why the page matters in the reading flow.`);
-}
-
-const combinedGuides = `${read("docs/README.md")}\n${read("docs/guided-reading.md")}`;
-if (countMatches(combinedGuides, /```mermaid/g) < 3) errors.push("Guided docs must include at least three Mermaid diagrams.");
-
-for (const phrase of [
-  "Phase 7B",
-  "Editable Inspector read-only draft surface",
-  "Phase 8A",
-  "Style Engine read-only source inventory foundation",
-  "CSS/Sass Inspector read-only visual surface"
-]) {
-  if (!read("docs/roadmap-implementation.md").includes(phrase)) errors.push(`docs/roadmap-implementation.md must preserve roadmap phrase: ${phrase}`);
-}
-
-const packageJson = read("package.json");
-if (!packageJson.includes('"validate:guided-docs"')) errors.push("package.json must define validate:guided-docs.");
-if (!packageJson.includes("npm run validate:guided-docs")) errors.push("validate:guided-docs must be integrated into an aggregate validation script.");
-
-for (const file of requiredFiles) {
-  checkRelativeLinks(file);
-  checkNoImageReferences(file);
-}
-
-const changedFiles = getChangedFiles();
-const enforceDocsOnlyChangedFiles = shouldEnforceDocsOnlyChangedFiles();
-if (changedFiles.length > 0) {
-  for (const file of changedFiles) {
-    if (file === "package-lock.json") errors.push("package-lock.json must not be modified.");
-    if (/\.(png|jpe?g|svg)$/i.test(file)) errors.push(`PNG/JPG/SVG files must not be added or modified: ${file}`);
-    if (
-      enforceDocsOnlyChangedFiles &&
-      (file.startsWith("apps/desktop/electron/main/") ||
-        file.startsWith("apps/desktop/electron/preload/") ||
-        file.startsWith("apps/desktop/electron/renderer/") ||
-        file.startsWith("packages/core/"))
-    ) {
-      errors.push(`Runtime functional source must not be modified by guided docs pass: ${file}`);
-    }
-  }
-}
-
-if (errors.length > 0) {
-  console.error("Guided documentation validation failed:");
-  for (const error of errors) console.error(`- ${error}`);
-  process.exit(1);
-}
-
-console.log(`Guided documentation validation passed (${requiredFiles.length} docs, ${changedFiles.length || "unknown"} changed files checked).`);
