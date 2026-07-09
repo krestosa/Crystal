@@ -1,4 +1,12 @@
 const CSS_SASS_INSPECTOR_RULE_PREVIEW_EMPTY_COPY = "Rule preview unavailable — source text not provided";
+const CSS_SASS_INSPECTOR_COMPACT_MESSAGE = "Phase 8A inventory only. Writes, cascade, computed styles, refresh, undo/redo, and DOM mutation remain blocked.";
+const CSS_SASS_INSPECTOR_COMPACT_SAFETY_NOTES = [
+  "No real cascade is calculated",
+  "No computed styles are read",
+  "No Preview DOM mutation occurs",
+  "No write IPC exists",
+  "Apply remains unavailable"
+] as const;
 
 import type {
   CSSSassInspectorRuleSection,
@@ -13,7 +21,8 @@ export function renderCSSSassInspectorSurface(elements: CSSSassInspectorSurfaceE
   const validation = validateCSSSassInspectorSurfaceViewModel(viewModel);
 
   elements.cssSassInspectorStatus.textContent = viewModel.status;
-  elements.cssSassInspectorMessage.textContent = validation.valid ? viewModel.message : validation.errors.join(" · ");
+  elements.cssSassInspectorMessage.textContent = validation.valid ? CSS_SASS_INSPECTOR_COMPACT_MESSAGE : validation.errors.join(" · ");
+  elements.cssSassInspectorMessage.title = viewModel.message;
   elements.cssSassInspectorApplyUnavailableAffordance.textContent = viewModel.applyAffordance.label;
   elements.cssSassInspectorApplyUnavailableAffordance.setAttribute("aria-disabled", "true");
   elements.cssSassInspectorApplyUnavailableAffordance.setAttribute("data-disabled", "true");
@@ -21,18 +30,16 @@ export function renderCSSSassInspectorSurface(elements: CSSSassInspectorSurfaceE
   renderReadiness(elements.cssSassInspectorReadiness, viewModel);
   renderSources(elements, viewModel.sourceSections);
   renderRules(elements, viewModel.ruleSections);
-  elements.cssSassInspectorSafety.replaceChildren(...viewModel.safetyNotes.map(createSafetyItem));
+  renderSafety(elements.cssSassInspectorSafety, viewModel);
 }
 
 function renderReadiness(container: HTMLDListElement, model: CSSSassInspectorSurfaceViewModel): void {
   container.replaceChildren(
-    createDetailRow("Status", model.status),
-    createDetailRow("Selected node path", model.selectedNodePath),
-    createDetailRow("Target file", model.targetRelativePath),
     createDetailRow("Authored styles", model.sourceSummary.canInspectAuthoredStyles ? "available" : "unavailable"),
     createDetailRow("Computed styles", "unavailable"),
     createDetailRow("Apply", "unavailable"),
-    createDetailRow("Blocked", model.blockedReason)
+    createDetailRow("Selected node path", model.selectedNodePath),
+    createDetailRow("Target file", model.targetRelativePath)
   );
 }
 
@@ -44,21 +51,17 @@ function renderSources(elements: CSSSassInspectorSurfaceElements, sources: reado
 function createSourceItem(source: CSSSassInspectorSourceSection): HTMLLIElement {
   const item = document.createElement("li");
   item.className = "crystal-css-sass-inspector__source";
+  item.title = createSourceBoundaryLabel(source);
 
   const heading = document.createElement("span");
   heading.className = "crystal-css-sass-inspector__source-label";
-  heading.textContent = source.label;
+  heading.textContent = createCompactSourceLabel(source);
 
   const details = document.createElement("dl");
   details.className = "crystal-css-sass-inspector__source-details crystal-shell-metadata";
   details.append(
-    createDetailRow("kind", source.sourceKind),
-    createDetailRow("path", source.relativePath),
     createDetailRow("status", source.status),
-    createDetailRow("media", source.media),
-    createDetailRow("load order", String(source.loadOrder)),
-    createDetailRow("write", source.canWriteSource ? "unexpected" : "unavailable"),
-    createDetailRow("blocked", source.blockedReason)
+    createDetailRow("write", source.canWriteSource ? "unexpected" : "unavailable")
   );
 
   item.append(heading, details);
@@ -74,6 +77,7 @@ function renderRules(elements: CSSSassInspectorSurfaceElements, rules: readonly 
 function createRuleItem(rule: CSSSassInspectorRuleSection): HTMLLIElement {
   const item = document.createElement("li");
   item.className = "crystal-css-sass-inspector__rule";
+  item.title = rule.blockedReason;
 
   const heading = document.createElement("span");
   heading.className = "crystal-css-sass-inspector__rule-label";
@@ -87,12 +91,14 @@ function createRuleItem(rule: CSSSassInspectorRuleSection): HTMLLIElement {
   declarations.className = "crystal-css-sass-inspector__declarations";
   declarations.append(...rule.declarations.map(createDeclarationItem));
 
-  const blocked = document.createElement("p");
-  blocked.className = "crystal-css-sass-inspector__blocked";
-  blocked.textContent = rule.blockedReason;
-
-  item.append(heading, selectors, declarations, blocked);
+  item.append(heading, selectors, declarations);
   return item;
+}
+
+function renderSafety(container: HTMLUListElement, model: CSSSassInspectorSurfaceViewModel): void {
+  container.setAttribute("aria-label", model.safetyNotes.join(" · "));
+  container.title = model.safetyNotes.join(" · ");
+  container.replaceChildren(...CSS_SASS_INSPECTOR_COMPACT_SAFETY_NOTES.map(createSafetyItem));
 }
 
 function createDeclarationItem(declaration: StyleDeclarationPreview): HTMLLIElement {
@@ -121,6 +127,14 @@ function createSafetyItem(value: string): HTMLLIElement {
   const item = document.createElement("li");
   item.textContent = value;
   return item;
+}
+
+function createCompactSourceLabel(source: CSSSassInspectorSourceSection): string {
+  return `${source.sourceKind} — ${source.relativePath}`;
+}
+
+function createSourceBoundaryLabel(source: CSSSassInspectorSourceSection): string {
+  return `${source.ownerHtmlRelativePath} · ${source.media} · ${source.blockedReason}`;
 }
 
 function createDetailRow(label: string, value: string): HTMLDivElement {
