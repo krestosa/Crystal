@@ -37,16 +37,19 @@ Primary references:
 
 | Requirement | Notes |
 | --- | --- |
-| Node.js | 22.x for local development. |
-| npm | 10.x recommended. |
-| Electron | 35.x from the locked dependency tree. |
+| Node.js | 24.18.0 for local development. |
+| npm | >=10.0.0. Node 24.18.0 may ship npm 11.x; npm 10 remains accepted. |
+| Electron | 43.1.0 from the locked dependency tree. |
+| Electron internal Node.js | 24.18.0. |
 | Setup reference | See [development setup](docs/development.md). |
 
 ## Install
 
-```bash
-npm install
-```
+`ash
+npm ci
+`
+
+Use `npm ci` for reproducible installs from the committed `package-lock.json`. Use `npm install` only when intentionally updating dependencies. `package-lock.json` must remain versioned and must not be ignored.
 
 ## Development
 
@@ -67,8 +70,8 @@ The development command builds the current source and opens the Electron shell f
 
 Manual sequence:
 
-```bash
-npm install
+`ash
+npm ci
 npm run build
 npm run typecheck
 npm run validate:structure

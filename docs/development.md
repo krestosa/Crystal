@@ -1,29 +1,30 @@
 # Development environment
 
-Crystal currently targets a Node 22 local development environment. Use the `.nvmrc` version as the project baseline. Do not use Node 24 as the default local runtime for this repository until the project explicitly upgrades to it.
+Crystal currently targets a Node 24.18.0 local development environment. Use the `.nvmrc` version as the project baseline.
 
-Electron 35.x embeds Node 22 internally, and the local toolchain already uses `@types/node` 22.x. Keeping the host Node runtime on Node 22 avoids mixing the project baseline with a newer, unapproved host runtime.
+Electron 43.1.0 embeds Node 24.18.0 internally, and the local toolchain uses `@types/node` 24.x. Keeping the host Node runtime on Node 24.18.0 keeps Crystal aligned with the Node runtime embedded by the stable Electron baseline.
 
 ## Windows baseline
 
 Expected local versions:
 
 ```txt
-Node 22.22.0
-npm 10.x
-Electron 35.x
+Node 24.18.0
+npm >=10.0.0
+Electron 43.1.0
+Electron internal Node.js 24.18.0
 ```
 
 With nvm-windows:
 
 ```powershell
-nvm install 22.22.0
-nvm use 22.22.0
+nvm install 24.18.0
+nvm use 24.18.0
 node --version
 npm --version
 ```
 
-`node --version` should print `v22.22.0`. npm should be the npm version bundled with that Node release, or another npm 10.x release.
+``node --version`` should print ``v24.18.0``. npm should satisfy ``>=10.0.0``; Node 24.18.0 may ship npm 11.x, and npm 10 remains accepted by the project engines.
 
 ## Clean Electron install on Windows
 
@@ -39,13 +40,13 @@ Run from the repository root:
 ```powershell
 Remove-Item -Recurse -Force node_modules -ErrorAction SilentlyContinue
 Remove-Item -Recurse -Force "$env:LOCALAPPDATA\electron\Cache" -ErrorAction SilentlyContinue
-npm install --foreground-scripts
+npm ci --foreground-scripts
 npx electron --version
 npm run doctor:electron
 npm run dev
 ```
 
-`npm install --foreground-scripts` is intentional. Electron downloads and prepares its runtime binary from its install script; running scripts in the foreground makes Electron install failures visible instead of hiding them behind npm output buffering.
+`npm ci --foreground-scripts` is intentional. Electron downloads and prepares its runtime binary from its install script; running scripts in the foreground makes Electron install failures visible instead of hiding them behind npm output buffering.
 
 ## Electron diagnostics
 
@@ -185,6 +186,12 @@ After opening a project folder or HTML file in the app, the Project Graph panel 
 Use `fixtures/sample-html-project` for manual local checks. Modify `styles/watch-target.css`, create a small SVG placeholder, or delete a temporary fixture file to verify event classification and refresh behavior. Ambiguous events should fall back to full rescan.
 
 Manual UI checks remain required only where there is not enough automation yet. The validation runner must be updated whenever a roadmap phase adds new required checks.
+
+## Dependency installation policy
+
+Use `npm ci` for reproducible local installation from the committed `package-lock.json`.
+
+Use `npm install` only when intentionally updating dependencies, such as refreshing the Electron/Node baseline. `package-lock.json` must remain versioned, must not be ignored, and must not be deleted.
 
 ## Do not use forced audit fixes
 

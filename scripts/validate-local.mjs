@@ -2,6 +2,18 @@ import { spawnSync } from "node:child_process";
 
 const withDev = process.argv.slice(2).includes("--with-dev");
 
+function resolveExecutable(command) {
+  if (process.platform !== "win32") {
+    return command;
+  }
+
+  if (command === "npm" || command === "npx") {
+    return `${command}.cmd`;
+  }
+
+  return command;
+}
+
 const validationSteps = [
   { label: "npm install", command: "npm", args: ["install"] },
   { label: "npm run build", command: "npm", args: ["run", "build"] },
@@ -44,9 +56,10 @@ for (const step of validationSteps) {
 
   console.log(`RUN  ${renderedCommand}`);
 
-  const result = spawnSync(step.command, step.args, {
+  const result = spawnSync(resolveExecutable(step.command), step.args, {
     stdio: "inherit",
-    shell: process.platform === "win32"
+    shell: false,
+    windowsHide: true
   });
 
   const durationMs = Date.now() - started;
