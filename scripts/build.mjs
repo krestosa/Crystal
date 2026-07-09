@@ -6,20 +6,20 @@ const steps = [
   ["build:ts"]
 ];
 
-function resolveExecutable(command) {
-  if (process.platform !== "win32") {
-    return command;
+function resolveInvocation(command, args) {
+  if (process.platform !== "win32" || (command !== "npm" && command !== "npx")) {
+    return { command, args };
   }
 
-  if (command === "npm" || command === "npx") {
-    return `${command}.cmd`;
-  }
-
-  return command;
+  return {
+    command: "cmd.exe",
+    args: ["/d", "/s", "/c", [command, ...args].join(" ")]
+  };
 }
 
 for (const [script] of steps) {
-  const result = spawnSync(resolveExecutable("npm"), ["run", script], {
+  const invocation = resolveInvocation("npm", ["run", script]);
+  const result = spawnSync(invocation.command, invocation.args, {
     stdio: "inherit",
     shell: false,
     windowsHide: true
