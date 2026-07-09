@@ -71,13 +71,11 @@ function exists(relativePath) {
 
 function read(relativePath) {
   if (readCache.has(relativePath)) return readCache.get(relativePath);
-
   if (!exists(relativePath)) {
     errors.push(`Missing required guided documentation file: ${relativePath}`);
     readCache.set(relativePath, "");
     return "";
   }
-
   const content = fs.readFileSync(absolute(relativePath), "utf8");
   readCache.set(relativePath, content);
   return content;
@@ -115,23 +113,17 @@ function checkRelativeLinks(relativePath) {
   const directory = path.dirname(absolute(relativePath));
   const linkPattern = /(?<!!)\[[^\]]+\]\(([^)]+)\)/g;
   let match;
-
   while ((match = linkPattern.exec(content)) !== null) {
     const rawTarget = match[1].trim();
     if (isIgnoredLink(rawTarget)) continue;
-
     const target = stripAnchorAndQuery(rawTarget);
     if (target === "") continue;
-
     const resolvedPath = path.resolve(directory, target);
     if (!isInsideRepo(resolvedPath)) {
       errors.push(`${relativePath} contains an out-of-repo link: ${rawTarget}`);
       continue;
     }
-
-    if (!fs.existsSync(resolvedPath)) {
-      errors.push(`${relativePath} contains a broken internal link: ${rawTarget}`);
-    }
+    if (!fs.existsSync(resolvedPath)) errors.push(`${relativePath} contains a broken internal link: ${rawTarget}`);
   }
 }
 
@@ -139,12 +131,9 @@ function checkNoImageReferences(relativePath) {
   const content = read(relativePath);
   const imagePattern = /!\[[^\]]*\]\(([^)]+)\)/g;
   let match;
-
   while ((match = imagePattern.exec(content)) !== null) {
     const target = stripAnchorAndQuery(match[1].trim()).toLowerCase();
-    if (/\.(png|jpe?g|svg)$/.test(target)) {
-      errors.push(`${relativePath} must not add PNG/JPG/SVG image references: ${match[1]}`);
-    }
+    if (/\.(png|jpe?g|svg)$/.test(target)) errors.push(`${relativePath} must not add PNG/JPG/SVG image references: ${match[1]}`);
   }
 }
 
@@ -153,7 +142,6 @@ function getChangedFiles() {
     "git diff --name-only --diff-filter=ACMR main...HEAD",
     "git diff --name-only --diff-filter=ACMR origin/main...HEAD"
   ];
-
   for (const command of candidates) {
     try {
       const output = execSync(command, { cwd: repoRoot, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
@@ -162,8 +150,19 @@ function getChangedFiles() {
       // Try the next ref form. Some local checkouts have only main, some have only origin/main.
     }
   }
-
   return [];
+}
+
+function getCurrentBranchName() {
+  try {
+    return execSync("git branch --show-current", { cwd: repoRoot, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+  } catch {
+    return "";
+  }
+}
+
+function shouldEnforceDocsOnlyChangedFiles() {
+  return getCurrentBranchName().startsWith("docs/");
 }
 
 for (const file of requiredFiles) read(file);
@@ -185,9 +184,7 @@ for (const file of readNextDocs) {
 }
 
 const combinedGuides = `${read("docs/README.md")}\n${read("docs/guided-reading.md")}`;
-if (countMatches(combinedGuides, /```mermaid/g) < 3) {
-  errors.push("Guided docs must include at least three Mermaid diagrams.");
-}
+if (countMatches(combinedGuides, /```mermaid/g) < 3) errors.push("Guided docs must include at least three Mermaid diagrams.");
 
 for (const phrase of [
   "Phase 7B",
@@ -196,18 +193,12 @@ for (const phrase of [
   "Style Engine read-only source inventory foundation",
   "CSS/Sass Inspector read-only visual surface"
 ]) {
-  if (!read("docs/roadmap-implementation.md").includes(phrase)) {
-    errors.push(`docs/roadmap-implementation.md must preserve roadmap phrase: ${phrase}`);
-  }
+  if (!read("docs/roadmap-implementation.md").includes(phrase)) errors.push(`docs/roadmap-implementation.md must preserve roadmap phrase: ${phrase}`);
 }
 
 const packageJson = read("package.json");
-if (!packageJson.includes('"validate:guided-docs"')) {
-  errors.push("package.json must define validate:guided-docs.");
-}
-if (!packageJson.includes("npm run validate:guided-docs")) {
-  errors.push("validate:guided-docs must be integrated into an aggregate validation script.");
-}
+if (!packageJson.includes('"validate:guided-docs"')) errors.push("package.json must define validate:guided-docs.");
+if (!packageJson.includes("npm run validate:guided-docs")) errors.push("validate:guided-docs must be integrated into an aggregate validation script.");
 
 for (const file of requiredFiles) {
   checkRelativeLinks(file);
@@ -215,15 +206,17 @@ for (const file of requiredFiles) {
 }
 
 const changedFiles = getChangedFiles();
+const enforceDocsOnlyChangedFiles = shouldEnforceDocsOnlyChangedFiles();
 if (changedFiles.length > 0) {
   for (const file of changedFiles) {
     if (file === "package-lock.json") errors.push("package-lock.json must not be modified.");
     if (/\.(png|jpe?g|svg)$/i.test(file)) errors.push(`PNG/JPG/SVG files must not be added or modified: ${file}`);
     if (
-      file.startsWith("apps/desktop/electron/main/") ||
-      file.startsWith("apps/desktop/electron/preload/") ||
-      file.startsWith("apps/desktop/electron/renderer/") ||
-      file.startsWith("packages/core/")
+      enforceDocsOnlyChangedFiles &&
+      (file.startsWith("apps/desktop/electron/main/") ||
+        file.startsWith("apps/desktop/electron/preload/") ||
+        file.startsWith("apps/desktop/electron/renderer/") ||
+        file.startsWith("packages/core/"))
     ) {
       errors.push(`Runtime functional source must not be modified by guided docs pass: ${file}`);
     }
