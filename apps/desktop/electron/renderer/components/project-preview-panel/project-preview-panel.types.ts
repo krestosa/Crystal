@@ -30,7 +30,7 @@ export interface ProjectPreviewPanelElements {
   readonly editableInspectorFieldsEmpty: HTMLElement;
   readonly editableInspectorIntents: HTMLUListElement;
   readonly editableInspectorIntentsEmpty: HTMLElement;
-  readonly editableInspectorApply: HTMLButtonElement;
+  readonly editableInspectorApply: HTMLElement;
   readonly issuesEmpty: HTMLElement;
   readonly issuesList: HTMLUListElement;
   readonly frame: HTMLIFrameElement;
