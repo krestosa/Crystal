@@ -13,39 +13,20 @@
 | Phase 6D addition | Design editing readiness preflight only. |
 | Phase 7A addition | Editable Inspector draft/intent foundation only. |
 | Phase 7B addition | Editable Inspector read-only draft surface only. |
-| Safety risk controlled | Keeps dry-run preview, planning, readiness summaries, Inspector edit intents, and read-only Inspector UI separate from side effects. |
+| Phase 8A addition | Style Engine read-only source inventory foundation only. |
+| Safety risk controlled | Keeps dry-run previews, planning, readiness summaries, Inspector edit intents, disabled Inspector UI, and Style Engine inventory separate from side effects. |
 
 > **Future-only:** This page describes the shape a future runtime needs. It must not be cited as current write support.
 
 ## Purpose
 
-This page keeps future command execution separate from current preview behavior. Phase 6C adds a planning layer that can answer what a future command would affect, whether it appears reversible, and which derived states would need invalidation after a later write. Phase 6D adds a readiness layer that can explain why Apply must remain unavailable before a real write runtime exists. Phase 7A adds Editable Inspector draft/intent foundation contracts that describe text and attribute edit intent without executing or applying anything. Phase 7B exposes those contracts in a disabled Inspector surface without adding edit execution.
-
-## Why this exists
-
-The project already has command intent and Source Patch Preview. Without a future execution map, a source preview could be mistaken for permission to write files. The command transaction plan, design editing readiness model, Inspector editing intent model, and disabled Inspector surface make the missing requirements explicit instead of hiding them inside UI state.
-
-## How to read this page
-
-| Need | Focus |
-| --- | --- |
-| Current truth | Current implementation and what this does not do. |
-| Phase 6C contracts | Transaction planning preview. |
-| Phase 6D contracts | Design editing preflight/readiness preview. |
-| Phase 7A contracts | Editable Inspector draft/intent preview. |
-| Phase 7B surface | Disabled/read-only Inspector affordance. |
-| Future requirements | Data flow and future work. |
-| Safety language | Boundaries. |
+This page keeps future command execution separate from current preview behavior. Phase 6C adds transaction planning descriptors. Phase 6D adds Apply-blocked design readiness. Phase 7A adds Inspector draft/intent contracts. Phase 7B renders those Inspector contracts as disabled UI. Phase 8A adds Style Engine source inventory contracts for a future CSS/Sass Inspector without command execution.
 
 ## Current implementation
 
-No real command execution runtime exists. No source patch apply path exists. No write IPC exists. No save/apply workflow exists. No renderer behavior writes project files. Phase 6C adds only `CommandTransactionPlanPreview`, which combines existing previews with history and refresh planning descriptors. Phase 6D adds only `DesignEditingReadinessPreview`, which combines the transaction plan with dirty-state, source-conflict, and write-runtime capability previews. Phase 7A adds only `InspectorEditableFieldPreview`, `InspectorEditDraftPreview`, `InspectorEditIntentPreview`, and `InspectorEditingReadinessPreview` under `packages/core/inspector-editing/`. Phase 7B adds a read-only UI surface that renders those models as disabled controls.
+No real command execution runtime exists. No source patch apply path exists. No write IPC exists. No save/apply workflow exists. No renderer behavior writes project files. Phase 8A only introduces read-only style source inventory and textual preview models under `packages/core/style-engine/`.
 
-Phase 6D boundary: No source files are written. No patch apply is available. No write IPC exists. Apply remains unavailable. No undo/redo execution runs. Dirty-state is not persisted. No refresh execution runs. No Preview DOM mutation occurs.
-
-Phase 7A boundary: Editable Inspector draft/intent foundation only. No source files are written. No patch apply is available. No write IPC exists. Apply remains unavailable. No contenteditable is used. No undo/redo execution runs. Dirty-state is not persisted. No refresh execution runs. No Preview DOM mutation occurs.
-
-Phase 7B boundary: Editable Inspector read-only draft surface only. No source files are written. No patch apply is available. No write IPC exists. Apply remains unavailable. No contenteditable is used. No undo/redo execution runs. Dirty-state is not persisted. No refresh execution runs. No Preview DOM mutation occurs.
+Phase 8A boundary: Style Engine read-only source inventory foundation only. No CSS/Sass Inspector visual surface is added. No real cascade is calculated. No computed styles are read. No style editing is implemented. No source files are written. No patch apply is available. No write IPC exists. Apply remains unavailable. No contenteditable is used. No undo/redo execution runs. Dirty-state is not persisted. No refresh execution runs. No Preview DOM mutation occurs.
 
 | Implemented | Blocked | Future |
 | --- | --- | --- |
@@ -56,29 +37,27 @@ Phase 7B boundary: Editable Inspector read-only draft surface only. No source fi
 | Design editing readiness preview. | Apply enablement. | Dirty-state workflow. |
 | Inspector edit draft/intent previews. | Applied Inspector edits. | Gated Inspector Apply flow. |
 | Disabled Editable Inspector surface. | Editable input state. | Gated Inspector Apply flow. |
-| Disabled Apply affordance. | Save/apply workflow. | Dirty-state workflow. |
+| Style Engine source inventory. | CSS/Sass editing. | CSS/Sass Inspector. |
+| Selector/declaration/rule previews. | Real cascade. | Cascade Map. |
+| Selected-node style readiness. | Computed style reads. | Authored/computed style correlation. |
 
 ## Key files
 
-The following files are dry-run, planning, preflight, draft/intent, or read-only surface files only. Do not cite them as an implemented execution runtime.
+The following files are preview, planning, preflight, draft/intent, read-only surface, or inventory files only. Do not cite them as an implemented execution runtime.
 
 ## Key files and responsibilities
 
 | File or path | Responsibility | Reads | Must not do |
 | --- | --- | --- | --- |
 | `packages/core/commands/command-preview-bus/**` | Dry-run preview routing. | Command preview input. | Execute commands. |
-| `packages/core/commands/html-insertion/**` | Preview planning. | Command and anchor. | Apply patches. |
 | `packages/core/source-patch/**` | Preview anchors and payloads. | DOM Snapshot source location. | Persist files. |
 | `packages/core/history/**` | Future transaction descriptor. | Patch metadata. | Execute undo/redo. |
 | `packages/core/refresh-boundary/**` | Future invalidation descriptor. | Affected files. | Mutate derived state. |
 | `packages/core/commands/transaction-planning/**` | Preview-only bridge across the above models. | Preview results. | Execute or apply. |
-| `packages/core/dirty-state/**` | Preview-only dirty-state descriptor. | Transaction and patch preview IDs. | Persist dirty state. |
-| `packages/core/source-conflict/**` | Preview-only conflict precondition descriptor. | Version metadata only. | Read or hash files. |
-| `packages/core/write-runtime/**` | Preview-only capability gate. | Missing capability list. | Create write capability. |
 | `packages/core/design-editing/**` | Preview-only readiness summary. | Preflight models. | Enable Apply. |
-| `packages/core/inspector-editing/**` | Draft/intent and read-only surface models for future Inspector edits. | Selection paths, field values, and readiness previews. | Mutate DOM or write source. |
+| `packages/core/inspector-editing/**` | Draft/intent and read-only surface models. | Selection paths and readiness previews. | Mutate DOM or write source. |
+| `packages/core/style-engine/**` | Read-only style inventory, selector, declaration, rule, and selected-node style readiness previews. | Caller-supplied source text and Project Graph-style paths. | Read iframe styles, calculate real cascade, edit styles, write files, or enable Apply. |
 | `apps/desktop/electron/renderer/views/inspector/editable-inspector/**` | Disabled surface for Editable Inspector preview. | Inspector editing view model. | Attach editing or Apply handlers. |
-| `html-element-library-panel/**` | UI for intent and preview. | Preview result. | Enable working Apply. |
 
 Future execution files do not exist yet.
 
@@ -88,14 +67,12 @@ Future execution files do not exist yet.
 | --- | --- | --- |
 | Command Preview Result | Is it preview-ready? | Plan may continue or block. |
 | Source Patch Preview | Is it ready and does it include affected files? | History/refresh planning or blocked plan. |
-| Patch reversibility flag | Can undo strategy be described? | Reverse-patch or unsupported descriptor. |
-| Affected files | Which derived state would become stale after a future write? | Refresh-boundary plan. |
 | CommandTransactionPlanPreview | What dirty/conflict/write capability checks are needed? | Design editing readiness preview. |
 | Preview Inspector selection | Can Inspector fields be represented as drafts? | Inspector editable field preview. |
-| Inspector draft values | Which text/attribute changes are intended? | Inspector edit intent preview. |
 | InspectorEditingReadinessPreview | Can Apply be enabled? | No, Apply remains unavailable. |
-| Editable Inspector surface | How is this shown? | Disabled/read-only controls only. |
-| Execution request | Does write runtime exist? | Blocked. |
+| Caller-supplied HTML/source text | Can style sources be inventoried textually? | StyleSourceInventoryPreview. |
+| StyleSourceInventoryPreview | Can authored styles be inspected as inventory? | SelectedNodeStyleReadinessPreview. |
+| Style readiness | Can styles be edited or applied? | No, Apply remains unavailable. |
 
 ```mermaid
 flowchart TD
@@ -105,25 +82,17 @@ flowchart TD
     Selection[Read-only Preview Inspector selection]
   end
 
-  subgraph Planning[Phase 6C planning]
+  subgraph Planning[Planning and preflight]
     Plan[CommandTransactionPlanPreview]
-    History[HistoryTransactionPreview]
-    Refresh[RefreshBoundaryPlan]
-  end
-
-  subgraph Preflight[Phase 6D preflight]
-    Dirty[DirtyStatePreview]
-    Conflict[SourceConflictPreview]
-    Runtime[WriteRuntimeCapabilityPreview]
     Ready[DesignEditingReadinessPreview]
+    InspectorReady[InspectorEditingReadinessPreview]
   end
 
-  subgraph Inspector[Phase 7A/7B Editable Inspector]
-    Field[InspectorEditableFieldPreview]
-    Draft[InspectorEditDraftPreview]
-    Intent[InspectorEditIntentPreview]
-    InspectorReady[InspectorEditingReadinessPreview]
-    Surface[Read-only disabled surface]
+  subgraph Style8A[Phase 8A Style Engine inventory]
+    Sources[StyleSourceReferencePreview]
+    Inventory[StyleSourceInventoryPreview]
+    Rules[StyleRulePreview]
+    StyleReady[SelectedNodeStyleReadinessPreview]
   end
 
   subgraph Blocked[Blocked execution]
@@ -132,28 +101,22 @@ flowchart TD
     Ipc[(Write IPC)]
   end
 
-  Command --> Patch --> Plan
-  Plan --> History
-  Plan --> Refresh
-  Plan --> Dirty
-  Plan --> Conflict
-  Runtime --> Ready
-  Dirty --> Ready
-  Conflict --> Ready
-  Selection --> Field --> Draft --> Intent
-  Plan -. planning reference .-> InspectorReady
-  Ready -. readiness reference .-> InspectorReady
-  InspectorReady -. render only .-> Surface
-  Surface -. disabled affordance .-> Apply
+  Command --> Patch --> Plan --> Ready
+  Selection --> InspectorReady
+  Sources --> Inventory --> StyleReady
+  Rules --> StyleReady
+  Ready -. optional readiness context .-> InspectorReady
+  InspectorReady -. optional readiness context .-> StyleReady
+  StyleReady -. inventory only .-> Apply
   Apply -. no current edge .-> Write
   Apply -. no current edge .-> Ipc
 ```
 
 ## Boundaries
 
-Do not add hidden apply behavior under preview functions. Do not add renderer filesystem writes. Do not add write IPC before command execution policy, transaction state, dirty state, conflict detection, and refresh execution are designed. Phase 7A Inspector editing models must remain pure draft/intent contracts. Phase 7B may render those models, but only as disabled/read-only affordances and must not introduce contenteditable, iframe internals access, DOM mutation, refresh execution, dirty-state persistence, or real undo/redo.
+Do not add hidden apply behavior under preview functions. Do not add renderer filesystem writes. Do not add write IPC before command execution policy, transaction state, dirty state, conflict detection, and refresh execution are designed. Phase 8A Style Engine models must remain pure inventory contracts: no CSS/Sass Inspector visual surface, no real cascade, no computed styles, no style editing, no source write, no patch apply, no write IPC, no contenteditable, no refresh execution, no dirty-state persistence, no undo/redo execution, and no Preview DOM mutation.
 
-> **Safety boundary:** Execution must be a separate, explicit runtime path; it cannot be smuggled into preview helpers, Phase 6C planning helpers, Phase 6D readiness helpers, Phase 7A Inspector draft/intent helpers, or the Phase 7B read-only surface.
+> **Safety boundary:** Execution must be a separate, explicit runtime path; it cannot be smuggled into preview helpers, planning helpers, readiness helpers, Inspector draft/intent helpers, the Phase 7B read-only surface, or the Phase 8A Style Engine inventory.
 
 ## What this does not do
 
@@ -164,19 +127,19 @@ Do not add hidden apply behavior under preview functions. Do not add renderer fi
 | Undo/redo execution | Future only. |
 | Save/apply workflow | Future only. |
 | Preview reload after write | No write occurs. |
-| Dirty-state mutation | Future only. |
 | Dirty-state persistence | Future only. |
-| Source conflict check against real files | Future only. |
-| Applied Inspector text or attribute editing | Phase 7A creates draft/intent previews only; Phase 7B renders them disabled. |
-| contenteditable editing | The Preview DOM remains read-only. |
+| CSS/Sass Inspector visual surface | Phase 8A is core inventory only. |
+| Real cascade | Phase 8A only stores textual previews. |
+| Computed styles | Phase 8A forbids computed style reads. |
+| Applied style editing | Style declarations remain `canEdit: false` and `canApply: false`. |
 
 ## Common misunderstanding
 
-> **Common misunderstanding:** A command transaction plan is not an execution plan that can be run. A design editing readiness preview is not an Apply permission. An Inspector edit intent is not a mutation request. A disabled Editable Inspector field is not an editable input. These are preview objects and read-only affordances used to keep future requirements visible.
+> **Common misunderstanding:** A style source inventory is not a Cascade Map. A selector preview is not a DOM match. A declaration preview is not an editable style control. A selected-node style readiness preview is not Apply permission.
 
 ## Validation
 
-`validate:history-foundation` keeps Phase 6C dry-run by checking module presence, statuses, validators, exports, package script wiring, and forbidden filesystem, IPC, patch-apply, renderer, and iframe patterns. `validate:design-editing-preflight` keeps Phase 6D readiness models blocked and validates that Apply, writes, write IPC, dirty-state persistence, refresh execution, and undo/redo execution remain out of scope. `validate:inspector-editing-foundation` keeps Phase 7A Inspector editing as draft/intent-only and checks that Apply remains unavailable, no contenteditable path appears, and no Preview DOM mutation is introduced. `validate:editable-inspector-surface` keeps Phase 7B renderer integration disabled/read-only and checks that no Apply handler, write IPC, source mutation, refresh execution, dirty-state persistence, iframe internals access, or contenteditable path appears.
+`validate:style-engine-foundation` checks that Phase 8A modules exist, exports remain barrel-only, style sources cannot write, style inventory cannot edit/apply, selected-node style readiness cannot inspect computed styles, forbidden stylesheet/browser/iframe/write APIs are absent, package scripts are wired, and docs keep the Phase 8A boundary explicit.
 
 ## Related docs
 
@@ -189,4 +152,4 @@ Do not add hidden apply behavior under preview functions. Do not add renderer fi
 
 ## Future work
 
-A later phase can add real command execution only after write ownership, patch application, dirty state, conflict detection, refresh execution, Inspector Apply UX, and history execution are explicit and validated.
+A later phase can add CSS/Sass Inspector visual UI, authored-style matching against DOM Snapshot, real cascade analysis, computed style inspection, and controlled style editing only after write ownership, patch application, dirty state, conflict detection, refresh execution, Inspector Apply UX, and history execution are explicit and validated.

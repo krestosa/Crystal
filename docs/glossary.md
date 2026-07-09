@@ -2,7 +2,7 @@
 
 [Docs index](./README.md)
 
-> **Read this first:** Terms in Crystal often encode a boundary. In particular, `Preview`, `Snapshot`, `Patch Preview`, `Transaction Preview`, `Refresh Boundary`, `Dirty-State Preview`, `Source Conflict Preview`, `Write Runtime Capability Preview`, `Inspector Edit Draft`, `Inspector Edit Intent`, `Editable Inspector Surface`, and `Write` are intentionally different concepts.
+> **Read this first:** Terms in Crystal often encode a boundary. In particular, `Preview`, `Snapshot`, `Patch Preview`, `Transaction Preview`, `Refresh Boundary`, `Dirty-State Preview`, `Source Conflict Preview`, `Write Runtime Capability Preview`, `Inspector Edit Draft`, `Inspector Edit Intent`, `Editable Inspector Surface`, `Style Source Inventory`, `Selected Node Style Readiness`, and `Write` are intentionally different concepts.
 
 ## At a glance
 
@@ -15,6 +15,7 @@
 | Design editing preflight | Names Phase 6D readiness contracts without enabling Apply. |
 | Editable Inspector draft/intent foundation | Names Phase 7A Inspector editing contracts without applying edits. |
 | Editable Inspector read-only draft surface | Names Phase 7B disabled Inspector UI without enabling editing. |
+| Style Engine source inventory foundation | Names Phase 8A style inventory contracts without CSS/Sass editing. |
 | Future write system | Names blocked capabilities without claiming implementation. |
 | Validation | Names the checks that keep boundaries visible. |
 
@@ -69,8 +70,6 @@
 | WriteRuntimeCapabilityPreview | Explicit model showing write runtime capability is unavailable. | Yes, blocked preview | [Future command execution](./architecture/commands/future-command-execution.md) |
 | DesignEditingReadinessPreview | Summary that combines transaction plan, dirty state, conflict preflight, and write runtime capability while keeping Apply blocked. | Yes, preview-only | [Future write flow](./architecture/flows/future-write-flow.md) |
 
-Phase 6D boundary: No source files are written. No patch apply is available. No write IPC exists. Apply remains unavailable. No undo/redo execution runs. Dirty-state is not persisted. No refresh execution runs. No Preview DOM mutation occurs.
-
 ## Editable Inspector draft/intent foundation
 
 | Term | Short meaning | Implemented today? | Related docs |
@@ -79,8 +78,6 @@ Phase 6D boundary: No source files are written. No patch apply is available. No 
 | InspectorEditDraftPreview | In-memory draft summary for selected-node field values. | Yes, preview-only | [Roadmap implementation](./roadmap-implementation.md) |
 | InspectorEditIntentPreview | Future edit intent for text or attribute changes. | Yes, preview-only | [Future write flow](./architecture/flows/future-write-flow.md) |
 | InspectorEditingReadinessPreview | Readiness summary linking Inspector draft/intent state to design editing readiness and transaction planning while keeping Apply blocked. | Yes, preview-only | [Validation system](./architecture/validation-system.md) |
-
-Phase 7A boundary: Editable Inspector draft/intent foundation only. No source files are written. No patch apply is available. No write IPC exists. Apply remains unavailable. No contenteditable is used. No undo/redo execution runs. Dirty-state is not persisted. No refresh execution runs. No Preview DOM mutation occurs.
 
 ## Editable Inspector read-only draft surface
 
@@ -91,7 +88,18 @@ Phase 7A boundary: Editable Inspector draft/intent foundation only. No source fi
 | Disabled Inspector field control | Readonly and disabled input representing a future text-content or attribute field. | Yes, disabled only | [Validation system](./architecture/validation-system.md) |
 | Apply unavailable affordance | Visual Apply copy that remains disabled because write runtime is absent. | Yes, disabled only | [Future write flow](./architecture/flows/future-write-flow.md) |
 
-Phase 7B boundary: Editable Inspector read-only draft surface only. No source files are written. No patch apply is available. No write IPC exists. Apply remains unavailable. No contenteditable is used. No undo/redo execution runs. Dirty-state is not persisted. No refresh execution runs. No Preview DOM mutation occurs.
+## Style Engine source inventory foundation
+
+| Term | Short meaning | Implemented today? | Related docs |
+| --- | --- | --- | --- |
+| StyleSourceReferencePreview | Read-only descriptor for linked CSS, linked Sass/SCSS, inline style blocks, inline style attributes, or unknown style sources. | Yes, inventory-only | [Roadmap implementation](./roadmap-implementation.md) |
+| StyleSourceInventoryPreview | Read-only inventory of style source references for a target HTML path. | Yes, inventory-only | [Validation system](./architecture/validation-system.md) |
+| StyleSelectorPreview | Textual selector descriptor with match status kept `not-evaluated` by default. | Yes, preview-only | [Future command execution](./architecture/commands/future-command-execution.md) |
+| StyleDeclarationPreview | Textual CSS declaration descriptor with `canEdit: false` and `canApply: false`. | Yes, preview-only | [Future write flow](./architecture/flows/future-write-flow.md) |
+| StyleRulePreview | Textual rule preview composed from selector and declaration previews. | Yes, preview-only | [Roadmap implementation](./roadmap-implementation.md) |
+| SelectedNodeStyleReadinessPreview | Selected-node readiness summary for future CSS/Sass Inspector inventory inspection, with computed styles and Apply blocked. | Yes, inventory-only | [Validation system](./architecture/validation-system.md) |
+
+Phase 8A boundary: Style Engine read-only source inventory foundation only. No CSS/Sass Inspector visual surface is added. No real cascade is calculated. No computed styles are read. No style editing is implemented. No source files are written. No patch apply is available. No write IPC exists. Apply remains unavailable. No contenteditable is used. No undo/redo execution runs. Dirty-state is not persisted. No refresh execution runs. No Preview DOM mutation occurs.
 
 ## Future write system
 
@@ -103,6 +111,7 @@ Phase 7B boundary: Editable Inspector read-only draft surface only. No source fi
 | Real undo/redo | Later transaction-backed history execution. | No | [Future write flow](./architecture/flows/future-write-flow.md) |
 | Dirty state | Later save/apply state for changed files. | No | [Future write flow](./architecture/flows/future-write-flow.md) |
 | Applied Inspector edit | Later operation that may turn an Inspector edit intent into a validated source mutation. | No | [Future command execution](./architecture/commands/future-command-execution.md) |
+| Applied style edit | Later operation that may turn a style declaration edit into a validated source mutation. | No | [Future write flow](./architecture/flows/future-write-flow.md) |
 
 ## Validation
 
@@ -114,8 +123,9 @@ Phase 7B boundary: Editable Inspector read-only draft surface only. No source fi
 | Design editing preflight validator | Checks Phase 6D preflight contracts and blocked Apply/write behavior. | Yes | [Validation system](./architecture/validation-system.md) |
 | Inspector editing foundation validator | Checks Phase 7A Inspector draft/intent contracts and blocked Apply/write behavior. | Yes | [Validation system](./architecture/validation-system.md) |
 | Editable Inspector surface validator | Checks Phase 7B renderer surface, disabled controls, unavailable Apply, and blocked write behavior. | Yes | [Validation system](./architecture/validation-system.md) |
+| Style Engine foundation validator | Checks Phase 8A Style Engine inventory contracts, no computed styles, no real cascade, no style editing, and no write behavior. | Yes | [Validation system](./architecture/validation-system.md) |
 | Local quick validation | Installed-workspace aggregate gate. | Yes | [Validation gates](./architecture/diagrams/validation-gates.md) |
 
 ## Common misunderstanding
 
-> **Common misunderstanding:** `Preview`, `Source Patch Preview`, `HistoryTransactionPreview`, `RefreshBoundaryPlan`, `DesignEditingReadinessPreview`, `InspectorEditIntentPreview`, `Editable Inspector Surface`, and `Future write` are different states. Current preflight, draft/intent, and disabled-surface models describe blocked future work; none of them mutate project files.
+> **Common misunderstanding:** `Preview`, `Source Patch Preview`, `HistoryTransactionPreview`, `RefreshBoundaryPlan`, `DesignEditingReadinessPreview`, `InspectorEditIntentPreview`, `Editable Inspector Surface`, `StyleSourceInventoryPreview`, `SelectedNodeStyleReadinessPreview`, and `Future write` are different states. Current preflight, draft/intent, disabled-surface, and inventory models describe blocked future work; none of them mutate project files.
