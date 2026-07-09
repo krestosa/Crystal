@@ -4,8 +4,6 @@ import {
   STYLE_SOURCE_DISCOVERED_STATUS,
   STYLE_SOURCE_KIND_INLINE_STYLE_ATTRIBUTE,
   STYLE_SOURCE_KIND_INLINE_STYLE_BLOCK,
-  STYLE_SOURCE_KIND_LINKED_CSS,
-  STYLE_SOURCE_KIND_LINKED_SCSS,
   STYLE_SOURCE_KIND_UNKNOWN,
   STYLE_SOURCE_UNSUPPORTED_STATUS
 } from "./style-engine.constants";
@@ -39,8 +37,8 @@ export function createStyleSourceReferencePreview(input: StyleSourceReferencePre
 export function detectStyleSourceKindFromPath(relativePath: string | undefined): StyleSourceKind {
   const path = normalizeStyleSourcePath(relativePath).toLowerCase();
   if (!path) return STYLE_SOURCE_KIND_UNKNOWN;
-  if (path.endsWith(".css")) return STYLE_SOURCE_KIND_LINKED_CSS;
-  if (path.endsWith(".scss") || path.endsWith(".sass")) return STYLE_SOURCE_KIND_LINKED_SCSS;
+  if (path.endsWith(".css")) return "linked-css";
+  if (path.endsWith(".scss") || path.endsWith(".sass")) return "linked-scss";
   return STYLE_SOURCE_KIND_UNKNOWN;
 }
 
@@ -90,5 +88,5 @@ function resolveSourceStatus(sourceKind: StyleSourceKind, blockedReason: string 
 
 function resolveCanReadSource(sourceKind: StyleSourceKind, status: StyleSourceStatus): boolean {
   if (status !== STYLE_SOURCE_DISCOVERED_STATUS) return false;
-  return sourceKind === STYLE_SOURCE_KIND_LINKED_CSS || sourceKind === STYLE_SOURCE_KIND_INLINE_STYLE_BLOCK;
+  return sourceKind === "linked-css" || sourceKind === STYLE_SOURCE_KIND_INLINE_STYLE_BLOCK;
 }
