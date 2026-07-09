@@ -58,11 +58,13 @@ Flags are presentation-only unless otherwise stated: `--unicode`, `--ascii`, `--
 
 `--no-progress` disables live progress even in TTY. `--color` requests ANSI color when the selected render mode allows it. `--no-color` disables ANSI color always. `NO_COLOR` also disables ANSI by default. `--plain`, `--ascii`, `--raw`, and `--json-summary` take priority over color and remain copyable/parseable. Color is decorative: PASS, FAIL, SKIPPED, icons, labels, rankings, durations, and failure sections remain readable without color. `--compact` keeps failures complete but suppresses non-essential successful output. `--verbose` may print captured stdout/stderr and the internal `Executed:` command. `--raw` and `--json-summary` exist for stable CI/no-TTY consumption.
 
+`--json-summary` makes the validation runner emit JSON only. For strictly parseable JSON, call `node scripts/validate-local-quick.mjs --json-summary`, `npm --silent run validate:local:quick -- --json-summary`, or `npm --silent run validate:local:quick:json`. Plain `npm run validate:local:quick -- --json-summary` can include npm lifecycle banner lines before the runner starts; those banner lines are outside the runner's control and are not JSON.
+
 ## Strict validation meta hardening
 
 `validate:validation-system` is a static meta-validator for the validation system itself. It does not execute `validate:local:quick` and does not create a recursion cycle.
 
-It verifies that quick-suite checks have unique ids, labels, known categories, required status, public `npmScript` contracts, matching `displayCommand` values, no direct `npm.cmd`, and no ambiguous shell execution. It also verifies that direct Node scripts exist, that declared npm scripts exist in `package.json`, that failure types include `none`, `command-execution`, `missing-npm-script`, `missing-direct-script`, `validator-failure`, and `skipped`, that ANSI rendering is dependency-free, that `stripAnsi`/visible-length helpers keep alignment stable, that `--color`/`--no-color`/`NO_COLOR` are wired, and that critical validators use the shared assertions path that reports `checksExecuted` and fails when `checksExecuted === 0`.
+It verifies that quick-suite checks have unique ids, labels, known categories, required status, public `npmScript` contracts, matching `displayCommand` values, no direct `npm.cmd`, and no ambiguous shell execution. It also verifies that direct Node scripts exist, that declared npm scripts exist in `package.json`, that failure types include `none`, `command-execution`, `missing-npm-script`, `missing-direct-script`, `validator-failure`, and `skipped`, that ANSI rendering is dependency-free, that `stripAnsi`/visible-length helpers keep alignment stable, that `--color`/`--no-color`/`NO_COLOR` are wired, that `validate:local:quick:json` exists for silent npm JSON consumption, that `npm --silent` and direct Node JSON invocations are documented, and that critical validators use the shared assertions path that reports `checksExecuted` and fails when `checksExecuted === 0`.
 
 The meta-validator must print `Files checked`, `Checks executed`, and `Result`, and it must fail rather than warn when static validation-system wiring is broken.
 
@@ -279,6 +281,9 @@ npm run validate:architecture-docs
 npm run validate:local:quick
 npm run validate:local:quick -- --plain
 npm run validate:local:quick -- --raw
+node scripts/validate-local-quick.mjs --json-summary
+npm --silent run validate:local:quick -- --json-summary
+npm --silent run validate:local:quick:json
 npm run validate:local:quick -- --json-summary
 npm run validate:local:quick -- --no-progress
 npm run validate:local:quick -- --compact

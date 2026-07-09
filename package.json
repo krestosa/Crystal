@@ -39,6 +39,7 @@
     "validate:validation-system": "node scripts/validate-validation-system.mjs",
     "validate:local": "node scripts/validate-local.mjs",
     "validate:local:quick": "node scripts/validate-local-quick.mjs",
+    "validate:local:quick:json": "node scripts/validate-local-quick.mjs --json-summary",
     "validate:local:quick:verbose": "node scripts/validate-local-quick.mjs --verbose",
     "validate:local:quick:fail-fast": "node scripts/validate-local-quick.mjs --fail-fast",
     "validate:local:quick:core": "npm run validate:structure && npm run validate:project-graph && npm run validate:project-watch && npm run validate:history-foundation && npm run validate:design-editing-preflight && npm run validate:inspector-editing-foundation && npm run validate:style-engine-foundation",

@@ -61,6 +61,7 @@ export function runValidationSystemMetaChecks(options = {}) {
 
   for (const scriptName of [
     "validate:local:quick",
+    "validate:local:quick:json",
     "validate:local:quick:verbose",
     "validate:local:quick:fail-fast",
     "validate:validation-system"
@@ -133,8 +134,23 @@ export function runValidationSystemMetaChecks(options = {}) {
 
   check(renderModeText.includes("VALIDATION_RENDER_RAW") && renderModeText.includes("VALIDATION_RENDER_JSON_SUMMARY"), "render mode must isolate raw and json-summary.");
   check(renderModeText.includes("return false") && renderModeText.includes("VALIDATION_RENDER_RAW") && renderModeText.includes("VALIDATION_RENDER_JSON_SUMMARY"), "raw/json-summary must not enable ANSI color.");
+  check(reporterText.includes("if (this.jsonSummary) return;"), "json-summary reporter path must suppress human per-step output.");
+  check(reporterText.includes("JSON.stringify"), "json-summary reporter path must use JSON.stringify.");
 
-  for (const token of ["PASS", "FAIL", "SKIPPED", "raw", "plain", "unicode", "NO_COLOR", "ANSI", "decorative"]) {
+  for (const token of [
+    "PASS",
+    "FAIL",
+    "SKIPPED",
+    "raw",
+    "plain",
+    "unicode",
+    "NO_COLOR",
+    "ANSI",
+    "decorative",
+    "npm --silent",
+    "node scripts/validate-local-quick.mjs --json-summary",
+    "validate:local:quick:json"
+  ]) {
     check(validationSystemDocs.includes(token), `validation-system.md must document token: ${token}`);
   }
 
