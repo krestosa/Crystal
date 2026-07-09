@@ -24,7 +24,7 @@ node --version
 npm --version
 ```
 
-``node --version`` should print ``v24.18.0``. npm should satisfy ``>=10.0.0``; Node 24.18.0 may ship npm 11.x, and npm 10 remains accepted by the project engines.
+`node --version` should print `v24.18.0`. npm should satisfy `>=10.0.0`; Node 24.18.0 may ship npm 11.x, and npm 10 remains accepted by the project engines.
 
 ## Clean Electron install on Windows
 
@@ -76,10 +76,10 @@ Before requesting a PR merge, run:
 npm run validate:local
 ```
 
-The runner executes:
+The runner executes the local validation command graph. For reproducible setup before validation, use `npm ci` from the committed `package-lock.json`.
 
 ```txt
-npm install
+npm ci
 npm run build
 npm run typecheck
 npm run validate:structure
