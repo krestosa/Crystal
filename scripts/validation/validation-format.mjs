@@ -4,6 +4,11 @@ export function formatDuration(durationMs) {
   return `${(durationMs / 1000).toFixed(2)}s`;
 }
 
+export function formatPercent(completed, total) {
+  if (total === 0) return "0%";
+  return `${Math.max(0, Math.min(100, Math.round((completed / total) * 100)))}%`;
+}
+
 export function padRight(value, width) {
   const text = String(value);
   if (text.length >= width) return text;
@@ -21,7 +26,7 @@ export function formatStatus(status) {
 }
 
 export function formatStepIndex(index, total) {
-  const width = String(total).length;
+  const width = Math.max(2, String(total).length);
   return `[${padLeft(index + 1, width)}/${total}]`;
 }
 
@@ -30,14 +35,14 @@ export function formatCommand(command, args = []) {
 }
 
 export function formatProgressBar(completed, total, options = {}) {
-  const width = options.width ?? 40;
+  const width = options.width ?? 24;
   const ratio = total === 0 ? 0 : completed / total;
   const filled = Math.max(0, Math.min(width, Math.round(width * ratio)));
   const empty = width - filled;
-  const useAscii = options.ascii ?? !process.stdout.isTTY;
-  const fillChar = useAscii ? "#" : "█";
-  const emptyChar = useAscii ? "-" : "░";
-  return `[${fillChar.repeat(filled)}${emptyChar.repeat(empty)}] ${completed}/${total}`;
+  const plain = Boolean(options.plain);
+  const fillChar = plain ? "#" : "━";
+  const emptyChar = plain ? "-" : "░";
+  return `${fillChar.repeat(filled)}${emptyChar.repeat(empty)}`;
 }
 
 export function extractIssueLines(output) {

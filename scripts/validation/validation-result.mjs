@@ -5,6 +5,7 @@ export const VALIDATION_SKIPPED_STATUS = "SKIPPED";
 export const VALIDATION_FAILURE_NONE = "none";
 export const VALIDATION_FAILURE_COMMAND_EXECUTION = "command-execution";
 export const VALIDATION_FAILURE_MISSING_NPM_SCRIPT = "missing-npm-script";
+export const VALIDATION_FAILURE_MISSING_DIRECT_SCRIPT = "missing-direct-script";
 export const VALIDATION_FAILURE_VALIDATOR = "validator-failure";
 export const VALIDATION_FAILURE_SKIPPED = "skipped";
 
@@ -15,6 +16,7 @@ export function createValidationResult({
   status,
   durationMs,
   command,
+  executedCommand = command,
   exitCode = null,
   stdout = "",
   stderr = "",
@@ -29,6 +31,7 @@ export function createValidationResult({
     status,
     durationMs,
     command,
+    executedCommand,
     exitCode,
     stdout,
     stderr,

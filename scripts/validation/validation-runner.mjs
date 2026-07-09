@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { performance } from "node:perf_hooks";
 import {
@@ -6,6 +7,7 @@ import {
   isFailingValidationResult,
   VALIDATION_FAIL_STATUS,
   VALIDATION_FAILURE_COMMAND_EXECUTION,
+  VALIDATION_FAILURE_MISSING_DIRECT_SCRIPT,
   VALIDATION_FAILURE_MISSING_NPM_SCRIPT,
   VALIDATION_FAILURE_NONE,
   VALIDATION_FAILURE_SKIPPED,
@@ -13,7 +15,7 @@ import {
   VALIDATION_PASS_STATUS,
   VALIDATION_SKIPPED_STATUS
 } from "./validation-result.mjs";
-import { extractIssueLines } from "./validation-format.mjs";
+import { extractIssueLines, formatCommand } from "./validation-format.mjs";
 import { formatValidationCommand, ValidationReporter } from "./validation-reporter.mjs";
 
 export function parseValidationRunnerFlags(argv = process.argv.slice(2)) {
@@ -21,16 +23,20 @@ export function parseValidationRunnerFlags(argv = process.argv.slice(2)) {
     verbose: argv.includes("--verbose"),
     failFast: argv.includes("--fail-fast"),
     allowSkips: argv.includes("--allow-skips"),
-    noProgress: argv.includes("--no-progress")
+    noProgress: argv.includes("--no-progress"),
+    plain: argv.includes("--plain"),
+    compact: argv.includes("--compact")
   };
 }
 
 export function runValidationSuite(checks, options = {}) {
-  const reporter = new ValidationReporter(options);
+  const reporter = new ValidationReporter({ ...options, totalChecks: checks.length });
   const results = [];
-  const packageJson = readPackageJson();
+  const cwd = options.cwd ?? process.cwd();
+  const packageJson = readPackageJson(cwd);
+  const suiteStart = performance.now();
 
-  reporter.startSuite(options.title ?? "Crystal validation");
+  reporter.startSuite(options.title ?? "Crystal validation", checks, options);
 
   for (let index = 0; index < checks.length; index += 1) {
     const check = checks[index];
@@ -49,6 +55,7 @@ export function runValidationSuite(checks, options = {}) {
           status: VALIDATION_SKIPPED_STATUS,
           durationMs: 0,
           command: formatValidationCommand(skippedCheck),
+          executedCommand: formatExecutedCommand(skippedCheck),
           exitCode: null,
           stdout: "",
           stderr: "",
@@ -63,7 +70,8 @@ export function runValidationSuite(checks, options = {}) {
     }
   }
 
-  reporter.finalSummary(results, options);
+  const suiteDurationMs = performance.now() - suiteStart;
+  reporter.finalSummary(results, options, { durationMs: suiteDurationMs });
 
   const hasFail = results.some((result) => result.status === VALIDATION_FAIL_STATUS);
   const hasSkipped = results.some((result) => result.status === VALIDATION_SKIPPED_STATUS);
@@ -75,6 +83,7 @@ export function runValidationSuite(checks, options = {}) {
 
 function runValidationCheck(check, packageJson, options) {
   const commandText = formatValidationCommand(check);
+  const executedCommandText = formatExecutedCommand(check);
   const start = performance.now();
 
   if (check.npmScript && !packageJson.scripts?.[check.npmScript]) {
@@ -85,12 +94,31 @@ function runValidationCheck(check, packageJson, options) {
       status: check.required === false ? VALIDATION_SKIPPED_STATUS : VALIDATION_FAIL_STATUS,
       durationMs: performance.now() - start,
       command: commandText,
+      executedCommand: executedCommandText,
       exitCode: null,
       stdout: "",
       stderr: `Missing npm script: ${check.npmScript}`,
       errors: [`Missing npm script: ${check.npmScript}`],
       hints: ["Add the script to package.json or mark this check optional explicitly."],
       failureType: check.required === false ? VALIDATION_FAILURE_SKIPPED : VALIDATION_FAILURE_MISSING_NPM_SCRIPT
+    });
+  }
+
+  if (check.directScriptPath && !fs.existsSync(path.join(options.cwd ?? process.cwd(), check.directScriptPath))) {
+    return createValidationResult({
+      id: check.id,
+      label: check.label,
+      category: check.category,
+      status: VALIDATION_FAIL_STATUS,
+      durationMs: performance.now() - start,
+      command: commandText,
+      executedCommand: executedCommandText,
+      exitCode: null,
+      stdout: "",
+      stderr: `Missing direct Node script: ${check.directScriptPath}`,
+      errors: [`Missing direct Node script: ${check.directScriptPath}`],
+      hints: ["Restore the direct script file or change the suite entry to use npm fallback explicitly."],
+      failureType: VALIDATION_FAILURE_MISSING_DIRECT_SCRIPT
     });
   }
 
@@ -111,11 +139,12 @@ function runValidationCheck(check, packageJson, options) {
       status: VALIDATION_FAIL_STATUS,
       durationMs,
       command: commandText,
+      executedCommand: formatCommand(invocation.command, invocation.args),
       exitCode: null,
       stdout: execution.stdout ?? "",
       stderr: `${execution.stderr ?? ""}\n${execution.error.message}`.trim(),
       errors: [execution.error.message],
-      hints: ["Confirm Node can spawn npm from this shell."],
+      hints: ["Confirm Node can spawn the configured validation command from this shell."],
       failureType: VALIDATION_FAILURE_COMMAND_EXECUTION
     });
   }
@@ -131,6 +160,7 @@ function runValidationCheck(check, packageJson, options) {
     status: exitCode === 0 ? VALIDATION_PASS_STATUS : VALIDATION_FAIL_STATUS,
     durationMs,
     command: commandText,
+    executedCommand: formatCommand(invocation.command, invocation.args),
     exitCode,
     stdout: execution.stdout ?? "",
     stderr: execution.stderr ?? "",
@@ -141,7 +171,15 @@ function runValidationCheck(check, packageJson, options) {
 }
 
 function resolveCheckInvocation(check) {
-  if (check.npmScript) return resolveNpmInvocation(check.npmScript);
+  if (check.command && Array.isArray(check.args)) {
+    return {
+      command: check.command,
+      args: check.args
+    };
+  }
+
+  if (check.commandMode === "npm" || check.npmScript) return resolveNpmInvocation(check.npmScript);
+
   return {
     command: check.command,
     args: check.args ?? []
@@ -171,8 +209,17 @@ function resolveNpmInvocation(scriptName) {
   };
 }
 
-function readPackageJson() {
-  const packagePath = "package.json";
+function formatExecutedCommand(check) {
+  if (check.command && Array.isArray(check.args)) return formatCommand(check.command, check.args);
+  if (check.commandMode === "npm" || check.npmScript) {
+    const invocation = resolveNpmInvocation(check.npmScript);
+    return formatCommand(invocation.command, invocation.args);
+  }
+  return formatCommand(check.command, check.args ?? []);
+}
+
+function readPackageJson(cwd = process.cwd()) {
+  const packagePath = path.join(cwd, "package.json");
   if (!fs.existsSync(packagePath)) return { scripts: {} };
   try {
     return JSON.parse(fs.readFileSync(packagePath, "utf8"));
