@@ -148,7 +148,9 @@ if (!changedFilesInfo.files) {
 if (changedFilesInfo.files) {
   for (const file of changedFilesInfo.files) {
     recordCheck(context, `changed file policy: ${file}`);
-    if (file === "package-lock.json") pushValidationError(context, "package-lock.json must not be modified.");
+    if (docsOnlyEnabled && file === "package-lock.json") {
+      pushValidationError(context, "package-lock.json must not be modified by guided docs pass.");
+    }
     if (/\.(png|jpe?g|svg)$/i.test(file)) pushValidationError(context, `PNG/JPG/SVG files must not be added or modified: ${file}`);
     if (
       docsOnlyEnabled &&

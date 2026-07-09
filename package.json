@@ -5,7 +5,10 @@
   "description": "Crystal desktop application bootstrap.",
   "type": "module",
   "main": "dist/main/main.cjs",
-  "workspaces": ["apps/*", "packages/*"],
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "dev": "npm run build && electron dist/main/main.cjs",
     "build": "node scripts/build.mjs",
@@ -50,11 +53,14 @@
     "doctor:electron": "node scripts/doctor-electron.mjs"
   },
   "devDependencies": {
-    "@types/node": "^22.10.2",
-    "electron": "^35.0.0",
-    "esbuild": "^0.24.2",
-    "sass": "^1.83.4",
-    "typescript": "^5.7.2"
+    "@types/node": "^24.13.3",
+    "electron": "^43.1.0",
+    "esbuild": "^0.28.1",
+    "sass": "^1.101.0",
+    "typescript": "^7.0.2"
   },
-  "engines": { "node": ">=22.0.0", "npm": ">=10.0.0" }
+  "engines": {
+    "node": ">=24.18.0 <25",
+    "npm": ">=10.0.0"
+  }
 }
