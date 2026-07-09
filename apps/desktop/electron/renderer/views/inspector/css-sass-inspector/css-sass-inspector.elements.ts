@@ -9,6 +9,8 @@ export function createCSSSassInspectorSurfaceElements(root: ParentNode): CSSSass
     cssSassInspectorSourcesEmpty: queryCSSSassInspectorElement(root, "[data-css-sass-inspector-sources-empty]", HTMLElement),
     cssSassInspectorRules: queryCSSSassInspectorElement(root, "[data-css-sass-inspector-rules]", HTMLUListElement),
     cssSassInspectorRulesEmpty: queryCSSSassInspectorElement(root, "[data-css-sass-inspector-rules-empty]", HTMLElement),
+    cssSassInspectorAuthoredMatches: queryCSSSassInspectorElement(root, "[data-css-sass-inspector-authored-matches]", HTMLUListElement),
+    cssSassInspectorAuthoredMatchesEmpty: queryCSSSassInspectorElement(root, "[data-css-sass-inspector-authored-matches-empty]", HTMLElement),
     cssSassInspectorSafety: queryCSSSassInspectorElement(root, "[data-css-sass-inspector-safety]", HTMLUListElement),
     cssSassInspectorApplyUnavailableAffordance: queryCSSSassInspectorElement(root, "[data-css-sass-inspector-apply-unavailable]", HTMLElement)
   };

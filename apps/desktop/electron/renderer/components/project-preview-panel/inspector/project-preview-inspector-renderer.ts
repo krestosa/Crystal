@@ -1,3 +1,4 @@
+import type { ProjectDomNode } from "../../../../../../../packages/core/project/dom/project-dom-snapshot.types";
 import type { ProjectDependency } from "../../../../../../../packages/core/project/graph/project-graph.types";
 import type { ProjectPreviewInspectorInput } from "../../../../../../../packages/core/project/preview-inspector/project-preview-inspector-selector";
 import { selectProjectPreviewInspectorViewModel } from "../../../../../../../packages/core/project/preview-inspector/project-preview-inspector-selector";
@@ -6,10 +7,14 @@ import type { ProjectPreviewInspectorSelectedNodeDetails, ProjectPreviewInspecto
 import type { ProjectDomAttribute, ProjectDomSourceLocation } from "../../../../../../../packages/core/project/dom/project-dom-snapshot.types";
 import type { ProjectPreviewSelectedNodeAttribute } from "../../../../../../../packages/core/project/preview-selection/project-preview-selection.types";
 import {
+  createAuthoredStyleSnapshotNodePreviewFromProjectDomNode,
+  createSelectedNodeAuthoredStyleMatchesPreview,
   createSelectedNodeStyleReadinessPreview,
   createStyleSourceInventoryPreview,
   createStyleSourceReferencePreview,
   detectStyleSourceKindFromPath,
+  type AuthoredStyleSnapshotNodePreview,
+  type SelectedNodeAuthoredStyleMatchesPreview,
   type SelectedNodeStyleReadinessPreview,
   type StyleSourceReferencePreview,
   type StyleSourceStatus
@@ -35,8 +40,11 @@ export function renderProjectPreviewInspector(elements: ProjectPreviewInspectorR
     inspector: viewModel,
     snapshotVersion: input.domSnapshot.currentDomSnapshot?.id ?? "unknown"
   });
+  const cssSassReadinessPreview = selectCSSSassInspectorReadinessPreview(input, editableInspectorViewModel.readinessPreview);
+  const authoredMatchesPreview = selectCSSSassInspectorAuthoredMatchesPreview(input, cssSassReadinessPreview);
   const cssSassInspectorViewModel = createCSSSassInspectorSurfaceViewModel({
-    readinessPreview: selectCSSSassInspectorReadinessPreview(input, editableInspectorViewModel.readinessPreview)
+    readinessPreview: cssSassReadinessPreview,
+    authoredMatchesPreview
   });
 
   elements.inspectorStatus.textContent = viewModel.status;
@@ -72,6 +80,28 @@ function selectCSSSassInspectorReadinessPreview(
     hasDomSnapshot: input.domSnapshot.status === "ready" && !!input.domSnapshot.currentDomSnapshot,
     blockedReason: resolveCSSSassInspectorBlockedReason(input, styleSources),
     safetyNotes: ["CSS/Sass Inspector read-only visual surface consumes Phase 8A previews without cascade or computed style inspection."]
+  });
+}
+
+function selectCSSSassInspectorAuthoredMatchesPreview(
+  input: ProjectPreviewInspectorInput,
+  readinessPreview: SelectedNodeStyleReadinessPreview
+): SelectedNodeAuthoredStyleMatchesPreview {
+  const selectedNodePath = readinessPreview.selectedNodePath || input.previewSelection.mappedSnapshotPath || input.previewSelection.selectedNode?.snapshotPath || "";
+  const snapshotNode = input.domSnapshot.currentDomSnapshot && selectedNodePath
+    ? findProjectDomNodeBySnapshotPath(input.domSnapshot.currentDomSnapshot.rootNode, selectedNodePath)
+    : null;
+  const snapshotNodePreview = snapshotNode ? createAuthoredStyleSnapshotNodePreviewFromProjectDomNode(snapshotNode) : null;
+
+  return createSelectedNodeAuthoredStyleMatchesPreview({
+    matchingId: createStableId("authored-style-matches", readinessPreview.targetRelativePath || "missing-target", selectedNodePath || "missing-selection"),
+    selectedNodePath,
+    targetRelativePath: readinessPreview.targetRelativePath,
+    readinessPreview,
+    snapshotNodePreview,
+    rulePreviews: [],
+    blockedReason: resolveAuthoredStyleMatchesBlockedReason(input, readinessPreview, snapshotNodePreview),
+    safetyNotes: ["Phase 8C renderer passes DOM Snapshot node data only; source text is not read by the renderer surface."]
   });
 }
 
@@ -123,6 +153,28 @@ function resolveCSSSassInspectorBlockedReason(input: ProjectPreviewInspectorInpu
   if (input.previewSelection.mappingStatus !== "matched") return "CSS/Sass Inspector requires a trusted Preview selection mapped to a DOM Snapshot node.";
   if (sources.length === 0) return undefined;
   return undefined;
+}
+
+function resolveAuthoredStyleMatchesBlockedReason(
+  input: ProjectPreviewInspectorInput,
+  readinessPreview: SelectedNodeStyleReadinessPreview,
+  snapshotNodePreview: AuthoredStyleSnapshotNodePreview | null
+): string | undefined {
+  if (!input.preview.target) return "Authored style matching requires a Preview target.";
+  if (!input.domSnapshot.currentDomSnapshot) return "Authored style matching requires a DOM Snapshot.";
+  if (input.previewSelection.mappingStatus !== "matched") return "Authored style matching requires trusted Preview selection mapping.";
+  if (!snapshotNodePreview) return "Selected DOM Snapshot node was not found.";
+  if (readinessPreview.status === "blocked") return readinessPreview.blockedReason ?? "Style readiness is blocked for the selected node.";
+  return undefined;
+}
+
+function findProjectDomNodeBySnapshotPath(node: ProjectDomNode, snapshotPath: string): ProjectDomNode | null {
+  if (node.snapshotPath === snapshotPath) return node;
+  for (const child of node.children) {
+    const match = findProjectDomNodeBySnapshotPath(child, snapshotPath);
+    if (match) return match;
+  }
+  return null;
 }
 
 function createStableId(prefix: string, ...parts: readonly string[]): string {

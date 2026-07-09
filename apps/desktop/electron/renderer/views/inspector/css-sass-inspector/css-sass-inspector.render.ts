@@ -1,14 +1,17 @@
 const CSS_SASS_INSPECTOR_RULE_PREVIEW_EMPTY_COPY = "Rule preview unavailable — source text not provided";
-const CSS_SASS_INSPECTOR_COMPACT_MESSAGE = "Phase 8A inventory only. Writes, cascade, computed styles, refresh, undo/redo, and DOM mutation remain blocked.";
+const CSS_SASS_INSPECTOR_AUTHORED_SECTION_LABEL = "Authored matches";
+const CSS_SASS_INSPECTOR_AUTHORED_EMPTY_COPY = "No authored matches from DOM Snapshot";
+const CSS_SASS_INSPECTOR_COMPACT_MESSAGE = "Phase 8C candidate match only. No cascade, computed styles, writes, refresh, undo/redo, iframe DOM, or DOM mutation.";
 const CSS_SASS_INSPECTOR_COMPACT_SAFETY_NOTES = [
-  "No real cascade is calculated",
-  "No computed styles are read",
+  "Candidate match only — no cascade",
+  "Computed styles unavailable",
   "No Preview DOM mutation occurs",
   "No write IPC exists",
-  "Apply remains unavailable"
+  "Apply unavailable"
 ] as const;
 
 import type {
+  CSSSassInspectorAuthoredMatchSection,
   CSSSassInspectorRuleSection,
   CSSSassInspectorSourceSection,
   CSSSassInspectorSurfaceElements,
@@ -30,12 +33,14 @@ export function renderCSSSassInspectorSurface(elements: CSSSassInspectorSurfaceE
   renderReadiness(elements.cssSassInspectorReadiness, viewModel);
   renderSources(elements, viewModel.sourceSections);
   renderRules(elements, viewModel.ruleSections);
+  renderAuthoredMatches(elements, viewModel);
   renderSafety(elements.cssSassInspectorSafety, viewModel);
 }
 
 function renderReadiness(container: HTMLDListElement, model: CSSSassInspectorSurfaceViewModel): void {
   container.replaceChildren(
     createDetailRow("Authored styles", model.sourceSummary.canInspectAuthoredStyles ? "available" : "unavailable"),
+    createDetailRow("Candidate matches", createCandidateSummary(model)),
     createDetailRow("Computed styles", "unavailable"),
     createDetailRow("Apply", "unavailable"),
     createDetailRow("Selected node path", model.selectedNodePath),
@@ -95,6 +100,41 @@ function createRuleItem(rule: CSSSassInspectorRuleSection): HTMLLIElement {
   return item;
 }
 
+function renderAuthoredMatches(elements: CSSSassInspectorSurfaceElements, model: CSSSassInspectorSurfaceViewModel): void {
+  const sections = model.authoredMatchSections;
+  elements.cssSassInspectorAuthoredMatches.setAttribute("aria-label", CSS_SASS_INSPECTOR_AUTHORED_SECTION_LABEL);
+  elements.cssSassInspectorAuthoredMatchesEmpty.hidden = sections.length > 0;
+  elements.cssSassInspectorAuthoredMatchesEmpty.textContent = model.authoredMatchesPreview?.status === "blocked"
+    ? model.authoredMatchesPreview.blockedReason ?? "Authored style matching blocked."
+    : CSS_SASS_INSPECTOR_AUTHORED_EMPTY_COPY;
+  elements.cssSassInspectorAuthoredMatches.replaceChildren(...sections.map(createAuthoredMatchItem));
+}
+
+function createAuthoredMatchItem(section: CSSSassInspectorAuthoredMatchSection): HTMLLIElement {
+  const item = document.createElement("li");
+  item.className = "crystal-css-sass-inspector__authored-match";
+  item.title = section.blockedReason;
+
+  const heading = document.createElement("span");
+  heading.className = "crystal-css-sass-inspector__authored-match-label";
+  heading.textContent = `${section.sourceId} · ${section.status} · Apply unavailable`;
+
+  const selectors = document.createElement("ul");
+  selectors.className = "crystal-css-sass-inspector__selectors";
+  selectors.append(...section.selectorLabels.map(createCodeItem));
+
+  const evidence = document.createElement("ul");
+  evidence.className = "crystal-css-sass-inspector__authored-match-evidence";
+  evidence.append(...section.evidence.slice(0, 4).map(createTextItem));
+
+  const declarations = document.createElement("ul");
+  declarations.className = "crystal-css-sass-inspector__declarations";
+  declarations.append(...section.declarations.map(createDeclarationItem));
+
+  item.append(heading, selectors, evidence, declarations);
+  return item;
+}
+
 function renderSafety(container: HTMLUListElement, model: CSSSassInspectorSurfaceViewModel): void {
   container.setAttribute("aria-label", model.safetyNotes.join(" · "));
   container.title = model.safetyNotes.join(" · ");
@@ -123,10 +163,21 @@ function createCodeItem(value: string): HTMLLIElement {
   return item;
 }
 
+function createTextItem(value: string): HTMLLIElement {
+  const item = document.createElement("li");
+  item.textContent = value;
+  return item;
+}
+
 function createSafetyItem(value: string): HTMLLIElement {
   const item = document.createElement("li");
   item.textContent = value;
   return item;
+}
+
+function createCandidateSummary(model: CSSSassInspectorSurfaceViewModel): string {
+  const summary = model.authoredMatchesSummary;
+  return `${summary.matchedCandidateCount} matched · ${summary.unsupportedCandidateCount} unsupported · ${summary.notMatchedCandidateCount} not matched · ${summary.totalCandidateCount} total`;
 }
 
 function createCompactSourceLabel(source: CSSSassInspectorSourceSection): string {

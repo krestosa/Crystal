@@ -158,7 +158,8 @@ export function runValidationSystemMetaChecks(options = {}) {
 
   for (const criticalValidator of [
     "scripts/validate-guided-docs.mjs",
-    "scripts/validate-css-sass-inspector-surface.mjs"
+    "scripts/validate-css-sass-inspector-surface.mjs",
+    "scripts/validate-authored-style-matching.mjs"
   ]) {
     const text = readFile(criticalValidator);
     check(text.includes("finishValidation"), `${criticalValidator} must call finishValidation.`);

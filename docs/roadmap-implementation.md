@@ -388,13 +388,51 @@ Still out of scope:
 - DOM mutation
 - Apply enablement
 
+### Phase 8C — Authored Style Matching over DOM Snapshot
+
+Covered:
+
+- DOM Snapshot node normalization for authored style matching
+- read-only authored selector match preview contracts
+- read-only authored rule candidate match contracts
+- selected-node authored style matches preview
+- support for simple element, class, id, attribute, and single-node compound selectors
+- explicit unsupported-selector states for combinators, pseudo selectors, universal selectors, and complex selectors
+- CSS/Sass Inspector candidate match summary and compact read-only candidate list
+- validation guarding that Phase 8C remains DOM Snapshot only and Apply-blocked
+- `validate:authored-style-matching` wired into quick validation
+
+Phase 8C boundary: Authored Style Matching over DOM Snapshot only. No real cascade is calculated. No computed styles are read. No document.styleSheets or CSSOM is used. No iframe internals are read. No live Preview DOM matching is performed. No source files are written. No patch apply is available. No write IPC exists. Apply remains unavailable. No contenteditable is used. No undo/redo execution runs. Dirty-state is not persisted. No refresh execution runs. No Preview DOM mutation occurs.
+
+Still out of scope:
+
+- real cascade calculation
+- specificity resolution beyond textual preview
+- computed style inspection
+- CSSOM
+- live Preview DOM matching
+- selector engine for complex selectors
+- Sass nesting resolution
+- media/supports/container evaluation
+- style editing
+- class management
+- source writes
+- patch apply
+- write IPC
+- save/apply workflow
+- undo/redo execution
+- dirty-state persistence
+- refresh execution
+- DOM mutation
+- Apply enablement
+
 ### Cross-cutting validation hardening and strict reporter
 
 Covered:
 
 - strict local quick validation runner with granular per-check reporting
 - PASS/FAIL/SKIPPED final summary
-- 27-check suite including Validation System meta-validator
+- 28-check suite including Validation System meta-validator and Authored Style Matching validator
 - direct-node execution for known Node scripts while preserving npm script contracts
 - Windows-safe npm fallback and command-execution failure reporting
 - render modes for unicode, ascii/plain, raw, json-summary, compact, verbose, no-progress, color/no-color
@@ -436,35 +474,26 @@ Still out of scope:
 
 ## Recommended next module
 
-### Authored Style Matching over DOM Snapshot
+### Responsive Design and Layout Tools
 
 Recommended scope:
 
-- use Phase 8A Style Engine source inventory and Phase 8B CSS/Sass Inspector surface as inputs
-- match selected DOM Snapshot nodes against authored selector previews using DOM Snapshot data only
-- add read-only candidate match models for authored rules
-- surface candidate authored-style matches in the CSS/Sass Inspector
-- classify unsupported selectors explicitly
-- keep unmatched and not-evaluated states visible
-- keep source-text-unavailable and inventory-unavailable states explicit
-- do not calculate real cascade
-- do not read computed styles
-- do not use document.styleSheets or CSSOM
-- do not read iframe internals
-- do not evaluate against live Preview DOM
-- do not mutate Preview DOM
+- keep scope read-only/planning until write runtime, patch apply, write IPC, dirty-state persistence, refresh execution, and undo/redo execution exist
+- use Phase 8A Style Engine source inventory, Phase 8B CSS/Sass Inspector surface, and Phase 8C DOM Snapshot authored candidate matching only as read-only inputs
+- inspect responsive/layout metadata from Project Graph, DOM Snapshot, textual authored style previews, and safe renderer state only
+- avoid real cascade, computed style reads, document.styleSheets or CSSOM, iframe internals, live Preview DOM matching, and Preview DOM mutation
+- keep unsupported and not-evaluated states visible
 - do not write source files
 - do not apply patches
 - do not add write IPC
 - keep Apply unavailable
 
-Phase 8C should move the CSS/Sass Inspector from inventory-only toward read-only authored-style candidate matching. It must use DOM Snapshot data and textual selector previews only. Real cascade, computed styles, live DOM inspection, style editing, patch application, write IPC, dirty-state persistence, refresh execution, and undo/redo execution remain future-only.
+Responsive Design and Layout Tools should remain a read-only/planning module unless a later write-runtime phase explicitly lands source writes, patch application, write IPC, dirty-state persistence, refresh execution, and undo/redo execution.
 
 ## Not implemented yet
 
 The following roadmap items remain intentionally pending:
 
-- authored style matching against DOM Snapshot nodes
 - real source mutation command runtime
 - source mutation service in main/core, not renderer
 - source patch application and reversible patch persistence
@@ -513,7 +542,7 @@ The complete roadmap is documented in [`docs/full-product-roadmap.md`](./full-pr
 9. ~~Editable Inspector read-only draft surface.~~ Implemented as Phase 7B disabled surface.
 10. ~~Style Engine source inventory foundation.~~ Implemented as Phase 8A read-only inventory foundation.
 11. ~~CSS/Sass Inspector read-only visual surface.~~ Implemented as Phase 8B read-only surface.
-12. Authored Style Matching over DOM Snapshot.
+12. ~~Authored Style Matching over DOM Snapshot.~~ Implemented as Phase 8C read-only candidate matching foundation.
 13. Responsive Design and Layout Tools.
 14. Components, snippets, and reusable blocks.
 15. Assets, fonts, SVG, and media management.
@@ -534,6 +563,12 @@ For iterative validation after dependencies are already installed, run:
 
 ```bash
 npm run validate:local:quick
+```
+
+For Phase 8C-specific validation, run:
+
+```bash
+npm run validate:authored-style-matching
 ```
 
 For Phase 8B-specific validation, run:

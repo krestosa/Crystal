@@ -1,4 +1,5 @@
 import type {
+  SelectedNodeAuthoredStyleMatchesPreview,
   SelectedNodeStyleReadinessPreview,
   StyleDeclarationPreview,
   StyleRulePreview,
@@ -7,11 +8,12 @@ import type {
   StyleSourceStatus
 } from "../../../../../../../packages/core/style-engine";
 
-export type CSSSassInspectorSurfaceStatus = "empty" | "inventory-only" | "blocked" | "unsupported";
+export type CSSSassInspectorSurfaceStatus = "empty" | "inventory-only" | "authored-matching" | "blocked" | "unsupported";
 
 export interface CSSSassInspectorSurfaceInput {
   readonly readinessPreview?: SelectedNodeStyleReadinessPreview | null;
   readonly rulePreviews?: readonly StyleRulePreview[];
+  readonly authoredMatchesPreview?: SelectedNodeAuthoredStyleMatchesPreview | null;
 }
 
 export interface CSSSassInspectorSourceSummary {
@@ -25,6 +27,16 @@ export interface CSSSassInspectorSourceSummary {
   readonly canInspectAuthoredStyles: boolean;
   readonly canInspectComputedStyles: false;
   readonly canEditStyles: false;
+  readonly canApply: false;
+}
+
+export interface CSSSassInspectorAuthoredMatchesSummary {
+  readonly status: SelectedNodeAuthoredStyleMatchesPreview["status"];
+  readonly matchedCandidateCount: number;
+  readonly unsupportedCandidateCount: number;
+  readonly notMatchedCandidateCount: number;
+  readonly totalCandidateCount: number;
+  readonly canInspectComputedStyles: false;
   readonly canApply: false;
 }
 
@@ -55,6 +67,20 @@ export interface CSSSassInspectorRuleSection {
   readonly safetyNotes: readonly string[];
 }
 
+export interface CSSSassInspectorAuthoredMatchSection {
+  readonly candidateId: string;
+  readonly ruleId: string;
+  readonly sourceId: string;
+  readonly status: SelectedNodeAuthoredStyleMatchesPreview["candidates"][number]["status"];
+  readonly selectorLabels: readonly string[];
+  readonly declarationLabels: readonly string[];
+  readonly declarations: readonly StyleDeclarationPreview[];
+  readonly evidence: readonly string[];
+  readonly blockedReason: string;
+  readonly canEdit: false;
+  readonly canApply: false;
+}
+
 export interface CSSSassInspectorApplyAffordance {
   readonly label: "Apply unavailable — style write runtime not enabled";
   readonly ariaDisabled: true;
@@ -69,14 +95,17 @@ export interface CSSSassInspectorSurfaceViewModel {
   readonly selectedNodePath: string;
   readonly targetRelativePath: string;
   readonly sourceSummary: CSSSassInspectorSourceSummary;
+  readonly authoredMatchesSummary: CSSSassInspectorAuthoredMatchesSummary;
   readonly sourceSections: readonly CSSSassInspectorSourceSection[];
   readonly ruleSections: readonly CSSSassInspectorRuleSection[];
+  readonly authoredMatchSections: readonly CSSSassInspectorAuthoredMatchSection[];
   readonly safetyNotes: readonly string[];
   readonly blockedReason: string;
   readonly message: string;
   readonly applyAffordance: CSSSassInspectorApplyAffordance;
   readonly sourceInventoryPreview: SelectedNodeStyleReadinessPreview["inventoryPreview"] | null;
   readonly styleReadinessPreview: SelectedNodeStyleReadinessPreview | null;
+  readonly authoredMatchesPreview: SelectedNodeAuthoredStyleMatchesPreview | null;
 }
 
 export interface CSSSassInspectorSurfaceElements {
@@ -87,6 +116,8 @@ export interface CSSSassInspectorSurfaceElements {
   readonly cssSassInspectorSourcesEmpty: HTMLElement;
   readonly cssSassInspectorRules: HTMLUListElement;
   readonly cssSassInspectorRulesEmpty: HTMLElement;
+  readonly cssSassInspectorAuthoredMatches: HTMLUListElement;
+  readonly cssSassInspectorAuthoredMatchesEmpty: HTMLElement;
   readonly cssSassInspectorSafety: HTMLUListElement;
   readonly cssSassInspectorApplyUnavailableAffordance: HTMLElement;
 }
