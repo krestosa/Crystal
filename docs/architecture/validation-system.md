@@ -24,6 +24,9 @@ Crystal has several features whose safest behavior is the absence of a shortcut:
 
 Validation is script-based and uses the existing Node toolchain. The root scripts cover build, typecheck, structure, Project Graph, watcher behavior, Preview, DOM Snapshot, Preview Selection, Preview Inspector, Design Canvas, Visual Selection Overlay, HTML Element Library, Source Patch Preview, History Foundation, Design Editing Preflight, Inspector Editing Foundation, Editable Inspector Surface, Style Engine Foundation, UI flow, Electron diagnostics, and architecture docs.
 
+- Phase 7A — Editable Inspector draft/intent foundation: validates draft and intent contracts only; Apply remains blocked and no write runtime, patch apply, dirty persistence, refresh execution, undo/redo execution, DOM mutation, or contenteditable behavior is introduced.
+- Phase 7B — Editable Inspector read-only draft surface: validates that the renderer surface remains read-only/disabled, Apply remains unavailable, and no Preview DOM mutation or write IPC is introduced.
+
 Phase 8A boundary: Style Engine read-only source inventory foundation only. No CSS/Sass Inspector visual surface is added. No real cascade is calculated. No computed styles are read. No style editing is implemented. No source files are written. No patch apply is available. No write IPC exists. Apply remains unavailable. No contenteditable is used. No undo/redo execution runs. Dirty-state is not persisted. No refresh execution runs. No Preview DOM mutation occurs.
 
 | Implemented | Blocked | Future |
