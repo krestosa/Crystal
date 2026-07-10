@@ -1,109 +1,31 @@
-import { spawnSync } from "node:child_process";
+import { fullValidationChecks } from "./validation/validation-suite.mjs";
+import { parseValidationRunnerFlags, runValidationSuite } from "./validation/validation-runner.mjs";
 
-const withDev = process.argv.slice(2).includes("--with-dev");
-
-function resolveInvocation(command, args) {
-  if (process.platform !== "win32" || (command !== "npm" && command !== "npx")) {
-    return { command, args };
-  }
-
-  return {
-    command: "cmd.exe",
-    args: ["/d", "/s", "/c", [command, ...args].join(" ")]
-  };
-}
-
-const validationSteps = [
-  { label: "npm install", command: "npm", args: ["install"] },
-  { label: "npm run build", command: "npm", args: ["run", "build"] },
-  { label: "npm run typecheck", command: "npm", args: ["run", "typecheck"] },
-  { label: "npm run validate:structure", command: "npm", args: ["run", "validate:structure"] },
-  { label: "npm run validate:project-graph", command: "npm", args: ["run", "validate:project-graph"] },
-  { label: "npm run validate:project-watch", command: "npm", args: ["run", "validate:project-watch"] },
-  { label: "npm run validate:preview", command: "npm", args: ["run", "validate:preview"] },
-  { label: "npm run validate:dom-snapshot", command: "npm", args: ["run", "validate:dom-snapshot"] },
-  { label: "npm run validate:preview-selection", command: "npm", args: ["run", "validate:preview-selection"] },
-  { label: "npm run validate:preview-inspector", command: "npm", args: ["run", "validate:preview-inspector"] },
-  { label: "npm run validate:design-canvas", command: "npm", args: ["run", "validate:design-canvas"] },
-  { label: "npm run validate:visual-selection-overlay", command: "npm", args: ["run", "validate:visual-selection-overlay"] },
-  { label: "npm run validate:html-element-library", command: "npm", args: ["run", "validate:html-element-library"] },
-  { label: "npm run validate:source-patch-preview", command: "npm", args: ["run", "validate:source-patch-preview"] },
-  { label: "npm run validate:ui-flow", command: "npm", args: ["run", "validate:ui-flow"] },
-  { label: "watcher filesystem validation", command: "npm", args: ["run", "validate:local:watch"] },
-  { label: "npm run doctor:electron", command: "npm", args: ["run", "doctor:electron"] }
-];
+const argv = process.argv.slice(2);
+const withDev = argv.includes("--with-dev");
+const flags = parseValidationRunnerFlags(argv);
+const checks = [...fullValidationChecks];
 
 if (withDev) {
-  validationSteps.push({ label: "npm run dev", command: "npm", args: ["run", "dev"] });
-}
-
-const results = [];
-const startedAt = Date.now();
-
-console.log("Crystal local validation");
-console.log("");
-
-if (withDev) {
-  console.log("The --with-dev option is enabled.");
-  console.log("Electron will open during npm run dev. Close the app manually to let validation finish.");
-  console.log("");
-}
-
-for (const step of validationSteps) {
-  const started = Date.now();
-  const renderedCommand = renderCommand(step.command, step.args);
-
-  console.log(`RUN  ${renderedCommand}`);
-
-  const invocation = resolveInvocation(step.command, step.args);
-  const result = spawnSync(invocation.command, invocation.args, {
-    stdio: "inherit",
-    shell: false,
-    windowsHide: true
+  checks.push({
+    id: "dev-launch",
+    label: "Development Electron launch",
+    category: "doctor",
+    npmScript: "dev",
+    required: true,
+    executionMode: "npm",
+    directScriptPath: null,
+    includeInLocalQuick: false,
+    includeInFullValidation: false,
+    documentationGroup: "Manual environment",
+    displayCommand: "npm run dev",
+    commandMode: "npm"
   });
-
-  const durationMs = Date.now() - started;
-  const exitCode = result.status ?? 1;
-
-  if (exitCode !== 0) {
-    results.push({ ...step, status: "FAIL", durationMs, exitCode });
-    console.log("");
-    console.error(`FAIL ${step.label} (${formatDuration(durationMs)})`);
-    printSummary(results, Date.now() - startedAt, false);
-    process.exit(1);
-  }
-
-  results.push({ ...step, status: "PASS", durationMs, exitCode: 0 });
-  console.log(`PASS ${step.label} (${formatDuration(durationMs)})`);
-  console.log("");
 }
 
-printSummary(results, Date.now() - startedAt, true);
-process.exit(0);
-
-function renderCommand(command, args) {
-  return [command, ...args].join(" ");
-}
-
-function formatDuration(durationMs) {
-  if (durationMs < 1000) return `${durationMs}ms`;
-  return `${(durationMs / 1000).toFixed(1)}s`;
-}
-
-function printSummary(results, totalDurationMs, passed) {
-  console.log("Result:");
-  for (const result of results) {
-    const line = `${result.status} ${result.label} (${formatDuration(result.durationMs)})`;
-    if (result.status === "PASS") console.log(line);
-    else console.error(line);
-  }
-
-  console.log("");
-
-  if (passed) {
-    console.log(`All local validation checks passed. Total duration: ${formatDuration(totalDurationMs)}.`);
-  } else {
-    const failed = results.find((result) => result.status === "FAIL");
-    console.error(`Local validation failed at: ${failed?.label ?? "unknown step"}. Total duration: ${formatDuration(totalDurationMs)}.`);
-  }
-}
+runValidationSuite(checks, {
+  title: "Crystal full local validation",
+  suiteName: "local",
+  failFast: true,
+  ...flags
+});

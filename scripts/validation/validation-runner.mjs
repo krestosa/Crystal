@@ -1,6 +1,5 @@
 import fs from "node:fs";
 import path from "node:path";
-import { spawnSync } from "node:child_process";
 import { performance } from "node:perf_hooks";
 import {
   createValidationResult,
@@ -15,8 +14,9 @@ import {
   VALIDATION_PASS_STATUS,
   VALIDATION_SKIPPED_STATUS
 } from "./validation-result.mjs";
-import { extractIssueLines, formatCommand } from "./validation-format.mjs";
+import { extractIssueLines } from "./validation-format.mjs";
 import { formatValidationCommand, ValidationReporter } from "./validation-reporter.mjs";
+import { formatProcessCommand, runExecutable, runNpmScript } from "../tooling/process-runner.mjs";
 
 export function parseValidationRunnerFlags(argv = process.argv.slice(2)) {
   return {
@@ -49,7 +49,7 @@ export function runValidationSuite(checks, options = {}) {
   for (let index = 0; index < checks.length; index += 1) {
     const check = checks[index];
     reporter.startStep(check, index, checks.length);
-    const result = runValidationCheck(check, packageJson, options);
+    const result = runValidationCheck(check, packageJson, { ...options, cwd });
     results.push(result);
     reporter.completeStep(result, index, checks.length);
 
@@ -63,7 +63,7 @@ export function runValidationSuite(checks, options = {}) {
           status: VALIDATION_SKIPPED_STATUS,
           durationMs: 0,
           command: formatValidationCommand(skippedCheck),
-          executedCommand: formatExecutedCommand(skippedCheck),
+          executedCommand: formatValidationCommand(skippedCheck),
           executionMode: "skipped",
           exitCode: null,
           stdout: "",
@@ -84,15 +84,12 @@ export function runValidationSuite(checks, options = {}) {
 
   const hasFail = results.some((result) => result.status === VALIDATION_FAIL_STATUS);
   const hasSkipped = results.some((result) => result.status === VALIDATION_SKIPPED_STATUS);
-  if (hasFail || (hasSkipped && !options.allowSkips)) process.exitCode = 1;
-  else process.exitCode = 0;
-
+  process.exitCode = hasFail || (hasSkipped && !options.allowSkips) ? 1 : 0;
   return results;
 }
 
 function runValidationCheck(check, packageJson, options) {
   const commandText = formatValidationCommand(check);
-  const executedCommandText = formatExecutedCommand(check);
   const start = performance.now();
 
   if (check.npmScript && !packageJson.scripts?.[check.npmScript]) {
@@ -103,7 +100,7 @@ function runValidationCheck(check, packageJson, options) {
       status: check.required === false ? VALIDATION_SKIPPED_STATUS : VALIDATION_FAIL_STATUS,
       durationMs: performance.now() - start,
       command: commandText,
-      executedCommand: executedCommandText,
+      executedCommand: commandText,
       executionMode: check.executionMode ?? inferExecutionMode(check),
       exitCode: null,
       stdout: "",
@@ -114,7 +111,7 @@ function runValidationCheck(check, packageJson, options) {
     });
   }
 
-  if (check.directScriptPath && !fs.existsSync(path.join(options.cwd ?? process.cwd(), check.directScriptPath))) {
+  if (check.directScriptPath && !fs.existsSync(path.join(options.cwd, check.directScriptPath))) {
     return createValidationResult({
       id: check.id,
       label: check.label,
@@ -122,25 +119,20 @@ function runValidationCheck(check, packageJson, options) {
       status: VALIDATION_FAIL_STATUS,
       durationMs: performance.now() - start,
       command: commandText,
-      executedCommand: executedCommandText,
+      executedCommand: commandText,
       executionMode: check.executionMode ?? inferExecutionMode(check),
       exitCode: null,
       stdout: "",
       stderr: `Missing direct Node script: ${check.directScriptPath}`,
       errors: [`Missing direct Node script: ${check.directScriptPath}`],
-      hints: ["Restore the direct script file or change the suite entry to use npm fallback explicitly."],
+      hints: ["Restore the direct script file or change the catalog entry explicitly."],
       failureType: VALIDATION_FAILURE_MISSING_DIRECT_SCRIPT
     });
   }
 
-  const invocation = resolveCheckInvocation(check);
-  const execution = spawnSync(invocation.command, invocation.args, {
-    cwd: options.cwd ?? process.cwd(),
-    encoding: "utf8",
-    shell: false,
-    windowsHide: true
-  });
+  const execution = executeCheck(check, options.cwd);
   const durationMs = performance.now() - start;
+  const executedCommand = formatProcessCommand(execution.command, execution.args);
 
   if (execution.error) {
     return createValidationResult({
@@ -150,19 +142,19 @@ function runValidationCheck(check, packageJson, options) {
       status: VALIDATION_FAIL_STATUS,
       durationMs,
       command: commandText,
-      executedCommand: formatCommand(invocation.command, invocation.args),
+      executedCommand,
       executionMode: check.executionMode ?? inferExecutionMode(check),
       exitCode: null,
-      stdout: execution.stdout ?? "",
-      stderr: `${execution.stderr ?? ""}\n${execution.error.message}`.trim(),
+      stdout: execution.stdout,
+      stderr: `${execution.stderr}\n${execution.error.message}`.trim(),
       errors: [execution.error.message],
-      hints: ["Confirm Node can spawn the configured validation command from this shell."],
+      hints: ["Confirm the configured executable exists and can run without a shell wrapper."],
       failureType: VALIDATION_FAILURE_COMMAND_EXECUTION
     });
   }
 
   const exitCode = execution.status;
-  const combinedOutput = `${execution.stdout ?? ""}\n${execution.stderr ?? ""}`;
+  const combinedOutput = `${execution.stdout}\n${execution.stderr}`;
   const errors = exitCode === 0 ? [] : extractIssueLines(combinedOutput);
 
   return createValidationResult({
@@ -172,63 +164,33 @@ function runValidationCheck(check, packageJson, options) {
     status: exitCode === 0 ? VALIDATION_PASS_STATUS : VALIDATION_FAIL_STATUS,
     durationMs,
     command: commandText,
-    executedCommand: formatCommand(invocation.command, invocation.args),
+    executedCommand,
     executionMode: check.executionMode ?? inferExecutionMode(check),
     exitCode,
-    stdout: execution.stdout ?? "",
-    stderr: execution.stderr ?? "",
+    stdout: execution.stdout,
+    stderr: execution.stderr,
     errors: exitCode === 0 ? [] : errors.length > 0 ? errors : [`${commandText} exited with code ${exitCode}`],
     hints: [],
     failureType: exitCode === 0 ? VALIDATION_FAILURE_NONE : VALIDATION_FAILURE_VALIDATOR
   });
 }
 
-function resolveCheckInvocation(check) {
+function executeCheck(check, cwd) {
+  if (check.executionMode === "npm" || check.commandMode === "npm") {
+    return runNpmScript(check.npmScript, [], { cwd });
+  }
   if (check.command && Array.isArray(check.args)) {
-    return {
-      command: check.command,
-      args: check.args
-    };
+    return runExecutable(check.command, check.args, { cwd });
   }
-
-  if (check.commandMode === "npm" || check.npmScript) return resolveNpmInvocation(check.npmScript);
-
   return {
-    command: check.command,
-    args: check.args ?? []
+    command: String(check.command ?? ""),
+    args: check.args ?? [],
+    status: null,
+    signal: null,
+    stdout: "",
+    stderr: "",
+    error: new Error(`Validation check ${check.id} has no executable invocation.`)
   };
-}
-
-function resolveNpmInvocation(scriptName) {
-  const npmExecPath = process.env.npm_execpath;
-
-  if (npmExecPath) {
-    return {
-      command: process.execPath,
-      args: [npmExecPath, "run", scriptName]
-    };
-  }
-
-  if (process.platform === "win32") {
-    return {
-      command: "cmd.exe",
-      args: ["/d", "/s", "/c", "npm", "run", scriptName]
-    };
-  }
-
-  return {
-    command: "npm",
-    args: ["run", scriptName]
-  };
-}
-
-function formatExecutedCommand(check) {
-  if (check.command && Array.isArray(check.args)) return formatCommand(check.command, check.args);
-  if (check.commandMode === "npm" || check.npmScript) {
-    const invocation = resolveNpmInvocation(check.npmScript);
-    return formatCommand(invocation.command, invocation.args);
-  }
-  return formatCommand(check.command, check.args ?? []);
 }
 
 function inferExecutionMode(check) {
