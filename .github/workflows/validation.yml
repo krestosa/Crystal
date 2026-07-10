@@ -13,6 +13,34 @@ permissions:
   contents: read
 
 jobs:
+  export-linux-node:
+    name: Export Linux Node runtime
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node from .nvmrc
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Locate installed Node distribution
+        shell: bash
+        run: echo "CRYSTAL_NODE_ROOT=$(dirname "$(dirname "$(command -v node)")")" >> "$GITHUB_ENV"
+
+      - name: Upload Linux Node distribution
+        uses: actions/upload-artifact@v4
+        with:
+          name: crystal-node-linux-${{ github.sha }}
+          path: ${{ env.CRYSTAL_NODE_ROOT }}
+          include-hidden-files: true
+          retention-days: 1
+
   validation:
     name: Windows validation
     runs-on: windows-latest
