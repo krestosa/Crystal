@@ -11,6 +11,8 @@
   ],
   "scripts": {
     "dev": "npm run build && electron dist/main/main.cjs",
+    "install:electron-runtime": "node scripts/install-electron-runtime.mjs",
+    "postinstall": "node scripts/install-electron-runtime.mjs",
     "build": "node scripts/build.mjs",
     "build:main": "node scripts/build-ts.mjs main",
     "build:preload": "node scripts/build-ts.mjs preload",

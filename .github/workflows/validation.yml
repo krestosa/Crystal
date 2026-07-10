@@ -38,9 +38,6 @@ jobs:
       - name: Install locked dependencies
         run: npm ci --foreground-scripts
 
-      - name: Install Electron runtime
-        run: npx --no-install install-electron
-
       - name: Validate project metadata
         run: npm run validate:project-metadata
 

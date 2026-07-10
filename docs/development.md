@@ -33,27 +33,23 @@ npm --version
 Install reproducibly with `npm ci --foreground-scripts`. Use `npm install` or `npm install --package-lock-only` only when intentionally resolving a direct dependency change. Metadata synchronization never resolves packages or rewrites transitive dependency nodes.
 <!-- crystal-generated:toolchain:end -->
 
-## Clean Electron install on Windows
+## Electron runtime installation
 
-Use this when Electron installs without its runtime binary, for example when these files are missing:
+A clean `npm ci` prepares the locked Electron runtime automatically through the root `postinstall` script. Use `npm ci --foreground-scripts` when install diagnostics must remain visible in the terminal.
 
-```txt
-node_modules/electron/path.txt
-node_modules/electron/dist/electron.exe
+The repository installer checks `node_modules/electron/path.txt` and the executable referenced by that file. If either is missing or `path.txt` is empty, it executes only the locked local installer at `node_modules/electron/install.js`, then verifies the runtime again.
+
+For an explicit repair without resolving dependencies again, run:
+
+```bash
+npm run install:electron-runtime
 ```
 
-Run from the repository root:
+`npm run doctor:electron` is diagnostic-only. It verifies the environment and runtime but never installs or modifies Electron.
 
-```powershell
-Remove-Item -Recurse -Force node_modules -ErrorAction SilentlyContinue
-Remove-Item -Recurse -Force "$env:LOCALAPPDATA\electron\Cache" -ErrorAction SilentlyContinue
-npm ci --foreground-scripts
-npx electron --version
-npm run doctor:electron
-npm run dev
-```
+`npm ci --ignore-scripts` and `npm_config_ignore_scripts` bypass the root `postinstall` guarantee and can leave the Electron package without a usable runtime. `ELECTRON_SKIP_BINARY_DOWNLOAD` also prevents installation and is treated as an error.
 
-`npm ci --foreground-scripts` is intentional. Electron downloads and prepares its runtime binary from its install script; running scripts in the foreground makes Electron install failures visible instead of hiding them behind npm output buffering.
+`node_modules/electron/path.txt` and the platform executable under `node_modules/electron/dist` are local installation outputs. They must never be committed.
 
 ## Electron diagnostics
 
@@ -196,7 +192,7 @@ Manual UI checks remain required only where there is not enough automation yet. 
 
 ## Dependency installation policy
 
-Use `npm ci` for reproducible local installation from the committed `package-lock.json`.
+Use `npm ci` for reproducible local installation from the committed `package-lock.json`. The root `postinstall` prepares the locked Electron runtime; `npm ci --foreground-scripts` exposes lifecycle output directly.
 
 Use `npm install` only when intentionally updating dependencies, such as refreshing the Electron/Node baseline. `package-lock.json` must remain versioned, must not be ignored, and must not be deleted.
 
