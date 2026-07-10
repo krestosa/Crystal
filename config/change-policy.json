@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "policies": [
+    {
+      "name": "documentation-only",
+      "branchPrefix": "docs/",
+      "allow": [
+        "docs/**",
+        "README.md"
+      ],
+      "denyExtensions": [
+        ".png",
+        ".jpg",
+        ".jpeg",
+        ".svg"
+      ]
+    },
+    {
+      "name": "tooling",
+      "branchPrefix": "tooling/",
+      "allow": [
+        ".github/**",
+        ".nvmrc",
+        "README.md",
+        "config/**",
+        "docs/**",
+        "package.json",
+        "package-lock.json",
+        "scripts/**",
+        "tests/**"
+      ],
+      "denyExtensions": []
+    }
+  ]
+}
