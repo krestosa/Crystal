@@ -13,10 +13,10 @@ permissions:
   contents: read
 
 jobs:
-  export-linux-node:
-    name: Export Linux Node runtime
+  export-linux-toolchain:
+    name: Export Linux validation toolchain
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
 
     steps:
       - name: Checkout repository
@@ -38,6 +38,20 @@ jobs:
         with:
           name: crystal-node-linux-${{ github.sha }}
           path: ${{ env.CRYSTAL_NODE_ROOT }}
+          include-hidden-files: true
+          retention-days: 1
+
+      - name: Install locked dependencies
+        run: npm ci --foreground-scripts
+
+      - name: Install Electron runtime
+        run: npx --no-install install-electron
+
+      - name: Upload Linux Electron package
+        uses: actions/upload-artifact@v4
+        with:
+          name: crystal-electron-linux-${{ github.sha }}
+          path: node_modules/electron
           include-hidden-files: true
           retention-days: 1
 
@@ -68,6 +82,9 @@ jobs:
 
       - name: Install locked dependencies
         run: npm ci --foreground-scripts
+
+      - name: Install Electron runtime
+        run: npx --no-install install-electron
 
       - name: Validate project metadata
         run: npm run validate:project-metadata
