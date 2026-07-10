@@ -6,6 +6,21 @@ const withDev = argv.includes("--with-dev");
 const flags = parseValidationRunnerFlags(argv);
 const checks = [...fullValidationChecks];
 
+const requiredFullValidationCommands = [
+  "npm run validate:design-canvas",
+  "npm run validate:visual-selection-overlay",
+  "npm run validate:html-element-library",
+  "npm run validate:source-patch-preview",
+  "npm run validate:ui-flow"
+];
+
+const catalogCommands = new Set(fullValidationChecks.map((check) => `npm run ${check.npmScript}`));
+for (const requiredCommand of requiredFullValidationCommands) {
+  if (!catalogCommands.has(requiredCommand)) {
+    throw new Error(`Full validation catalog is missing required command: ${requiredCommand}`);
+  }
+}
+
 if (withDev) {
   checks.push({
     id: "dev-launch",

@@ -5,6 +5,9 @@ import { replaceGeneratedBlock } from "./generated-blocks.mjs";
 import { validationCatalog, getGeneratedValidationScripts, getValidationCatalogStats } from "../validation/validation-suite.mjs";
 import { runExecutable } from "../tooling/process-runner.mjs";
 
+const DEPENDENCY_GROUPS = ["dependencies", "devDependencies", "optionalDependencies"];
+const MANAGED_DIRECT_DEPENDENCIES = new Set(["electron", "@types/node"]);
+
 const ROOT_METADATA_FIELDS = [
   "name",
   "version",
@@ -175,17 +178,60 @@ function synchronizeRootMetadata(packageJson, rootPackage) {
 
 function validateLockGraphCompatibility(_currentPackage, expectedPackage, packageLock, errors, hints) {
   const lockRoot = packageLock.packages?.[""] ?? {};
-  for (const group of ["dependencies", "devDependencies", "optionalDependencies"]) {
+  const resolutionHint = "Run npm install or npm install --package-lock-only to resolve the direct dependency change, then run npm run sync:project-metadata.";
+
+  for (const group of DEPENDENCY_GROUPS) {
     const lockedDirect = lockRoot[group] ?? {};
-    const expected = expectedPackage[group] ?? {};
-    for (const [name, range] of Object.entries(expected)) {
-      if (lockedDirect[name] === range) continue;
-      const installed = packageLock.packages?.[`node_modules/${name}`]?.version;
-      if (!installed || !safeSatisfies(installed, range)) {
-        errors.push(`${group}.${name} changed to ${range}, but package-lock.json does not contain a compatible installed package graph.`);
-        hints.push("Run npm install or npm install --package-lock-only to resolve the direct dependency change, then run npm run sync:project-metadata.");
+    const expectedDirect = expectedPackage[group] ?? {};
+    const names = new Set([...Object.keys(lockedDirect), ...Object.keys(expectedDirect)]);
+
+    for (const name of names) {
+      const expectedHas = Object.prototype.hasOwnProperty.call(expectedDirect, name);
+      const lockedHas = Object.prototype.hasOwnProperty.call(lockedDirect, name);
+      const expectedRange = expectedDirect[name];
+      const lockedRange = lockedDirect[name];
+      if (expectedHas && lockedHas && expectedRange === lockedRange) continue;
+
+      if (MANAGED_DIRECT_DEPENDENCIES.has(name) && expectedHas && lockedHas) {
+        const unsupportedReason = getUnsupportedDependencyRangeReason(expectedRange);
+        if (unsupportedReason) {
+          errors.push(`${group}.${name} uses unsupported dependency range ${JSON.stringify(expectedRange)}: ${unsupportedReason}.`);
+          hints.push(resolutionHint);
+          continue;
+        }
+
+        const installed = packageLock.packages?.[`node_modules/${name}`]?.version;
+        if (!installed || !satisfiesVersionRange(installed, expectedRange)) {
+          errors.push(`${group}.${name} changed to ${expectedRange}, but package-lock.json does not contain a compatible installed package graph.`);
+          hints.push(resolutionHint);
+        }
+        continue;
       }
+
+      if (expectedHas) {
+        const unsupportedReason = getUnsupportedDependencyRangeReason(expectedRange);
+        if (unsupportedReason) {
+          errors.push(`${group}.${name} uses unsupported dependency range ${JSON.stringify(expectedRange)}; run npm because metadata synchronization only manages electron and @types/node. Cause: ${unsupportedReason}.`);
+        } else if (!lockedHas) {
+          errors.push(`${group}.${name} is declared in package.json but missing from package-lock.json root metadata; metadata synchronization must not fabricate a dependency graph.`);
+        } else {
+          errors.push(`${group}.${name} differs between package.json (${expectedRange}) and package-lock.json (${lockedRange}); metadata synchronization only auto-manages electron and @types/node.`);
+        }
+      } else {
+        errors.push(`${group}.${name} remains in package-lock.json root metadata after removal from package.json; metadata synchronization must not leave an orphaned direct dependency graph.`);
+      }
+      hints.push(resolutionHint);
     }
+  }
+}
+
+function getUnsupportedDependencyRangeReason(range) {
+  if (typeof range !== "string" || range.trim() === "") return "range must be a non-empty string";
+  try {
+    satisfiesVersionRange("0.0.0", range);
+    return null;
+  } catch (error) {
+    return error instanceof Error ? error.message : String(error);
   }
 }
 
@@ -204,13 +250,6 @@ function deriveNodeTypesRange(existingRange, expectedMajor) {
   return `^${expectedMajor}.0.0`;
 }
 
-function safeSatisfies(version, range) {
-  try {
-    return satisfiesVersionRange(version, range);
-  } catch {
-    return false;
-  }
-}
 
 function readJson(filePath, label, errors) {
   if (!fs.existsSync(filePath)) {
