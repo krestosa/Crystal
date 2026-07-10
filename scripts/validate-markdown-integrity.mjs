@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { validateGeneratedMarkers } from "./project-metadata/generated-blocks.mjs";
+import { parseStrictCliArguments, renderCliHelp } from "./tooling/strict-cli.mjs";
 
 const isMain = path.resolve(process.argv[1] ?? "") === fileURLToPath(import.meta.url);
 const CONTROL_CHARACTER_PATTERN = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g;
@@ -114,16 +115,49 @@ function walk(directory, projectRoot, output) {
   }
 }
 
+export function parseMarkdownIntegrityCli(args) {
+  return parseStrictCliArguments(args, { booleanFlags: ["--json", "--help"] });
+}
+
+const markdownHelp = renderCliHelp({
+  command: "node scripts/validate-markdown-integrity.mjs",
+  description: "Validate Markdown syntax, generated markers, and internal navigation.",
+  flags: [
+    ["--json", "Emit JSON only."],
+    ["--help", "Show help without validating."]
+  ]
+});
+
 if (isMain) {
-  let result;
-  try {
-    result = validateMarkdownRepository();
-  } catch (error) {
-    result = { status: "FAIL", filesChecked: 0, errors: [error.message] };
+  const parsed = parseMarkdownIntegrityCli(process.argv.slice(2));
+  const json = parsed.values.json === true;
+  if (!parsed.ok) {
+    const result = { status: "FAIL", filesChecked: 0, errors: parsed.errors };
+    emitMarkdown(result, json);
+    process.exitCode = 1;
+  } else if (parsed.values.help) {
+    if (json) process.stdout.write(`${JSON.stringify({ status: "PASS", mode: "help", help: markdownHelp })}\n`);
+    else process.stdout.write(`${markdownHelp}\n`);
+    process.exitCode = 0;
+  } else {
+    let result;
+    try {
+      result = validateMarkdownRepository();
+    } catch (error) {
+      result = { status: "FAIL", filesChecked: 0, errors: [error.message] };
+    }
+    emitMarkdown(result, json);
+    process.exitCode = result.status === "PASS" ? 0 : 1;
+  }
+}
+
+function emitMarkdown(result, json) {
+  if (json) {
+    process.stdout.write(`${JSON.stringify(result)}\n`);
+    return;
   }
   console.log("Markdown integrity validation");
   console.log(`Files checked: ${result.filesChecked}`);
   for (const error of result.errors) console.error(`- ${error}`);
   console.log(`Result: ${result.status}`);
-  process.exitCode = result.status === "PASS" ? 0 : 1;
 }

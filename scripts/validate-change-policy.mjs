@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { runExecutable } from "./tooling/process-runner.mjs";
+import { parseStrictCliArguments, renderCliHelp } from "./tooling/strict-cli.mjs";
 
 const isMain = path.resolve(process.argv[1] ?? "") === fileURLToPath(import.meta.url);
 
@@ -201,26 +202,53 @@ function normalizePath(value) {
   return value.replace(/\\/g, "/");
 }
 
-function parseFlag(name) {
-  const prefix = `--${name}=`;
-  const item = process.argv.slice(2).find((argument) => argument.startsWith(prefix));
-  return item ? item.slice(prefix.length) : undefined;
+export function parseChangePolicyCli(args) {
+  return parseStrictCliArguments(args, {
+    booleanFlags: ["--json", "--help"],
+    valueFlags: ["--branch", "--base"]
+  });
 }
 
+const changePolicyHelp = renderCliHelp({
+  command: "node scripts/validate-change-policy.mjs",
+  description: "Validate changed paths against the policy selected for the current branch.",
+  flags: [
+    ["--branch=<name>", "Override branch detection."],
+    ["--base=<ref>", "Override the exact comparison base."],
+    ["--json", "Emit JSON only."],
+    ["--help", "Show help without validating."]
+  ]
+});
+
 if (isMain) {
-  const json = process.argv.includes("--json");
-  const result = runChangePolicy({ branch: parseFlag("branch"), base: parseFlag("base") });
+  const parsed = parseChangePolicyCli(process.argv.slice(2));
+  const json = parsed.values.json === true;
+  if (!parsed.ok) {
+    const result = { status: "FAIL", branch: "", branchSource: "unknown", base: "", baseSource: "unknown", policy: "unknown", changes: [], errors: parsed.errors, warnings: [] };
+    emitChangePolicy(result, json);
+    process.exitCode = 1;
+  } else if (parsed.values.help) {
+    if (json) process.stdout.write(`${JSON.stringify({ status: "PASS", mode: "help", help: changePolicyHelp })}\n`);
+    else process.stdout.write(`${changePolicyHelp}\n`);
+    process.exitCode = 0;
+  } else {
+    const result = runChangePolicy({ branch: parsed.values.branch, base: parsed.values.base });
+    emitChangePolicy(result, json);
+    process.exitCode = result.status === "PASS" ? 0 : 1;
+  }
+}
+
+function emitChangePolicy(result, json) {
   if (json) {
     process.stdout.write(`${JSON.stringify(result)}\n`);
-  } else {
-    console.log("Change policy validation");
-    console.log(`Branch: ${result.branch || "unknown"} (${result.branchSource})`);
-    console.log(`Base: ${result.base || "not resolved"} (${result.baseSource})`);
-    console.log(`Policy: ${result.policy}`);
-    console.log(`Changed paths: ${result.changes.length}`);
-    for (const warning of result.warnings) console.warn(`WARN ${warning}`);
-    for (const error of result.errors) console.error(`- ${error}`);
-    console.log(`Result: ${result.status}`);
+    return;
   }
-  process.exitCode = result.status === "PASS" ? 0 : 1;
+  console.log("Change policy validation");
+  console.log(`Branch: ${result.branch || "unknown"} (${result.branchSource})`);
+  console.log(`Base: ${result.base || "not resolved"} (${result.baseSource})`);
+  console.log(`Policy: ${result.policy}`);
+  console.log(`Changed paths: ${result.changes.length}`);
+  for (const warning of result.warnings) console.warn(`WARN ${warning}`);
+  for (const error of result.errors) console.error(`- ${error}`);
+  console.log(`Result: ${result.status}`);
 }
