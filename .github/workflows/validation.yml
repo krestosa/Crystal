@@ -13,48 +13,6 @@ permissions:
   contents: read
 
 jobs:
-  export-linux-toolchain:
-    name: Export Linux validation toolchain
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Set up Node from .nvmrc
-        uses: actions/setup-node@v4
-        with:
-          node-version-file: .nvmrc
-
-      - name: Locate installed Node distribution
-        shell: bash
-        run: echo "CRYSTAL_NODE_ROOT=$(dirname "$(dirname "$(command -v node)")")" >> "$GITHUB_ENV"
-
-      - name: Upload Linux Node distribution
-        uses: actions/upload-artifact@v4
-        with:
-          name: crystal-node-linux-${{ github.sha }}
-          path: ${{ env.CRYSTAL_NODE_ROOT }}
-          include-hidden-files: true
-          retention-days: 1
-
-      - name: Install locked dependencies
-        run: npm ci --foreground-scripts
-
-      - name: Install Electron runtime
-        run: npx --no-install install-electron
-
-      - name: Upload Linux Electron package
-        uses: actions/upload-artifact@v4
-        with:
-          name: crystal-electron-linux-${{ github.sha }}
-          path: node_modules/electron
-          include-hidden-files: true
-          retention-days: 1
-
   validation:
     name: Windows validation
     runs-on: windows-latest
