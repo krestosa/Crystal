@@ -134,7 +134,7 @@ function runValidationCheck(check, packageJson, options) {
   const durationMs = performance.now() - start;
   const executedCommand = formatProcessCommand(execution.command, execution.args);
 
-  if (execution.error) {
+  if (execution.error && execution.status === null) {
     return createValidationResult({
       id: check.id,
       label: check.label,
