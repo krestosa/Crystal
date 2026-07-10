@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { validateObjectShape } from "./configuration-schemas.mjs";
 
 export const PROJECT_BASELINE_SCHEMA_VERSION = 1;
 export const PROJECT_BASELINE_RELATIVE_PATH = "config/project-baseline.json";
@@ -17,63 +18,44 @@ export function readProjectBaseline(options = {}) {
 }
 
 export function validateProjectBaseline(baseline) {
-  const errors = [];
-  if (!baseline || typeof baseline !== "object" || Array.isArray(baseline)) {
-    return ["baseline must be a JSON object."];
-  }
+  const errors = validateObjectShape(baseline, {
+    name: "baseline",
+    requiredKeys: ["schemaVersion", "node", "npm", "electron"],
+    allowedKeys: ["schemaVersion", "node", "npm", "electron"]
+  });
+  if (!baseline || typeof baseline !== "object" || Array.isArray(baseline)) return errors;
+  if (baseline.schemaVersion !== PROJECT_BASELINE_SCHEMA_VERSION) errors.push(`schemaVersion must equal ${PROJECT_BASELINE_SCHEMA_VERSION}.`);
+  errors.push(...validateObjectShape(baseline.node, { name: "node", requiredKeys: ["baseline", "engine"], allowedKeys: ["baseline", "engine"] }));
+  errors.push(...validateObjectShape(baseline.npm, { name: "npm", requiredKeys: ["engine"], allowedKeys: ["engine"] }));
+  errors.push(...validateObjectShape(baseline.electron, {
+    name: "electron",
+    requiredKeys: ["version", "packageRange", "embeddedNode", "chromium"],
+    allowedKeys: ["version", "packageRange", "embeddedNode", "chromium", "embeddedNodeMajorMismatchJustification"]
+  }));
 
-  if (baseline.schemaVersion !== PROJECT_BASELINE_SCHEMA_VERSION) {
-    errors.push(`schemaVersion must equal ${PROJECT_BASELINE_SCHEMA_VERSION}.`);
-  }
-
-  const nodeBaseline = requireVersion(errors, baseline.node?.baseline, "node.baseline");
-  const nodeEngine = requireString(errors, baseline.node?.engine, "node.engine");
-  const npmEngine = requireString(errors, baseline.npm?.engine, "npm.engine");
-  const electronVersion = requireVersion(errors, baseline.electron?.version, "electron.version");
-  const electronRange = requireString(errors, baseline.electron?.packageRange, "electron.packageRange");
-  const embeddedNode = requireVersion(errors, baseline.electron?.embeddedNode, "electron.embeddedNode");
+  const nodeBaseline = requireStableVersion(errors, baseline.node?.baseline, "node.baseline");
+  const nodeEngine = requireTrimmedString(errors, baseline.node?.engine, "node.engine");
+  const npmEngine = requireTrimmedString(errors, baseline.npm?.engine, "npm.engine");
+  const electronVersion = requireStableVersion(errors, baseline.electron?.version, "electron.version");
+  const electronRange = requireTrimmedString(errors, baseline.electron?.packageRange, "electron.packageRange");
+  const embeddedNode = requireStableVersion(errors, baseline.electron?.embeddedNode, "electron.embeddedNode");
   requireDottedVersion(errors, baseline.electron?.chromium, "electron.chromium");
 
-  if (nodeBaseline && nodeEngine && !satisfiesVersionRange(baseline.node.baseline, baseline.node.engine)) {
-    errors.push(`node.baseline ${baseline.node.baseline} must satisfy node.engine ${baseline.node.engine}.`);
+  for (const [field, range] of [["node.engine", nodeEngine], ["npm.engine", npmEngine], ["electron.packageRange", electronRange]]) {
+    if (!range) continue;
+    try { parseVersionRange(range); } catch (error) { errors.push(`${field} is invalid: ${error.message}`); }
   }
-
-  if (electronVersion && electronRange && !satisfiesVersionRange(baseline.electron.version, baseline.electron.packageRange)) {
-    errors.push(`electron.version ${baseline.electron.version} must satisfy electron.packageRange ${baseline.electron.packageRange}.`);
-  }
-
+  if (nodeBaseline && nodeEngine && safeSatisfies(baseline.node.baseline, baseline.node.engine) === false) errors.push(`node.baseline ${baseline.node.baseline} must satisfy node.engine ${baseline.node.engine}.`);
+  if (electronVersion && electronRange && safeSatisfies(baseline.electron.version, baseline.electron.packageRange) === false) errors.push(`electron.version ${baseline.electron.version} must satisfy electron.packageRange ${baseline.electron.packageRange}.`);
   if (nodeBaseline && embeddedNode && nodeBaseline.major !== embeddedNode.major) {
     const justification = baseline.electron?.embeddedNodeMajorMismatchJustification;
-    if (typeof justification !== "string" || justification.trim().length < 12) {
-      errors.push("electron.embeddedNode must share the Node baseline major unless embeddedNodeMajorMismatchJustification is provided.");
-    }
+    if (typeof justification !== "string" || justification.trim().length < 12) errors.push("electron.embeddedNode must share the Node baseline major unless embeddedNodeMajorMismatchJustification is provided.");
   }
+  return [...new Set(errors)];
+}
 
-  if (npmEngine) {
-    try {
-      parseVersionRange(npmEngine);
-    } catch (error) {
-      errors.push(`npm.engine is invalid: ${error.message}`);
-    }
-  }
-
-  if (nodeEngine) {
-    try {
-      parseVersionRange(nodeEngine);
-    } catch (error) {
-      errors.push(`node.engine is invalid: ${error.message}`);
-    }
-  }
-
-  if (electronRange) {
-    try {
-      parseVersionRange(electronRange);
-    } catch (error) {
-      errors.push(`electron.packageRange is invalid: ${error.message}`);
-    }
-  }
-
-  return errors;
+function safeSatisfies(version, range) {
+  try { return satisfiesVersionRange(version, range); } catch { return null; }
 }
 
 export function parseSemver(value) {
@@ -172,25 +154,30 @@ function normalizePartialVersion(value, operator) {
   return { version: { major: parts[0], minor: parts[1], patch: parts[2], prerelease: null }, majorOnlyUpperBound: false };
 }
 
-function requireString(errors, value, field) {
+function requireTrimmedString(errors, value, field) {
   if (typeof value !== "string" || value.trim() === "") {
     errors.push(`${field} must be a non-empty string.`);
     return null;
   }
+  if (value !== value.trim()) errors.push(`${field} must not contain surrounding whitespace.`);
   return value;
 }
 
 function requireDottedVersion(errors, value, field) {
-  const text = requireString(errors, value, field);
+  const text = requireTrimmedString(errors, value, field);
   if (!text) return null;
   if (!/^\d+(?:\.\d+){2,3}$/.test(text)) errors.push(`${field} must be a parseable dotted version.`);
   return text;
 }
 
-function requireVersion(errors, value, field) {
-  const text = requireString(errors, value, field);
+function requireStableVersion(errors, value, field) {
+  const text = requireTrimmedString(errors, value, field);
   if (!text) return null;
   const parsed = parseSemver(text);
-  if (!parsed) errors.push(`${field} must be a parseable semantic version.`);
+  if (!parsed) {
+    errors.push(`${field} must be a parseable semantic version.`);
+    return null;
+  }
+  if (parsed.prerelease) errors.push("Prerelease baselines are not supported by Crystal project metadata.");
   return parsed;
 }

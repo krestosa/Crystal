@@ -3,6 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { validateGeneratedMarkers } from "./project-metadata/generated-blocks.mjs";
 import { parseStrictCliArguments, renderCliHelp } from "./tooling/strict-cli.mjs";
+import { readDocumentationContract } from "./project-metadata/configuration-schemas.mjs";
 
 const isMain = path.resolve(process.argv[1] ?? "") === fileURLToPath(import.meta.url);
 const CONTROL_CHARACTER_PATTERN = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g;
@@ -96,15 +97,6 @@ function validateFences(content, filePath) {
   }
   if (active) errors.push(`${filePath}:${active.line} contains an unclosed ${active.character.repeat(active.length)} fenced code block.`);
   return errors;
-}
-
-function readDocumentationContract(projectRoot) {
-  const contractPath = path.join(projectRoot, "docs", "metadata", "documentation-contract.json");
-  const contract = JSON.parse(fs.readFileSync(contractPath, "utf8"));
-  if (contract.schemaVersion !== 1 || !Array.isArray(contract.documents)) {
-    throw new Error("docs/metadata/documentation-contract.json must use schemaVersion 1 and define documents[].");
-  }
-  return contract;
 }
 
 function walk(directory, projectRoot, output) {

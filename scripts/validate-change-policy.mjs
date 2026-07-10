@@ -3,15 +3,16 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { runExecutable } from "./tooling/process-runner.mjs";
 import { parseStrictCliArguments, renderCliHelp } from "./tooling/strict-cli.mjs";
+import { validateChangePolicyConfig } from "./project-metadata/configuration-schemas.mjs";
 
 const isMain = path.resolve(process.argv[1] ?? "") === fileURLToPath(import.meta.url);
 
 export function loadChangePolicy(projectRoot = process.cwd()) {
   const policyPath = path.join(projectRoot, "config", "change-policy.json");
   const policy = JSON.parse(fs.readFileSync(policyPath, "utf8"));
-  if (policy.schemaVersion !== 1 || !Array.isArray(policy.policies)) {
-    throw new Error("config/change-policy.json must use schemaVersion 1 and define policies[].");
-  }
+  const errors = validateChangePolicyConfig(policy);
+  if (errors.length > 0) throw new Error(`Invalid change policy configuration:
+${errors.map((error) => `- ${error}`).join("\n")}`);
   return policy;
 }
 
