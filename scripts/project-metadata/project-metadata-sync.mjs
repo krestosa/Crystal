@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { readProjectBaseline, getNodeTypesMajor, parseSemver, satisfiesVersionRange } from "./project-baseline.mjs";
 import { replaceGeneratedBlock } from "./generated-blocks.mjs";
-import { validationCatalog, getGeneratedValidationScripts, getValidationCatalogStats } from "../validation/validation-suite.mjs";
+import { validationCatalog, applyCatalogScripts, getValidationCatalogStats, validateValidationCatalog } from "../validation/validation-suite.mjs";
 import { runExecutable } from "../tooling/process-runner.mjs";
 
 const DEPENDENCY_GROUPS = ["dependencies", "devDependencies", "optionalDependencies"];
@@ -47,7 +47,11 @@ export function synchronizeProjectMetadata(options = {}) {
   if (!packageLock.packages || typeof packageLock.packages[""] !== "object") errors.push('package-lock.json must contain packages[""].');
 
   packageJson.engines = { ...(packageJson.engines ?? {}), node: baseline.node.engine, npm: baseline.npm.engine };
-  packageJson.scripts = { ...(packageJson.scripts ?? {}), ...getGeneratedValidationScripts(catalog) };
+  const catalogErrors = validateValidationCatalog(catalog, { projectRoot });
+  errors.push(...catalogErrors);
+  const scriptResult = applyCatalogScripts(packageJson.scripts ?? {}, catalog);
+  errors.push(...scriptResult.errors);
+  packageJson.scripts = scriptResult.scripts;
   packageJson.devDependencies = { ...(packageJson.devDependencies ?? {}) };
   packageJson.devDependencies.electron = baseline.electron.packageRange;
   packageJson.devDependencies["@types/node"] = deriveNodeTypesRange(packageJson.devDependencies["@types/node"], getNodeTypesMajor(baseline));
@@ -147,11 +151,12 @@ export function renderValidationCatalog(catalog = validationCatalog) {
     "",
     `Canonical checks: ${stats.total}. Local quick checks: ${stats.localQuick}. Full validation checks: ${stats.full}.`,
     "",
-    "| Group | ID | Label | npm script | Required | Execution | Direct script |",
-    "| --- | --- | --- | --- | --- | --- | --- |"
+    "| Group | ID | Label | npm script | Ownership | Required | Local quick | Full | Execution | Direct script | Args |",
+    "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |"
   ];
   for (const item of catalog) {
-    lines.push(`| ${escapeCell(item.documentationGroup)} | \`${item.id}\` | ${escapeCell(item.label)} | \`${item.npmScript}\` | ${item.required ? "yes" : "no"} | ${item.executionMode} | ${item.directScriptPath ? `\`${item.directScriptPath}\`` : "—"} |`);
+    const args = item.args.length > 0 ? `\`${escapeCell(JSON.stringify(item.args))}\`` : "—";
+    lines.push(`| ${escapeCell(item.documentationGroup)} | \`${item.id}\` | ${escapeCell(item.label)} | \`${item.npmScript}\` | ${item.scriptOwnership} | ${item.required ? "yes" : "no"} | ${item.includeInLocalQuick ? "yes" : "no"} | ${item.includeInFullValidation ? "yes" : "no"} | ${item.executionMode} | ${item.directScriptPath ? `\`${item.directScriptPath}\`` : "—"} | ${args} |`);
   }
   return lines.join("\n");
 }
