@@ -1,24 +1,25 @@
 name: Apply repair payload
 
 on:
-  push:
+  pull_request:
     branches:
-      - "tooling/generated-metadata-validation-hardening"
+      - main
 
 permissions:
   contents: write
 
 jobs:
   apply:
-    if: ${{ !contains(github.event.head_commit.message, '[repair-applied]') }}
+    if: ${{ github.event.pull_request.number == 35 }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
     steps:
-      - name: Checkout branch
+      - name: Checkout branch head
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: tooling/generated-metadata-validation-hardening
 
       - name: Apply validated repair payload
         shell: bash
