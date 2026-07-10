@@ -43,6 +43,51 @@ test("zero push before SHA falls back without inventing a base", () => {
   } finally { cleanup(repo.root); }
 });
 
+test("unavailable push before SHA falls back to origin/main after history rewrite", () => {
+  const repo = gitFixture();
+  try {
+    const missingBefore = "a".repeat(40);
+    const info = resolveBaseRef({
+      projectRoot: repo.root,
+      env: {
+        GITHUB_EVENT_NAME: "push",
+        CRYSTAL_CHANGE_POLICY_BASE: missingBefore
+      }
+    });
+    assert.equal(info.detected, true);
+    assert.equal(info.base, repo.baseSha);
+    assert.equal(info.source, "origin/main");
+
+    const result = runChangePolicy({
+      projectRoot: repo.root,
+      env: {
+        CI: "true",
+        GITHUB_ACTIONS: "true",
+        GITHUB_EVENT_NAME: "push",
+        CRYSTAL_CHANGE_POLICY_BRANCH: "tooling/phase-2",
+        CRYSTAL_CHANGE_POLICY_BASE: missingBefore
+      },
+      changes: []
+    });
+    assert.equal(result.status, "PASS");
+    assert.equal(result.base, repo.baseSha);
+    assert.equal(result.baseSource, "origin/main");
+    assert.equal(result.comparisonRange, `${repo.baseSha}..HEAD`);
+  } finally { cleanup(repo.root); }
+});
+
+test("an unavailable explicit base remains fail-closed even for push", () => {
+  const repo = gitFixture();
+  try {
+    const info = resolveBaseRef({
+      projectRoot: repo.root,
+      base: "a".repeat(40),
+      env: { GITHUB_EVENT_NAME: "push" }
+    });
+    assert.equal(info.detected, false);
+    assert.equal(info.source, "flag");
+  } finally { cleanup(repo.root); }
+});
 test("explicit base flag wins over environment and stale origin/main", () => {
   const repo = gitFixture();
   try {

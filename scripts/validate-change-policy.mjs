@@ -35,6 +35,7 @@ export function detectBranch(options = {}) {
 export function resolveBaseRef(options = {}) {
   const projectRoot = options.projectRoot ?? process.cwd();
   const env = options.env ?? process.env;
+  const eventType = options.eventType ?? detectChangePolicyEvent(env);
   const candidates = [];
   const authoritative = options.base
     ? { ref: options.base, source: "flag" }
@@ -43,9 +44,13 @@ export function resolveBaseRef(options = {}) {
       : null;
   if (authoritative) {
     const verify = runExecutable("git", ["rev-parse", "--verify", "--quiet", `${authoritative.ref}^{commit}`], { cwd: projectRoot, env });
-    return verify.status === 0
-      ? { base: verify.stdout.trim(), requestedBase: authoritative.ref, source: authoritative.source, detected: true }
-      : { base: "", requestedBase: authoritative.ref, source: authoritative.source, detected: false };
+    if (verify.status === 0) {
+      return { base: verify.stdout.trim(), requestedBase: authoritative.ref, source: authoritative.source, detected: true };
+    }
+    const mayFallBackAfterPushRewrite = eventType === "push" && authoritative.source === "CRYSTAL_CHANGE_POLICY_BASE";
+    if (!mayFallBackAfterPushRewrite) {
+      return { base: "", requestedBase: authoritative.ref, source: authoritative.source, detected: false };
+    }
   }
   if (env.GITHUB_BASE_REF) {
     candidates.push({ ref: `origin/${env.GITHUB_BASE_REF}`, source: "GITHUB_BASE_REF" });
