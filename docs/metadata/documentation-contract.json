@@ -87,6 +87,25 @@
       "requiredPhrases": []
     },
     {
+      "path": "docs/architecture/validation-platform-hardening-phase-2.md",
+      "required": true,
+      "requiresReadNext": true,
+      "requiresPosition": true,
+      "requiresRationale": true,
+      "validateLinks": true,
+      "requiredPhrases": [
+        "## Architecture boundary",
+        "## Validator catalog ownership",
+        "## Transactional metadata synchronization",
+        "## Process execution contracts",
+        "## Canonical metadata consumers",
+        "## Markdown navigation validation",
+        "## Change-policy base resolution",
+        "## GitHub Actions security",
+        "## Documentation ownership"
+      ]
+    },
+    {
       "path": "docs/architecture/flows/future-write-flow.md",
       "required": true,
       "requiresReadNext": true,

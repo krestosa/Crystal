@@ -12,6 +12,7 @@ import {
 } from "./validation/validation-assertions.mjs";
 import { validateGeneratedMarkers } from "./project-metadata/generated-blocks.mjs";
 import { validateInternalLinks } from "./validate-markdown-integrity.mjs";
+import { validationCatalog } from "./validation/validation-suite.mjs";
 
 const context = createValidationContext("Guided documentation validation");
 const repoRoot = process.cwd();
@@ -64,9 +65,12 @@ const packageJson = parsePackageJson(context, read("package.json", true));
 assertPackageScript(context, packageJson, "validate:guided-docs");
 assertPackageScript(context, packageJson, "validate:architecture-docs");
 assertPackageScript(context, packageJson, "validate:markdown-integrity");
-recordCheck(context, "validate:architecture-docs integrates guided docs");
-if (!packageJson.scripts?.["validate:architecture-docs"]?.includes("validate:guided-docs")) {
-  pushValidationError(context, "validate:architecture-docs must integrate validate:guided-docs.");
+recordCheck(context, "guided and architecture docs remain required full-suite checks");
+for (const npmScript of ["validate:guided-docs", "validate:architecture-docs"]) {
+  const entry = validationCatalog.find((candidate) => candidate.npmScript === npmScript);
+  if (!entry?.required || !entry.includeInFullValidation) {
+    pushValidationError(context, `${npmScript} must remain a required full-validation catalog entry.`);
+  }
 }
 
 finishValidation(context, {

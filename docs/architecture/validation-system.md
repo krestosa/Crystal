@@ -378,6 +378,7 @@ Use `validate:local` when the full install-backed path is needed.
 - [Guided reading](../guided-reading.md)
 - [Authored Style Matching over DOM Snapshot](./authored-style-matching-dom-snapshot.md)
 - [CSS/Sass Inspector read-only visual surface](./css-sass-inspector-readonly-surface.md)
+- [Validation Platform Hardening Phase 2](./validation-platform-hardening-phase-2.md)
 - [Validation flow](./flows/validation-flow.md)
 - [Validation gates diagram](./diagrams/validation-gates.md)
 - [Repository map](./repository-map.md)
