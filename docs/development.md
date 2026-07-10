@@ -6,14 +6,20 @@ Electron 43.1.0 embeds Node 24.18.0 internally, and the local toolchain uses `@t
 
 ## Windows baseline
 
-Expected local versions:
+<!-- crystal-generated:toolchain:start -->
+<!-- Do not edit manually. Run npm run sync:project-metadata. -->
 
-```txt
-Node 24.18.0
-npm >=10.0.0
-Electron 43.1.0
-Electron internal Node.js 24.18.0
-```
+Crystal reads the selected toolchain baseline from `config/project-baseline.json`.
+
+| Runtime | Canonical value |
+| --- | --- |
+| Local Node.js | 24.18.0 |
+| Node engine | >=24.18.0 <25 |
+| npm engine | >=10.0.0 |
+| Electron | 43.1.0 |
+| Electron package range | ^43.1.0 |
+| Electron internal Node.js | 24.18.0 |
+| Electron Chromium | 150.0.7871.47 |
 
 With nvm-windows:
 
@@ -24,7 +30,8 @@ node --version
 npm --version
 ```
 
-`node --version` should print `v24.18.0`. npm should satisfy `>=10.0.0`; Node 24.18.0 may ship npm 11.x, and npm 10 remains accepted by the project engines.
+Install reproducibly with `npm ci --foreground-scripts`. Use `npm install` or `npm install --package-lock-only` only when intentionally resolving a direct dependency change. Metadata synchronization never resolves packages or rewrites transitive dependency nodes.
+<!-- crystal-generated:toolchain:end -->
 
 ## Clean Electron install on Windows
 

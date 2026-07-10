@@ -1,0 +1,128 @@
+{
+  "schemaVersion": 1,
+  "documents": [
+    {
+      "path": "docs/README.md",
+      "required": true,
+      "requiresReadNext": true,
+      "requiresPosition": true,
+      "requiresRationale": true,
+      "validateLinks": true,
+      "requiredPhrases": [
+        "## What Crystal is",
+        "## What Crystal is not yet",
+        "## How to read the documentation",
+        "## Read by goal",
+        "## Read by subsystem",
+        "## Read by safety concern",
+        "## Read by implementation phase",
+        "## Reader profiles",
+        "Style Engine and CSS/Sass Inspector preparation"
+      ]
+    },
+    {
+      "path": "docs/guided-reading.md",
+      "required": true,
+      "requiresReadNext": true,
+      "requiresPosition": true,
+      "requiresRationale": true,
+      "validateLinks": true,
+      "requiredPhrases": [
+        "## Main sequential path",
+        "## Paths by objective",
+        "## Before touching code",
+        "## Before implementing a feature",
+        "## Before touching Electron security",
+        "## Before touching Preview or iframe behavior",
+        "## Before touching editing or source patches",
+        "## Before touching docs or validators",
+        "## Preview pipeline path",
+        "## Editing foundation path",
+        "## Style Engine and CSS/Sass Inspector preparation"
+      ]
+    },
+    {
+      "path": "docs/glossary.md",
+      "required": true,
+      "requiresReadNext": true,
+      "requiresPosition": true,
+      "requiresRationale": true,
+      "validateLinks": true,
+      "requiredPhrases": []
+    },
+    {
+      "path": "docs/architecture/README.md",
+      "required": true,
+      "requiresReadNext": true,
+      "requiresPosition": true,
+      "requiresRationale": true,
+      "validateLinks": true,
+      "requiredPhrases": []
+    },
+    {
+      "path": "docs/architecture/preview/README.md",
+      "required": true,
+      "requiresReadNext": true,
+      "requiresPosition": true,
+      "requiresRationale": true,
+      "validateLinks": true,
+      "requiredPhrases": []
+    },
+    {
+      "path": "docs/architecture/commands/README.md",
+      "required": true,
+      "requiresReadNext": true,
+      "requiresPosition": true,
+      "requiresRationale": true,
+      "validateLinks": true,
+      "requiredPhrases": []
+    },
+    {
+      "path": "docs/architecture/validation-system.md",
+      "required": true,
+      "requiresReadNext": true,
+      "requiresPosition": true,
+      "requiresRationale": true,
+      "validateLinks": true,
+      "requiredPhrases": []
+    },
+    {
+      "path": "docs/architecture/flows/future-write-flow.md",
+      "required": true,
+      "requiresReadNext": true,
+      "requiresPosition": true,
+      "requiresRationale": true,
+      "validateLinks": true,
+      "requiredPhrases": []
+    },
+    {
+      "path": "docs/roadmap-implementation.md",
+      "required": true,
+      "requiresReadNext": false,
+      "requiresPosition": false,
+      "requiresRationale": false,
+      "validateLinks": true,
+      "requiredPhrases": [
+        "Phase 7B",
+        "Editable Inspector read-only draft surface",
+        "Phase 8A",
+        "Style Engine read-only source inventory foundation",
+        "CSS/Sass Inspector read-only visual surface"
+      ]
+    }
+  ],
+  "readingNodes": [
+    "Get Started",
+    "Core concepts",
+    "Electron/security model",
+    "Project Graph",
+    "Preview Pipeline",
+    "DOM Snapshot",
+    "Selection & Inspector",
+    "Editing Foundations",
+    "Style Engine Preparation",
+    "Validation System",
+    "Roadmap"
+  ],
+  "minimumGuidedMermaidDiagrams": 3
+}

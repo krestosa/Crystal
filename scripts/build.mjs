@@ -1,31 +1,18 @@
-import { spawnSync } from "node:child_process";
+import { synchronizeProjectMetadata } from "./project-metadata/project-metadata-sync.mjs";
+import { runNodeScript } from "./tooling/process-runner.mjs";
 
-const steps = [
-  ["build:html"],
-  ["build:scss"],
-  ["build:ts"]
-];
-
-function resolveInvocation(command, args) {
-  if (process.platform !== "win32" || (command !== "npm" && command !== "npx")) {
-    return { command, args };
-  }
-
-  return {
-    command: "cmd.exe",
-    args: ["/d", "/s", "/c", [command, ...args].join(" ")]
-  };
+const syncResult = synchronizeProjectMetadata({ write: true });
+if (syncResult.status !== "PASS") {
+  console.error("Generated project metadata synchronization failed:");
+  for (const error of syncResult.errors) console.error(`- ${error}`);
+  for (const hint of syncResult.hints) console.error(`- ${hint}`);
+  process.exit(1);
+}
+if (syncResult.changedFiles.length > 0) {
+  console.log(`Synchronized generated project metadata: ${syncResult.changedFiles.join(", ")}`);
 }
 
-for (const [script] of steps) {
-  const invocation = resolveInvocation("npm", ["run", script]);
-  const result = spawnSync(invocation.command, invocation.args, {
-    stdio: "inherit",
-    shell: false,
-    windowsHide: true
-  });
-
-  if (result.status !== 0) {
-    process.exit(result.status ?? 1);
-  }
+for (const scriptPath of ["scripts/build-html.mjs", "scripts/build-scss.mjs", "scripts/build-ts.mjs"]) {
+  const result = runNodeScript(scriptPath, [], { inherit: true });
+  if (result.error || result.status !== 0) process.exit(result.status ?? 1);
 }

@@ -35,13 +35,19 @@ Primary references:
 
 ## Requirements
 
-| Requirement | Notes |
+<!-- crystal-generated:toolchain:start -->
+<!-- Do not edit manually. Run npm run sync:project-metadata. -->
+
+| Requirement | Canonical value |
 | --- | --- |
-| Node.js | 24.18.0 for local development. |
-| npm | >=10.0.0. Node 24.18.0 may ship npm 11.x; npm 10 remains accepted. |
-| Electron | 43.1.0 from the locked dependency tree. |
-| Electron internal Node.js | 24.18.0. |
-| Setup reference | See [development setup](docs/development.md). |
+| Node.js local baseline | 24.18.0 (>=24.18.0 <25) |
+| npm engine | >=10.0.0 |
+| Electron package | 43.1.0 (^43.1.0) |
+| Electron internal Node.js | 24.18.0 |
+| Electron Chromium | 150.0.7871.47 |
+| Reproducible install | `npm ci` from the committed `package-lock.json` |
+| Lockfile policy | Keep `package-lock.json` tracked; use `npm install` only for explicit dependency resolution. |
+<!-- crystal-generated:toolchain:end -->
 
 ## Install
 

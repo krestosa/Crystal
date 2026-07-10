@@ -111,6 +111,48 @@ Phase 8C boundary: Authored Style Matching over DOM Snapshot only. No real casca
 
 Read `package.json` first to see the command graph. The scripts below are the feature gates most relevant to architecture boundaries.
 
+### Generated validator catalog
+
+<!-- crystal-generated:validation-catalog:start -->
+<!-- Do not edit manually. Run npm run sync:project-metadata. -->
+
+Canonical checks: 31. Local quick checks: 31. Full validation checks: 31.
+
+| Group | ID | Label | npm script | Required | Execution | Direct script |
+| --- | --- | --- | --- | --- | --- | --- |
+| Validation foundation | `validation-system` | Validation System | `validate:validation-system` | yes | direct-node | `scripts/validate-validation-system.mjs` |
+| Generated metadata | `project-metadata` | Project Metadata | `validate:project-metadata` | yes | direct-node | `scripts/sync-project-metadata.mjs` |
+| Change policy | `change-policy` | Change Policy | `validate:change-policy` | yes | direct-node | `scripts/validate-change-policy.mjs` |
+| Documentation | `markdown-integrity` | Markdown Integrity | `validate:markdown-integrity` | yes | direct-node | `scripts/validate-markdown-integrity.mjs` |
+| Documentation | `guided-docs` | Guided docs | `validate:guided-docs` | yes | direct-node | `scripts/validate-guided-docs.mjs` |
+| Documentation | `architecture-docs` | Architecture docs | `validate:architecture-docs` | yes | direct-node | `scripts/validate-architecture-docs.mjs` |
+| Build | `build-html` | Build HTML | `build:html` | yes | direct-node | `scripts/build-html.mjs` |
+| Build | `build-scss` | Build SCSS | `build:scss` | yes | direct-node | `scripts/build-scss.mjs` |
+| Build | `build-ts` | Build TS | `build:ts` | yes | direct-node | `scripts/build-ts.mjs` |
+| Build | `typecheck` | Typecheck | `typecheck` | yes | npm | — |
+| Core | `structure` | Structure | `validate:structure` | yes | direct-node | `scripts/validate-structure.mjs` |
+| Core | `project-graph` | Project Graph | `validate:project-graph` | yes | direct-node | `scripts/validate-project-graph.mjs` |
+| Core | `project-watch` | Project Watch | `validate:project-watch` | yes | direct-node | `scripts/validate-project-watch.mjs` |
+| Core | `history-foundation` | History Foundation | `validate:history-foundation` | yes | direct-node | `scripts/validate-history-foundation.mjs` |
+| Core | `design-editing-preflight` | Design Editing Preflight | `validate:design-editing-preflight` | yes | direct-node | `scripts/validate-design-editing-preflight.mjs` |
+| Core | `inspector-editing-foundation` | Inspector Editing Foundation | `validate:inspector-editing-foundation` | yes | direct-node | `scripts/validate-inspector-editing-foundation.mjs` |
+| Core | `style-engine-foundation` | Style Engine Foundation | `validate:style-engine-foundation` | yes | direct-node | `scripts/validate-style-engine-foundation.mjs` |
+| Core | `authored-style-matching` | Authored Style Matching | `validate:authored-style-matching` | yes | direct-node | `scripts/validate-authored-style-matching.mjs` |
+| Preview | `preview` | Preview | `validate:preview` | yes | direct-node | `scripts/validate-preview.mjs` |
+| Preview | `dom-snapshot` | DOM Snapshot | `validate:dom-snapshot` | yes | direct-node | `scripts/validate-dom-snapshot.mjs` |
+| Preview | `preview-selection` | Preview Selection | `validate:preview-selection` | yes | direct-node | `scripts/validate-preview-selection.mjs` |
+| Preview | `preview-inspector` | Preview Inspector | `validate:preview-inspector` | yes | direct-node | `scripts/validate-preview-inspector.mjs` |
+| UI | `design-canvas` | Design Canvas | `validate:design-canvas` | yes | direct-node | `scripts/validate-design-canvas.mjs` |
+| UI | `visual-selection-overlay` | Visual Selection Overlay | `validate:visual-selection-overlay` | yes | direct-node | `scripts/validate-visual-selection-overlay.mjs` |
+| UI | `html-element-library` | HTML Element Library | `validate:html-element-library` | yes | direct-node | `scripts/validate-html-element-library.mjs` |
+| UI | `source-patch-preview` | Source Patch Preview | `validate:source-patch-preview` | yes | direct-node | `scripts/validate-source-patch-preview.mjs` |
+| UI | `editable-inspector-surface` | Editable Inspector Surface | `validate:editable-inspector-surface` | yes | direct-node | `scripts/validate-editable-inspector-surface.mjs` |
+| UI | `css-sass-inspector-surface` | CSS/Sass Inspector Surface | `validate:css-sass-inspector-surface` | yes | direct-node | `scripts/validate-css-sass-inspector-surface.mjs` |
+| UI | `ui-flow` | UI Flow | `validate:ui-flow` | yes | direct-node | `scripts/validate-ui-flow.mjs` |
+| Environment | `local-watch` | Local Watch | `validate:local:watch` | yes | direct-node | `scripts/validate-local-watch.mjs` |
+| Environment | `electron-doctor` | Electron Doctor | `doctor:electron` | yes | direct-node | `scripts/doctor-electron.mjs` |
+<!-- crystal-generated:validation-catalog:end -->
+
 ## Key files and responsibilities
 
 | File | Responsibility | Reads | Must not do |

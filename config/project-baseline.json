@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "node": {
+    "baseline": "24.18.0",
+    "engine": ">=24.18.0 <25"
+  },
+  "npm": {
+    "engine": ">=10.0.0"
+  },
+  "electron": {
+    "version": "43.1.0",
+    "packageRange": "^43.1.0",
+    "embeddedNode": "24.18.0",
+    "chromium": "150.0.7871.47"
+  }
+}

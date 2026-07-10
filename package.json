@@ -19,6 +19,11 @@
     "build:scss": "node scripts/build-scss.mjs",
     "build:ts": "node scripts/build-ts.mjs",
     "typecheck": "tsc --noEmit",
+    "sync:project-metadata": "node scripts/sync-project-metadata.mjs --write",
+    "validate:project-metadata": "node scripts/sync-project-metadata.mjs --check",
+    "validate:project-metadata:json": "node scripts/sync-project-metadata.mjs --check --json",
+    "validate:change-policy": "node scripts/validate-change-policy.mjs",
+    "validate:markdown-integrity": "node scripts/validate-markdown-integrity.mjs",
     "validate:structure": "node scripts/validate-structure.mjs",
     "validate:project-graph": "node scripts/validate-project-graph.mjs",
     "validate:project-watch": "node scripts/validate-project-watch.mjs",
@@ -46,11 +51,12 @@
     "validate:local:quick:json": "node scripts/validate-local-quick.mjs --json-summary",
     "validate:local:quick:verbose": "node scripts/validate-local-quick.mjs --verbose",
     "validate:local:quick:fail-fast": "node scripts/validate-local-quick.mjs --fail-fast",
+    "validate:local:watch": "node scripts/validate-local-watch.mjs",
+    "doctor:electron": "node scripts/doctor-electron.mjs",
+    "test:tooling-hardening": "node --test tests/tooling/*.test.mjs",
     "validate:local:quick:core": "npm run validate:structure && npm run validate:project-graph && npm run validate:project-watch && npm run validate:history-foundation && npm run validate:design-editing-preflight && npm run validate:inspector-editing-foundation && npm run validate:style-engine-foundation && npm run validate:authored-style-matching",
     "validate:local:quick:preview": "npm run validate:preview && npm run validate:dom-snapshot && npm run validate:preview-selection && npm run validate:preview-inspector",
-    "validate:local:quick:ui": "npm run validate:design-canvas && npm run validate:visual-selection-overlay && npm run validate:html-element-library && npm run validate:source-patch-preview && npm run validate:editable-inspector-surface && npm run validate:css-sass-inspector-surface && npm run validate:ui-flow",
-    "validate:local:watch": "node scripts/validate-local-watch.mjs",
-    "doctor:electron": "node scripts/doctor-electron.mjs"
+    "validate:local:quick:ui": "npm run validate:design-canvas && npm run validate:visual-selection-overlay && npm run validate:html-element-library && npm run validate:source-patch-preview && npm run validate:editable-inspector-surface && npm run validate:css-sass-inspector-surface && npm run validate:ui-flow"
   },
   "devDependencies": {
     "@types/node": "^24.13.3",
