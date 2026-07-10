@@ -23,14 +23,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Upload checked-out source snapshot
-        uses: actions/upload-artifact@v4
-        with:
-          name: crystal-source-${{ github.sha }}
-          path: .
-          include-hidden-files: true
-          retention-days: 1
+          persist-credentials: false
 
       - name: Set up Node from .nvmrc
         uses: actions/setup-node@v4
