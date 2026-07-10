@@ -28,7 +28,6 @@ jobs:
           echo "4657d575feb2130a5f0dcd328f6edab46c67a01ff7cb3a39705d4ac488864132  /tmp/pr35-repair-payload.tar.xz" | sha256sum --check
           tar -xJf /tmp/pr35-repair-payload.tar.xz
           rm -rf .github/repair
-          rm -f .github/workflows/apply-repair-payload.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
