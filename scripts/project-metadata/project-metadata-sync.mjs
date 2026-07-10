@@ -73,11 +73,12 @@ export function synchronizeProjectMetadata(options = {}) {
   for (const [relativePath, expectedContent] of expectedFiles) {
     const absolutePath = path.join(projectRoot, relativePath);
     const currentContent = fs.existsSync(absolutePath) ? fs.readFileSync(absolutePath, "utf8") : null;
-    if (currentContent === expectedContent) continue;
+    const platformExpectedContent = currentContent === null ? expectedContent : preserveExistingEol(expectedContent, currentContent);
+    if (currentContent === platformExpectedContent) continue;
     changedFiles.push(relativePath);
     if (write) {
       fs.mkdirSync(path.dirname(absolutePath), { recursive: true });
-      fs.writeFileSync(absolutePath, expectedContent, "utf8");
+      fs.writeFileSync(absolutePath, platformExpectedContent, "utf8");
     }
   }
 
@@ -240,6 +241,11 @@ function validateLockfileGitPolicy(projectRoot, errors) {
   if (tracked.status !== 0) errors.push("package-lock.json must remain tracked by git.");
   const ignored = runExecutable("git", ["check-ignore", "-q", "package-lock.json"], { cwd: projectRoot });
   if (ignored.status === 0) errors.push("package-lock.json must not be ignored by git.");
+}
+
+function preserveExistingEol(expectedContent, currentContent) {
+  const eol = currentContent.includes("\r\n") ? "\r\n" : "\n";
+  return expectedContent.replace(/\r\n/g, "\n").replace(/\r/g, "\n").replace(/\n/g, eol);
 }
 
 function deriveNodeTypesRange(existingRange, expectedMajor) {
