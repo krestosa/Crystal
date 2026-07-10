@@ -1,52 +1,105 @@
-function nodeScript(scriptPath, npmScript) {
+const directNode = (directScriptPath) => ({ executionMode: "direct-node", directScriptPath });
+const npm = () => ({ executionMode: "npm", directScriptPath: null });
+
+export const validationCatalog = Object.freeze([
+  entry("validation-system", "Validation System", "validation", "validate:validation-system", directNode("scripts/validate-validation-system.mjs"), "Validation foundation"),
+  entry("project-metadata", "Project Metadata", "validation", "validate:project-metadata", directNode("scripts/sync-project-metadata.mjs"), "Generated metadata"),
+  entry("change-policy", "Change Policy", "validation", "validate:change-policy", directNode("scripts/validate-change-policy.mjs"), "Change policy"),
+  entry("markdown-integrity", "Markdown Integrity", "docs", "validate:markdown-integrity", directNode("scripts/validate-markdown-integrity.mjs"), "Documentation"),
+  entry("guided-docs", "Guided docs", "docs", "validate:guided-docs", directNode("scripts/validate-guided-docs.mjs"), "Documentation"),
+  entry("architecture-docs", "Architecture docs", "docs", "validate:architecture-docs", directNode("scripts/validate-architecture-docs.mjs"), "Documentation"),
+  entry("build-html", "Build HTML", "build", "build:html", directNode("scripts/build-html.mjs"), "Build"),
+  entry("build-scss", "Build SCSS", "build", "build:scss", directNode("scripts/build-scss.mjs"), "Build"),
+  entry("build-ts", "Build TS", "build", "build:ts", directNode("scripts/build-ts.mjs"), "Build"),
+  entry("typecheck", "Typecheck", "build", "typecheck", npm(), "Build"),
+  entry("structure", "Structure", "core", "validate:structure", directNode("scripts/validate-structure.mjs"), "Core"),
+  entry("project-graph", "Project Graph", "core", "validate:project-graph", directNode("scripts/validate-project-graph.mjs"), "Core"),
+  entry("project-watch", "Project Watch", "core", "validate:project-watch", directNode("scripts/validate-project-watch.mjs"), "Core"),
+  entry("history-foundation", "History Foundation", "core", "validate:history-foundation", directNode("scripts/validate-history-foundation.mjs"), "Core"),
+  entry("design-editing-preflight", "Design Editing Preflight", "core", "validate:design-editing-preflight", directNode("scripts/validate-design-editing-preflight.mjs"), "Core"),
+  entry("inspector-editing-foundation", "Inspector Editing Foundation", "core", "validate:inspector-editing-foundation", directNode("scripts/validate-inspector-editing-foundation.mjs"), "Core"),
+  entry("style-engine-foundation", "Style Engine Foundation", "core", "validate:style-engine-foundation", directNode("scripts/validate-style-engine-foundation.mjs"), "Core"),
+  entry("authored-style-matching", "Authored Style Matching", "core", "validate:authored-style-matching", directNode("scripts/validate-authored-style-matching.mjs"), "Core"),
+  entry("preview", "Preview", "preview", "validate:preview", directNode("scripts/validate-preview.mjs"), "Preview"),
+  entry("dom-snapshot", "DOM Snapshot", "preview", "validate:dom-snapshot", directNode("scripts/validate-dom-snapshot.mjs"), "Preview"),
+  entry("preview-selection", "Preview Selection", "preview", "validate:preview-selection", directNode("scripts/validate-preview-selection.mjs"), "Preview"),
+  entry("preview-inspector", "Preview Inspector", "preview", "validate:preview-inspector", directNode("scripts/validate-preview-inspector.mjs"), "Preview"),
+  entry("design-canvas", "Design Canvas", "ui", "validate:design-canvas", directNode("scripts/validate-design-canvas.mjs"), "UI"),
+  entry("visual-selection-overlay", "Visual Selection Overlay", "ui", "validate:visual-selection-overlay", directNode("scripts/validate-visual-selection-overlay.mjs"), "UI"),
+  entry("html-element-library", "HTML Element Library", "ui", "validate:html-element-library", directNode("scripts/validate-html-element-library.mjs"), "UI"),
+  entry("source-patch-preview", "Source Patch Preview", "ui", "validate:source-patch-preview", directNode("scripts/validate-source-patch-preview.mjs"), "UI"),
+  entry("editable-inspector-surface", "Editable Inspector Surface", "ui", "validate:editable-inspector-surface", directNode("scripts/validate-editable-inspector-surface.mjs"), "UI"),
+  entry("css-sass-inspector-surface", "CSS/Sass Inspector Surface", "ui", "validate:css-sass-inspector-surface", directNode("scripts/validate-css-sass-inspector-surface.mjs"), "UI"),
+  entry("ui-flow", "UI Flow", "ui", "validate:ui-flow", directNode("scripts/validate-ui-flow.mjs"), "UI"),
+  entry("local-watch", "Local Watch", "watch", "validate:local:watch", directNode("scripts/validate-local-watch.mjs"), "Environment"),
+  entry("electron-doctor", "Electron Doctor", "doctor", "doctor:electron", directNode("scripts/doctor-electron.mjs"), "Environment")
+]);
+
+export const localQuickValidationChecks = Object.freeze(
+  validationCatalog.filter((item) => item.includeInLocalQuick).map(toExecutionCheck)
+);
+
+export const fullValidationChecks = Object.freeze(
+  validationCatalog.filter((item) => item.includeInFullValidation).map(toExecutionCheck)
+);
+
+
+export function getGeneratedValidationScripts(catalog = validationCatalog) {
+  const categoryScripts = {
+    "validate:local:quick:core": renderCategoryScript(catalog, "core"),
+    "validate:local:quick:preview": renderCategoryScript(catalog, "preview"),
+    "validate:local:quick:ui": renderCategoryScript(catalog, "ui")
+  };
+  return categoryScripts;
+}
+
+function renderCategoryScript(catalog, category) {
+  return catalog
+    .filter((item) => item.category === category && item.includeInLocalQuick)
+    .map((item) => `npm run ${item.npmScript}`)
+    .join(" && ");
+}
+
+export function getValidationCatalogStats(catalog = validationCatalog) {
+  const categories = {};
+  for (const item of catalog) categories[item.category] = (categories[item.category] ?? 0) + 1;
   return {
+    total: catalog.length,
+    localQuick: catalog.filter((item) => item.includeInLocalQuick).length,
+    full: catalog.filter((item) => item.includeInFullValidation).length,
+    categories
+  };
+}
+
+function entry(id, label, category, npmScript, execution, documentationGroup) {
+  return Object.freeze({
+    id,
+    label,
+    category,
     npmScript,
     required: true,
-    command: process.execPath,
-    args: [scriptPath],
-    directScriptPath: scriptPath,
-    displayCommand: `npm run ${npmScript}`,
-    executionMode: "direct-node"
-  };
+    executionMode: execution.executionMode,
+    directScriptPath: execution.directScriptPath,
+    includeInLocalQuick: true,
+    includeInFullValidation: true,
+    documentationGroup
+  });
 }
 
-function npmRun(scriptName) {
+function toExecutionCheck(item) {
+  const common = {
+    ...item,
+    displayCommand: `npm run ${item.npmScript}`
+  };
+  if (item.executionMode === "direct-node") {
+    return {
+      ...common,
+      command: process.execPath,
+      args: [item.directScriptPath]
+    };
+  }
   return {
-    npmScript: scriptName,
-    required: true,
-    commandMode: "npm",
-    displayCommand: `npm run ${scriptName}`,
-    executionMode: "npm"
+    ...common,
+    commandMode: "npm"
   };
 }
-
-export const localQuickValidationChecks = [
-  { id: "validation-system", label: "Validation System", category: "validation", ...nodeScript("scripts/validate-validation-system.mjs", "validate:validation-system") },
-  { id: "guided-docs", label: "Guided docs", category: "docs", ...nodeScript("scripts/validate-guided-docs.mjs", "validate:guided-docs") },
-  { id: "architecture-docs", label: "Architecture docs", category: "docs", ...nodeScript("scripts/validate-architecture-docs.mjs", "validate:architecture-docs") },
-  { id: "build-html", label: "Build HTML", category: "build", ...nodeScript("scripts/build-html.mjs", "build:html") },
-  { id: "build-scss", label: "Build SCSS", category: "build", ...nodeScript("scripts/build-scss.mjs", "build:scss") },
-  { id: "build-ts", label: "Build TS", category: "build", ...nodeScript("scripts/build-ts.mjs", "build:ts") },
-  { id: "typecheck", label: "Typecheck", category: "build", ...npmRun("typecheck") },
-  { id: "structure", label: "Structure", category: "core", ...nodeScript("scripts/validate-structure.mjs", "validate:structure") },
-  { id: "project-graph", label: "Project Graph", category: "core", ...nodeScript("scripts/validate-project-graph.mjs", "validate:project-graph") },
-  { id: "project-watch", label: "Project Watch", category: "core", ...nodeScript("scripts/validate-project-watch.mjs", "validate:project-watch") },
-  { id: "history-foundation", label: "History Foundation", category: "core", ...nodeScript("scripts/validate-history-foundation.mjs", "validate:history-foundation") },
-  { id: "design-editing-preflight", label: "Design Editing Preflight", category: "core", ...nodeScript("scripts/validate-design-editing-preflight.mjs", "validate:design-editing-preflight") },
-  { id: "inspector-editing-foundation", label: "Inspector Editing Foundation", category: "core", ...nodeScript("scripts/validate-inspector-editing-foundation.mjs", "validate:inspector-editing-foundation") },
-  { id: "style-engine-foundation", label: "Style Engine Foundation", category: "core", ...nodeScript("scripts/validate-style-engine-foundation.mjs", "validate:style-engine-foundation") },
-  { id: "authored-style-matching", label: "Authored Style Matching", category: "core", ...nodeScript("scripts/validate-authored-style-matching.mjs", "validate:authored-style-matching") },
-  { id: "preview", label: "Preview", category: "preview", ...nodeScript("scripts/validate-preview.mjs", "validate:preview") },
-  { id: "dom-snapshot", label: "DOM Snapshot", category: "preview", ...nodeScript("scripts/validate-dom-snapshot.mjs", "validate:dom-snapshot") },
-  { id: "preview-selection", label: "Preview Selection", category: "preview", ...nodeScript("scripts/validate-preview-selection.mjs", "validate:preview-selection") },
-  { id: "preview-inspector", label: "Preview Inspector", category: "preview", ...nodeScript("scripts/validate-preview-inspector.mjs", "validate:preview-inspector") },
-  { id: "design-canvas", label: "Design Canvas", category: "ui", ...nodeScript("scripts/validate-design-canvas.mjs", "validate:design-canvas") },
-  { id: "visual-selection-overlay", label: "Visual Selection Overlay", category: "ui", ...nodeScript("scripts/validate-visual-selection-overlay.mjs", "validate:visual-selection-overlay") },
-  { id: "html-element-library", label: "HTML Element Library", category: "ui", ...nodeScript("scripts/validate-html-element-library.mjs", "validate:html-element-library") },
-  { id: "source-patch-preview", label: "Source Patch Preview", category: "ui", ...nodeScript("scripts/validate-source-patch-preview.mjs", "validate:source-patch-preview") },
-  { id: "editable-inspector-surface", label: "Editable Inspector Surface", category: "ui", ...nodeScript("scripts/validate-editable-inspector-surface.mjs", "validate:editable-inspector-surface") },
-  { id: "css-sass-inspector-surface", label: "CSS/Sass Inspector Surface", category: "ui", ...nodeScript("scripts/validate-css-sass-inspector-surface.mjs", "validate:css-sass-inspector-surface") },
-  { id: "ui-flow", label: "UI Flow", category: "ui", ...nodeScript("scripts/validate-ui-flow.mjs", "validate:ui-flow") },
-  { id: "local-watch", label: "Local Watch", category: "watch", ...nodeScript("scripts/validate-local-watch.mjs", "validate:local:watch") },
-  { id: "electron-doctor", label: "Electron Doctor", category: "doctor", ...nodeScript("scripts/doctor-electron.mjs", "doctor:electron") }
-];

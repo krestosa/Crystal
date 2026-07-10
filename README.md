@@ -1,108 +1,50 @@
 # Crystal
 
-Crystal is a desktop application for creating a safe visual/code workbench around real HTML projects and their related assets.
-
-> **Read this first:** Crystal currently provides read-only and dry-run foundations. It can inspect, preview, map, and describe possible edits, but it does not write project files.
-
-## At a glance
-
-| Question | Answer |
-| --- | --- |
-| Current product shape | Electron/Node desktop workbench for real HTML projects. |
-| Implemented today | Project Graph, secure Preview, DOM Snapshot, Preview Selection, Inspector, Design Canvas navigation, Visual Selection Overlay, Element Library intent, Source Patch Preview, Command Preview Bus dry-run. |
-| Blocked today | Real file writes, patch apply, write IPC, DOM mutation, real undo/redo, editable Inspector. |
-| Main safety rule | Renderer displays state and intent; main owns privileged effects; core owns portable models and planning. |
-| Start reading | `docs/README.md`, then architecture, runtime, security, Preview, and commands docs. |
+Crystal is an Electron/Node desktop workbench for real HTML projects. Current foundations are read-only and dry-run: they inspect, preview, map, and plan, but do not write project files.
 
 ## Documentation
 
-| Goal | Start with | Then read |
-| --- | --- | --- |
-| Understand the app boundary | [Runtime boundaries](docs/architecture/runtime-boundaries.md) | [Security model](docs/architecture/security-model.md) |
-| Understand Preview and selection | [Preview architecture](docs/architecture/preview/README.md) | [Preview Selection](docs/architecture/preview/preview-selection.md), [DOM Snapshot flow](docs/architecture/flows/dom-snapshot-flow.md) |
-| Understand command previews | [Commands overview](docs/architecture/commands/README.md) | [Source Patch Preview](docs/architecture/commands/source-patch-preview.md), [Command Preview Bus](docs/architecture/commands/command-preview-bus.md) |
-| Understand future writing | [Future write flow](docs/architecture/flows/future-write-flow.md) | [ADR 0003](docs/decisions/0003-command-preview-before-write.md) |
-| Validate a docs-only change | [Validation system](docs/architecture/validation-system.md) | `npm run validate:architecture-docs` |
-
-Primary references:
-
-- [Documentation index](docs/README.md)
-- [Architecture documentation](docs/architecture/README.md)
-- [Architecture decisions](docs/decisions/README.md)
-- [Glossary](docs/glossary.md)
-- [Current implementation status](docs/roadmap-implementation.md)
-- [Full product roadmap](docs/full-product-roadmap.md)
+Start with [the docs index](docs/README.md), then review [runtime boundaries](docs/architecture/runtime-boundaries.md), [security](docs/architecture/security-model.md), [Preview](docs/architecture/preview/README.md), [commands](docs/architecture/commands/README.md), and the [current roadmap](docs/roadmap-implementation.md).
 
 ## Requirements
 
-| Requirement | Notes |
-| --- | --- |
-| Node.js | 24.18.0 for local development. |
-| npm | >=10.0.0. Node 24.18.0 may ship npm 11.x; npm 10 remains accepted. |
-| Electron | 43.1.0 from the locked dependency tree. |
-| Electron internal Node.js | 24.18.0. |
-| Setup reference | See [development setup](docs/development.md). |
+<!-- crystal-generated:toolchain:start -->
+<!-- Do not edit manually. Run npm run sync:project-metadata. -->
 
-## Install
+| Requirement | Canonical value |
+| --- | --- |
+| Node.js local baseline | 24.18.0 (>=24.18.0 <25) |
+| npm engine | >=10.0.0 |
+| Electron package | 43.1.0 (^43.1.0) |
+| Electron internal Node.js | 24.18.0 |
+| Electron Chromium | 150.0.7871.47 |
+| Reproducible install | `npm ci` from the committed `package-lock.json` |
+| Lockfile policy | Keep `package-lock.json` tracked; use `npm install` only for explicit dependency resolution. |
+<!-- crystal-generated:toolchain:end -->
+
+## Install and development
 
 ```bash
 npm ci
-```
-
-Use `npm ci` for reproducible installs from the committed `package-lock.json`. Use `npm install` only when intentionally updating dependencies. `package-lock.json` must remain versioned and must not be ignored.
-
-## Development
-
-```bash
 npm run dev
 ```
 
-The development command builds the current source and opens the Electron shell from `dist/main/main.cjs`. Electron main and preload are emitted as explicit CommonJS outputs so the root `"type": "module"` setting can remain unchanged.
+Use `npm ci` for reproducible installs. Use `npm install` only when intentionally resolving dependency changes.
 
 ## Build and validation
 
-| Command | Use when |
+`npm run build` synchronizes deterministic generated metadata before HTML, SCSS, and TypeScript compilation. Validators remain read-only.
+
+| Command | Purpose |
 | --- | --- |
-| `npm run validate:architecture-docs` | Reviewing architecture docs only. |
-| `npm run validate:local:quick` | Dependencies are installed and a quick local gate is enough. |
-| `npm run validate:local` | Full local validation before asking for PR merge. |
-| `npm run validate:local -- --with-dev` | The branch also needs the manual Electron launch check. |
+| `npm run sync:project-metadata` | Regenerate derived metadata. |
+| `npm run validate:project-metadata` | Detect generated drift without writing. |
+| `npm run validate:change-policy` | Enforce branch-specific changed-file policy. |
+| `npm run validate:markdown-integrity` | Detect malformed Markdown. |
+| `npm run validate:local:quick` | Run the strict catalog-driven gate. |
+| `npm --silent run validate:local:quick:json` | Emit pure JSON. |
+| `npm run test:tooling-hardening` | Run tooling regression fixtures. |
 
-Manual sequence:
+## Safety boundary
 
-```bash
-npm ci
-npm run build
-npm run typecheck
-npm run validate:structure
-npm run validate:project-graph
-npm run validate:project-watch
-npm run validate:preview
-npm run validate:dom-snapshot
-npm run validate:preview-selection
-npm run validate:preview-inspector
-npm run validate:design-canvas
-npm run validate:visual-selection-overlay
-npm run validate:html-element-library
-npm run validate:source-patch-preview
-npm run validate:architecture-docs
-npm run validate:ui-flow
-npm run validate:local:watch
-npm run doctor:electron
-```
-
-## Current scope
-
-| Implemented | Blocked | Future |
-| --- | --- | --- |
-| Project Graph scanner, watcher, cache, validation foundation. | Real file write. | Transaction skeletons and refresh-boundary planning. |
-| Secure `crystal-preview://current/<relative-project-path>` Preview protocol. | Patch apply. | Controlled command execution after validators exist. |
-| Static DOM Snapshot and read-only DOM Tree. | Write IPC channels. | Dirty-state and save/apply workflow. |
-| Read-only Preview Selection and Inspector. | DOM mutation and editable Inspector. | Reversible undo/redo transactions. |
-| Source Patch Preview and Command Preview Bus dry-run. | Real undo/redo execution. | WebGPU/Rust/WASM hardening in later phases. |
-
-> **Safety boundary:** A dry-run command preview is not permission to mutate files. Any future write path must be explicit, typed, reversible, and owned by main/core services.
-
-## Architecture rule
-
-Crystal favors highly modular source code and compact runtime outputs. Renderer UI presents state and intent. Main owns privileged effects. Preload exposes only controlled APIs. Core owns portable models, selectors, validators, planners, and state contracts. Future write-capable behavior must go through validated commands, reversible source patches, transaction history, refresh planning, and main/core persistence services.
+Renderer code presents state and intent. Main owns privileged effects. Core owns portable models and planning. Future writes must use typed, validated, reversible commands and source patches.
