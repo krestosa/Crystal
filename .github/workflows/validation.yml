@@ -44,6 +44,14 @@ jobs:
       - name: Validate project metadata
         run: npm run validate:project-metadata
 
+      - name: Verify metadata synchronization idempotence
+        shell: pwsh
+        run: |
+          npm run sync:project-metadata
+          git diff --exit-code
+          npm run sync:project-metadata
+          git diff --exit-code
+
       - name: Validate validation system
         run: npm run validate:validation-system
 
@@ -68,11 +76,24 @@ jobs:
       - name: Run tooling hardening regression tests
         run: npm run test:tooling-hardening
 
-      - name: Build generated and compiled outputs
-        run: npm run build
+      - name: Build generated and compiled outputs twice
+        shell: pwsh
+        run: |
+          npm run build
+          git diff --exit-code
+          npm run build
+          git diff --exit-code
 
-      - name: Verify build leaves no generated drift
-        run: git diff --exit-code
+      - name: Verify no metadata transaction residue
+        shell: pwsh
+        run: |
+          $residue = Get-ChildItem -Recurse -Force | Where-Object {
+            $_.Name -match "crystal-tmp|crystal-backup|project-metadata-sync.lock|project-metadata-sync-transaction"
+          }
+          if ($residue) {
+            $residue | ForEach-Object { Write-Error $_.FullName }
+            throw "Metadata transaction residue detected"
+          }
 
       - name: Audit dependency graph without fixes
         run: npm audit

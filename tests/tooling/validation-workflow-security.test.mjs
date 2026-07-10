@@ -95,3 +95,20 @@ test("pinned action requires a version comment", () => {
 `);
   assert.match(validateWorkflowSecurity(source).join("\n"), /version comment/);
 });
+
+test("permanent workflow validates metadata and build idempotence without transaction residue", () => {
+  const source = fs.readFileSync(workflowPath, "utf8");
+  assert.equal((source.match(/npm run sync:project-metadata/g) ?? []).length, 2);
+  assert.equal((source.match(/npm run build/g) ?? []).length, 2);
+  assert.ok((source.match(/git diff --exit-code/g) ?? []).length >= 4);
+  assert.match(source, /project-metadata-sync\.lock/);
+  assert.match(source, /project-metadata-sync-transaction/);
+  assert.doesNotMatch(source, /actions\/upload-artifact@/);
+});
+
+test("permanent workflow passes exact change-policy event inputs", () => {
+  const source = fs.readFileSync(workflowPath, "utf8");
+  assert.match(source, /CRYSTAL_CHANGE_POLICY_BRANCH:\s*\$\{\{ github\.head_ref \|\| github\.ref_name \}\}/);
+  assert.match(source, /CRYSTAL_CHANGE_POLICY_BASE:\s*\$\{\{ github\.event\.pull_request\.base\.sha \|\| github\.event\.before \}\}/);
+  assert.match(source, /CRYSTAL_CHANGE_POLICY_EVENT:\s*\$\{\{ github\.event_name \}\}/);
+});
