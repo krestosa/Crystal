@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "consumers": [
+    { "field": "node.baseline", "kind": "generated-file", "path": ".nvmrc" },
+    { "field": "node.engine", "kind": "generated-json", "path": "package.json", "targetPath": ["engines", "node"] },
+    { "field": "npm.engine", "kind": "generated-json", "path": "package.json", "targetPath": ["engines", "npm"] },
+    { "field": "electron.packageRange", "kind": "generated-json", "path": "package.json", "targetPath": ["devDependencies", "electron"] },
+    { "field": "node.engine", "kind": "generated-json", "path": "package-lock.json", "targetPath": ["packages", "", "engines", "node"] },
+    { "field": "npm.engine", "kind": "generated-json", "path": "package-lock.json", "targetPath": ["packages", "", "engines", "npm"] },
+    { "field": "electron.packageRange", "kind": "generated-json", "path": "package-lock.json", "targetPath": ["packages", "", "devDependencies", "electron"] },
+    { "field": "node.baseline", "kind": "generated-document", "path": "README.md", "block": "toolchain" },
+    { "field": "electron.version", "kind": "generated-document", "path": "README.md", "block": "toolchain" },
+    { "field": "node.baseline", "kind": "generated-document", "path": "docs/development.md", "block": "toolchain" },
+    { "field": "electron.version", "kind": "generated-document", "path": "docs/development.md", "block": "toolchain" },
+    { "field": "node.baseline", "kind": "runtime-import", "path": "scripts/doctor-electron.mjs", "module": "./project-metadata/project-baseline.mjs" },
+    { "field": "electron.version", "kind": "doctor-check", "path": "scripts/doctor-electron.mjs", "module": "./project-metadata/project-baseline.mjs" }
+  ]
+}
