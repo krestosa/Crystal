@@ -14,7 +14,7 @@ import { parseValidationRunnerFlags } from "../../scripts/validation/validation-
 import { resolveColorEnabled, resolveRenderMode } from "../../scripts/validation/validation-render-mode.mjs";
 import { colorize, padEndVisible, renderDurationBarChart, stripAnsi, truncateVisible, visibleLength } from "../../scripts/validation/validation-terminal-components.mjs";
 import { summarizePerformance } from "../../scripts/validation/validation-performance.mjs";
-import { validationCatalog } from "../../scripts/validation/validation-suite.mjs";
+import { getGeneratedValidationScripts, validationCatalog } from "../../scripts/validation/validation-suite.mjs";
 import { stripGeneratedBlocks, validateToolingProcessSource } from "../../scripts/validation/validation-meta.mjs";
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
@@ -29,13 +29,23 @@ function createFixture() {
     npm: { engine: ">=10.0.0" },
     electron: { version: "43.1.0", packageRange: "^43.1.0", embeddedNode: "24.18.0", chromium: "150.0.7871.47" }
   }, null, 2) + "\n");
+  fs.writeFileSync(path.join(root, "config", "project-metadata-consumers.json"), JSON.stringify({
+    schemaVersion: 1,
+    consumers: [
+      { field: "node.baseline", kind: "generated-file", path: ".nvmrc" },
+      { field: "node.engine", kind: "generated-json", path: "package.json", targetPath: ["engines", "node"] },
+      { field: "node.engine", kind: "generated-json", path: "package-lock.json", targetPath: ["packages", "", "engines", "node"] },
+      { field: "node.baseline", kind: "generated-document", path: "README.md", block: "toolchain" },
+      { field: "node.baseline", kind: "generated-document", path: "docs/development.md", block: "toolchain" }
+    ]
+  }, null, 2) + "\n");
   fs.writeFileSync(path.join(root, ".nvmrc"), "24.18.0\n");
   fs.writeFileSync(path.join(root, "package.json"), JSON.stringify({
     name: "crystal",
     version: "0.0.0",
     private: true,
     workspaces: ["apps/*", "packages/*"],
-    scripts: {},
+    scripts: { ...getGeneratedValidationScripts(validationCatalog), typecheck: "tsc --noEmit" },
     devDependencies: { "@types/node": "^24.13.3", electron: "^43.1.0", "custom-tool": "^1.0.0" },
     engines: { node: ">=24.18.0 <25", npm: ">=10.0.0" }
   }, null, 2) + "\n");

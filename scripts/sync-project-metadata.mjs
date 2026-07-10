@@ -1,17 +1,56 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { synchronizeProjectMetadata } from "./project-metadata/project-metadata-sync.mjs";
+import { parseStrictCliArguments, renderCliHelp } from "./tooling/strict-cli.mjs";
 
-const args = process.argv.slice(2);
-const write = args.includes("--write");
-const check = args.includes("--check") || !write;
-const json = args.includes("--json");
+const isMain = path.resolve(process.argv[1] ?? "") === fileURLToPath(import.meta.url);
 
-if (write && args.includes("--check")) {
-  emit({ status: "FAIL", mode: "invalid", changedFiles: [], errors: ["Use either --write or --check, not both."], hints: [] }, json);
-  process.exitCode = 1;
-} else {
-  const result = synchronizeProjectMetadata({ write: write && !check });
-  emit(result, json);
-  process.exitCode = result.status === "PASS" ? 0 : 1;
+const helpText = renderCliHelp({
+  command: "node scripts/sync-project-metadata.mjs",
+  description: "Check or write deterministic Crystal project metadata.",
+  flags: [
+    ["--check", "Check for drift (default)."],
+    ["--write", "Write derived outputs transactionally."],
+    ["--json", "Emit JSON only."],
+    ["--help", "Show this help without synchronizing."]
+  ]
+});
+
+export function parseProjectMetadataCli(args) {
+  return parseStrictCliArguments(args, {
+    booleanFlags: ["--write", "--check", "--json", "--help"],
+    mutuallyExclusive: [["write", "check"]]
+  });
+}
+
+export function runProjectMetadataCli(args = process.argv.slice(2)) {
+  const parsed = parseProjectMetadataCli(args);
+  const json = parsed.values.json === true;
+  if (!parsed.ok) {
+    return { exitCode: 1, json, result: invalidResult(parsed.errors), help: null };
+  }
+  if (parsed.values.help) {
+    return {
+      exitCode: 0,
+      json,
+      result: json ? { status: "PASS", mode: "help", help: helpText, changedFiles: [], errors: [], hints: [] } : null,
+      help: helpText
+    };
+  }
+  const write = parsed.values.write === true;
+  const result = synchronizeProjectMetadata({ write });
+  return { exitCode: result.status === "PASS" ? 0 : 1, json, result, help: null };
+}
+
+if (isMain) {
+  const execution = runProjectMetadataCli();
+  if (execution.help && !execution.json) process.stdout.write(`${execution.help}\n`);
+  else emit(execution.result, execution.json);
+  process.exitCode = execution.exitCode;
+}
+
+function invalidResult(errors) {
+  return { status: "FAIL", mode: "invalid", changedFiles: [], errors, hints: [] };
 }
 
 function emit(result, json) {

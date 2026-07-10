@@ -3,65 +3,112 @@ import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
+import { validateWorkflowSecurity } from "../../scripts/validation/workflow-security.mjs";
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const workflowPath = path.join(repositoryRoot, ".github", "workflows", "validation.yml");
 
-function splitSteps(sourceText) {
-  return sourceText.split(/(?=^      - name:)/m);
-}
-
-function validateWorkflowSecurity(sourceText) {
-  const errors = [];
-  const steps = splitSteps(sourceText);
-  const checkoutSteps = steps.filter((step) => /uses:\s*actions\/checkout@v4/.test(step));
-
-  if (checkoutSteps.length === 0) {
-    errors.push("Validation workflow must include actions/checkout@v4.");
-  }
-
-  for (const step of checkoutSteps) {
-    if (!/^\s*persist-credentials:\s*false\s*$/m.test(step)) {
-      errors.push("Validation workflow checkout must set persist-credentials: false.");
-    }
-  }
-
-  for (const step of steps.filter((entry) => /uses:\s*actions\/upload-artifact@v4/.test(entry))) {
-    const uploadsWorkspaceRoot = /^[ \t]*path:[ \t]*\.[ \t]*(?:#.*)?$/m.test(step);
-    const includesHiddenFiles = /^[ \t]*include-hidden-files:[ \t]*true[ \t]*(?:#.*)?$/m.test(step);
-    if (uploadsWorkspaceRoot && includesHiddenFiles) {
-      errors.push("Validation workflow must not upload the workspace root with hidden files enabled.");
-    }
-  }
-
-  return errors;
-}
-
-test("Validation workflow prevents credential-bearing workspace artifacts", () => {
-  const workflowText = fs.readFileSync(workflowPath, "utf8");
-  assert.deepEqual(validateWorkflowSecurity(workflowText), []);
-  assert.match(workflowText, /persist-credentials:\s*false/);
-  assert.doesNotMatch(workflowText, /name:\s*Upload checked-out source snapshot/);
-});
-
-test("Validation workflow security contract rejects the unsafe checkout and artifact combination", () => {
-  const unsafeWorkflow = `name: Validation
-
+function workflow(steps, extra = "") {
+  return `name: Validation
+on:
+  pull_request:
+permissions:
+  contents: read
 jobs:
   validation:
+    runs-on: windows-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+${steps}${extra}`;
+}
+
+function checkout(ref = "v4", persist = true) {
+  return `      - name: Checkout
+        uses: actions/checkout@${ref}${/^[0-9a-f]{40}$/.test(ref) ? " # v4" : ""}
         with:
-          fetch-depth: 0
-      - name: Upload workspace
+          persist-credentials: ${persist ? "false" : "true"}
+`;
+}
+
+function upload(pathValue) {
+  return `      - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          path: .
-          include-hidden-files: true
+          path: ${pathValue}
 `;
+}
 
-  const errors = validateWorkflowSecurity(unsafeWorkflow);
-  assert.match(errors.join("\n"), /persist-credentials: false/);
-  assert.match(errors.join("\n"), /must not upload the workspace root with hidden files enabled/);
+test("permanent Validation workflow satisfies pinned credential and artifact policy", () => {
+  const source = fs.readFileSync(workflowPath, "utf8");
+  assert.deepEqual(validateWorkflowSecurity(source), []);
+});
+
+test("checkout tag and SHA are both recognized before pinning enforcement", () => {
+  assert.deepEqual(validateWorkflowSecurity(workflow(checkout("v4")), { requirePinnedActions: false }), []);
+  assert.deepEqual(validateWorkflowSecurity(workflow(checkout("a".repeat(40))), { requirePinnedActions: false }), []);
+});
+
+test("missing persist credentials is rejected", () => {
+  assert.match(validateWorkflowSecurity(workflow(checkout("v4", false)), { requirePinnedActions: false }).join("\n"), /persist-credentials: false/);
+});
+
+for (const unsafePath of [".", "./", '"${{ github.workspace }}"', '"**/*"', ".git/**", ".env", ".npmrc", '"${{ runner.temp }}"']) {
+  test(`unsafe artifact path ${unsafePath} is rejected`, () => {
+    const errors = validateWorkflowSecurity(workflow(checkout("v4") + upload(unsafePath)), { requirePinnedActions: false });
+    assert.match(errors.join("\n"), /artifact path is unsafe/);
+  });
+}
+
+test("multiline unsafe artifact paths are rejected", () => {
+  const step = `      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          path: |
+            reports/output.json
+            .git/**
+`;
+  assert.match(validateWorkflowSecurity(workflow(checkout("v4") + step), { requirePinnedActions: false }).join("\n"), /unsafe/);
+});
+
+test("safe scoped artifact path is accepted when pinning is not evaluated", () => {
+  assert.deepEqual(validateWorkflowSecurity(workflow(checkout("v4") + upload("reports/summary.json")), { requirePinnedActions: false }), []);
+});
+
+test("pull_request_target and write permissions are rejected", () => {
+  const source = workflow(checkout("v4")).replace("pull_request:", "pull_request_target:").replace("contents: read", "contents: write");
+  const errors = validateWorkflowSecurity(source, { requirePinnedActions: false }).join("\n");
+  assert.match(errors, /pull_request_target/);
+  assert.match(errors, /write permissions/);
+});
+
+test("unpinned and unexpected actions are rejected", () => {
+  const source = workflow(checkout("v4") + `      - uses: unexpected/runner@v1
+`);
+  const errors = validateWorkflowSecurity(source).join("\n");
+  assert.match(errors, /full commit SHA/);
+  assert.match(errors, /non-allowlisted/);
+});
+
+test("pinned action requires a version comment", () => {
+  const source = workflow(`      - uses: actions/checkout@${"a".repeat(40)}
+        with:
+          persist-credentials: false
+`);
+  assert.match(validateWorkflowSecurity(source).join("\n"), /version comment/);
+});
+
+test("permanent workflow validates metadata and build idempotence without transaction residue", () => {
+  const source = fs.readFileSync(workflowPath, "utf8");
+  assert.equal((source.match(/npm run sync:project-metadata/g) ?? []).length, 2);
+  assert.equal((source.match(/npm run build/g) ?? []).length, 2);
+  assert.ok((source.match(/git diff --exit-code/g) ?? []).length >= 4);
+  assert.match(source, /project-metadata-sync\.lock/);
+  assert.match(source, /project-metadata-sync-transaction/);
+  assert.doesNotMatch(source, /actions\/upload-artifact@/);
+});
+
+test("permanent workflow passes exact change-policy event inputs", () => {
+  const source = fs.readFileSync(workflowPath, "utf8");
+  assert.match(source, /CRYSTAL_CHANGE_POLICY_BRANCH:\s*\$\{\{ github\.head_ref \|\| github\.ref_name \}\}/);
+  assert.match(source, /CRYSTAL_CHANGE_POLICY_BASE:\s*\$\{\{ github\.event\.pull_request\.base\.sha \|\| github\.event\.before \}\}/);
+  assert.match(source, /CRYSTAL_CHANGE_POLICY_EVENT:\s*\$\{\{ github\.event_name \}\}/);
 });

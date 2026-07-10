@@ -11,6 +11,8 @@
   ],
   "scripts": {
     "dev": "npm run build && electron dist/main/main.cjs",
+    "install:electron-runtime": "node scripts/install-electron-runtime.mjs",
+    "postinstall": "node scripts/install-electron-runtime.mjs",
     "build": "node scripts/build.mjs",
     "build:main": "node scripts/build-ts.mjs main",
     "build:preload": "node scripts/build-ts.mjs preload",
@@ -43,7 +45,7 @@
     "validate:authored-style-matching": "node scripts/validate-authored-style-matching.mjs",
     "validate:css-sass-inspector-surface": "node scripts/validate-css-sass-inspector-surface.mjs",
     "validate:guided-docs": "node scripts/validate-guided-docs.mjs",
-    "validate:architecture-docs": "npm run validate:guided-docs && node scripts/validate-architecture-docs.mjs",
+    "validate:architecture-docs": "node scripts/validate-architecture-docs.mjs",
     "validate:ui-flow": "node scripts/validate-ui-flow.mjs",
     "validate:validation-system": "node scripts/validate-validation-system.mjs",
     "validate:local": "node scripts/validate-local.mjs",

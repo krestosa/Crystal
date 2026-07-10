@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "behavioralContracts": [
+    { "contract": "JSON summary is pure machine output", "replacementType": "node:test behavioral fixture", "fixture": "tests/tooling/tooling-hardening.test.mjs" },
+    { "contract": "raw output contains no ANSI", "replacementType": "node:test behavioral fixture", "fixture": "tests/tooling/tooling-hardening.test.mjs" },
+    { "contract": "NO_COLOR disables decorative ANSI", "replacementType": "node:test behavioral fixture", "fixture": "tests/tooling/tooling-hardening.test.mjs" },
+    { "contract": "fail-fast records visible skips", "replacementType": "node:test behavioral fixture", "fixture": "tests/tooling/tooling-hardening.test.mjs" },
+    { "contract": "allow-skips changes strict exit semantics explicitly", "replacementType": "node:test behavioral fixture", "fixture": "tests/tooling/tooling-hardening.test.mjs" },
+    { "contract": "zero executed checks fail", "replacementType": "node:test behavioral fixture", "fixture": "tests/tooling/tooling-hardening.test.mjs" },
+    { "contract": "missing npm scripts fail", "replacementType": "node:test behavioral fixture", "fixture": "tests/tooling/tooling-hardening.test.mjs" },
+    { "contract": "missing direct scripts fail", "replacementType": "node:test behavioral fixture", "fixture": "tests/tooling/tooling-hardening.test.mjs" },
+    { "contract": "validator nonzero exits remain validator failures", "replacementType": "node:test behavioral fixture", "fixture": "tests/tooling/tooling-hardening.test.mjs" },
+    { "contract": "process spawn failures remain command execution failures", "replacementType": "node:test behavioral fixture", "fixture": "tests/tooling/process-runner-hardening.test.mjs" },
+    { "contract": "reporter ranks slowest checks", "replacementType": "node:test behavioral fixture", "fixture": "tests/tooling/tooling-hardening.test.mjs" },
+    { "contract": "ANSI-safe truncation and padding preserve visible width", "replacementType": "node:test behavioral fixture", "fixture": "tests/tooling/tooling-hardening.test.mjs" },
+    { "contract": "direct-node arguments match generated npm representation", "replacementType": "node:test behavioral fixture", "fixture": "tests/tooling/validation-catalog.test.mjs" },
+    { "contract": "generated metadata drift fails read-only checks", "replacementType": "node:test behavioral fixture", "fixture": "tests/tooling/tooling-hardening.test.mjs" },
+    { "contract": "missing generated document markers fail without mutation", "replacementType": "node:test behavioral fixture", "fixture": "tests/tooling/generated-markers.test.mjs" }
+  ],
+  "structuralContracts": [
+    { "contract": "required source and test files exist", "reason": "File presence is structural." },
+    { "contract": "catalog and configuration schemas parse", "reason": "Schema shape is structural." },
+    { "contract": "catalog npm scripts are declared with correct ownership", "reason": "Script wiring is structural." },
+    { "contract": "generated markers are well formed", "reason": "Marker ownership is structural." },
+    { "contract": "shell true and child_process duplication are absent", "reason": "Forbidden source wiring is structural." },
+    { "contract": "external GitHub Actions are pinned and allowlisted", "reason": "Workflow dependency identity is structural." }
+  ]
+}

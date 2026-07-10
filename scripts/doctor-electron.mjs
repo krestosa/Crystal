@@ -66,10 +66,14 @@ const electronPathTxt = path.join(electronRoot, "path.txt");
 let electronExecutable = "";
 if (fs.existsSync(electronPathTxt)) {
   const binaryPath = fs.readFileSync(electronPathTxt, "utf8").trim();
-  pass(`node_modules/electron/path.txt exists (${binaryPath || "empty"}).`);
-  electronExecutable = path.isAbsolute(binaryPath) ? binaryPath : path.join(electronRoot, "dist", binaryPath);
+  if (binaryPath) {
+    pass(`node_modules/electron/path.txt exists (${binaryPath}).`);
+    electronExecutable = path.isAbsolute(binaryPath) ? binaryPath : path.join(electronRoot, "dist", binaryPath);
+  } else {
+    fail("node_modules/electron/path.txt is empty. Crystal Electron runtime installation did not finish correctly.");
+  }
 } else {
-  fail("node_modules/electron/path.txt is missing. Electron postinstall did not finish correctly.");
+  fail("node_modules/electron/path.txt is missing. Crystal Electron runtime installation did not finish correctly.");
 }
 
 if (electronExecutable) {
@@ -90,10 +94,10 @@ if (electronExecutable && fs.existsSync(electronExecutable)) {
 
 printHeader("Environment variables");
 for (const key of envKeys) console.log(`${key}: ${process.env[key] ?? "(unset)"}`);
-if (hasTruthyEnvValue(process.env.ELECTRON_SKIP_BINARY_DOWNLOAD)) fail("ELECTRON_SKIP_BINARY_DOWNLOAD is enabled; Electron will not download its runtime binary.");
+if (hasTruthyEnvValue(process.env.ELECTRON_SKIP_BINARY_DOWNLOAD)) fail("ELECTRON_SKIP_BINARY_DOWNLOAD is enabled; Crystal cannot install the Electron runtime binary.");
 if (process.env.ELECTRON_MIRROR) warn("ELECTRON_MIRROR is set; Electron downloads may come from a non-default mirror.");
 if (process.env.ELECTRON_CUSTOM_DIR) warn("ELECTRON_CUSTOM_DIR is set; Electron downloads may resolve from a non-default directory.");
-if (hasTruthyEnvValue(process.env.npm_config_ignore_scripts)) fail("npm_config_ignore_scripts is enabled; Electron postinstall scripts will be skipped.");
+if (hasTruthyEnvValue(process.env.npm_config_ignore_scripts)) fail("npm_config_ignore_scripts is enabled; the Crystal root postinstall and Electron lifecycle scripts will be skipped.");
 
 printHeader("Result");
 if (warnings.length > 0) console.log(`${warnings.length} warning(s).`);

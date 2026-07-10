@@ -2,15 +2,17 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { runExecutable } from "./tooling/process-runner.mjs";
+import { parseStrictCliArguments, renderCliHelp } from "./tooling/strict-cli.mjs";
+import { validateChangePolicyConfig } from "./project-metadata/configuration-schemas.mjs";
 
 const isMain = path.resolve(process.argv[1] ?? "") === fileURLToPath(import.meta.url);
 
 export function loadChangePolicy(projectRoot = process.cwd()) {
   const policyPath = path.join(projectRoot, "config", "change-policy.json");
   const policy = JSON.parse(fs.readFileSync(policyPath, "utf8"));
-  if (policy.schemaVersion !== 1 || !Array.isArray(policy.policies)) {
-    throw new Error("config/change-policy.json must use schemaVersion 1 and define policies[].");
-  }
+  const errors = validateChangePolicyConfig(policy);
+  if (errors.length > 0) throw new Error(`Invalid change policy configuration:
+${errors.map((error) => `- ${error}`).join("\n")}`);
   return policy;
 }
 
@@ -33,32 +35,59 @@ export function detectBranch(options = {}) {
 export function resolveBaseRef(options = {}) {
   const projectRoot = options.projectRoot ?? process.cwd();
   const env = options.env ?? process.env;
-  const explicit = options.base || env.CRYSTAL_CHANGE_POLICY_BASE;
+  const eventType = options.eventType ?? detectChangePolicyEvent(env);
   const candidates = [];
-  if (explicit) candidates.push({ ref: explicit, source: options.base ? "flag" : "CRYSTAL_CHANGE_POLICY_BASE" });
+  const authoritative = options.base
+    ? { ref: options.base, source: "flag" }
+    : env.CRYSTAL_CHANGE_POLICY_BASE && !isZeroSha(env.CRYSTAL_CHANGE_POLICY_BASE)
+      ? { ref: env.CRYSTAL_CHANGE_POLICY_BASE, source: "CRYSTAL_CHANGE_POLICY_BASE" }
+      : null;
+  if (authoritative) {
+    const verify = runExecutable("git", ["rev-parse", "--verify", "--quiet", `${authoritative.ref}^{commit}`], { cwd: projectRoot, env });
+    if (verify.status === 0) {
+      return { base: verify.stdout.trim(), requestedBase: authoritative.ref, source: authoritative.source, detected: true };
+    }
+    const mayFallBackAfterPushRewrite = eventType === "push" && authoritative.source === "CRYSTAL_CHANGE_POLICY_BASE";
+    if (!mayFallBackAfterPushRewrite) {
+      return { base: "", requestedBase: authoritative.ref, source: authoritative.source, detected: false };
+    }
+  }
   if (env.GITHUB_BASE_REF) {
     candidates.push({ ref: `origin/${env.GITHUB_BASE_REF}`, source: "GITHUB_BASE_REF" });
     candidates.push({ ref: env.GITHUB_BASE_REF, source: "GITHUB_BASE_REF" });
   }
-  candidates.push({ ref: "origin/main", source: "default" }, { ref: "main", source: "default" });
+  candidates.push({ ref: "origin/main", source: "origin/main" }, { ref: "main", source: "main" });
 
   const seen = new Set();
   for (const candidate of candidates) {
     if (seen.has(candidate.ref)) continue;
     seen.add(candidate.ref);
-    const verify = runExecutable("git", ["rev-parse", "--verify", "--quiet", candidate.ref], { cwd: projectRoot, env });
-    if (verify.status === 0) return { base: candidate.ref, source: candidate.source, detected: true };
+    const verify = runExecutable("git", ["rev-parse", "--verify", "--quiet", `${candidate.ref}^{commit}`], { cwd: projectRoot, env });
+    if (verify.status === 0) return { base: verify.stdout.trim(), requestedBase: candidate.ref, source: candidate.source, detected: true };
   }
-  return { base: "", source: "unknown", detected: false };
+  return { base: "", requestedBase: "", source: "unknown", detected: false };
+}
+
+export function detectChangePolicyEvent(env = process.env) {
+  return env.CRYSTAL_CHANGE_POLICY_EVENT || env.GITHUB_EVENT_NAME || "local";
+}
+
+export function buildComparisonRange(base, eventType) {
+  return eventType === "push" ? `${base}..HEAD` : `${base}...HEAD`;
+}
+
+function isZeroSha(value) {
+  return /^0{40}$/.test(value ?? "");
 }
 
 export function readChangedFiles(base, options = {}) {
-  const result = runExecutable("git", ["diff", "--name-status", "-z", "--find-renames", `${base}...HEAD`], {
+  const comparisonRange = options.comparisonRange ?? `${base}...HEAD`;
+  const result = runExecutable("git", ["diff", "--name-status", "-z", "--find-renames", comparisonRange], {
     cwd: options.projectRoot ?? process.cwd(),
     env: options.env ?? process.env
   });
   if (result.status !== 0) {
-    throw new Error(result.stderr.trim() || result.error?.message || `Unable to compare ${base}...HEAD.`);
+    throw new Error(result.stderr.trim() || result.error?.message || `Unable to compare ${comparisonRange}.`);
   }
   return parseNameStatus(result.stdout);
 }
@@ -112,6 +141,7 @@ export function runChangePolicy(options = {}) {
   const projectRoot = path.resolve(options.projectRoot ?? process.cwd());
   const env = options.env ?? process.env;
   const strict = options.strict ?? Boolean(env.CI || env.GITHUB_ACTIONS);
+  const eventType = options.eventType ?? detectChangePolicyEvent(env);
   const branchInfo = detectBranch({ ...options, projectRoot, env });
   const policyConfig = loadChangePolicy(projectRoot);
 
@@ -120,6 +150,8 @@ export function runChangePolicy(options = {}) {
       status: strict ? "FAIL" : "PASS",
       branch: "",
       branchSource: "unknown",
+      eventType,
+      comparisonRange: "",
       base: "",
       baseSource: "unknown",
       policy: "unknown",
@@ -135,6 +167,8 @@ export function runChangePolicy(options = {}) {
       status: "PASS",
       branch: branchInfo.branch,
       branchSource: branchInfo.source,
+      eventType,
+      comparisonRange: "",
       base: "",
       baseSource: "not-required",
       policy: "unrestricted",
@@ -150,6 +184,8 @@ export function runChangePolicy(options = {}) {
       status: strict ? "FAIL" : "PASS",
       branch: branchInfo.branch,
       branchSource: branchInfo.source,
+      eventType,
+      comparisonRange: "",
       base: "",
       baseSource: "unknown",
       policy: selectedPolicy.name,
@@ -159,13 +195,16 @@ export function runChangePolicy(options = {}) {
     };
   }
 
+  const comparisonRange = options.comparisonRange ?? buildComparisonRange(baseInfo.base, eventType);
   try {
-    const changes = options.changes ?? readChangedFiles(baseInfo.base, { projectRoot, env });
+    const changes = options.changes ?? readChangedFiles(baseInfo.base, { projectRoot, env, comparisonRange });
     const evaluation = evaluateChangePolicy(branchInfo.branch, changes, policyConfig);
     return {
       status: evaluation.errors.length === 0 ? "PASS" : "FAIL",
       branch: branchInfo.branch,
       branchSource: branchInfo.source,
+      eventType,
+      comparisonRange,
       base: baseInfo.base,
       baseSource: baseInfo.source,
       policy: evaluation.policy,
@@ -178,6 +217,8 @@ export function runChangePolicy(options = {}) {
       status: strict ? "FAIL" : "PASS",
       branch: branchInfo.branch,
       branchSource: branchInfo.source,
+      eventType,
+      comparisonRange,
       base: baseInfo.base,
       baseSource: baseInfo.source,
       policy: selectedPolicy.name,
@@ -201,26 +242,55 @@ function normalizePath(value) {
   return value.replace(/\\/g, "/");
 }
 
-function parseFlag(name) {
-  const prefix = `--${name}=`;
-  const item = process.argv.slice(2).find((argument) => argument.startsWith(prefix));
-  return item ? item.slice(prefix.length) : undefined;
+export function parseChangePolicyCli(args) {
+  return parseStrictCliArguments(args, {
+    booleanFlags: ["--json", "--help"],
+    valueFlags: ["--branch", "--base"]
+  });
 }
 
+const changePolicyHelp = renderCliHelp({
+  command: "node scripts/validate-change-policy.mjs",
+  description: "Validate changed paths against the policy selected for the current branch.",
+  flags: [
+    ["--branch=<name>", "Override branch detection."],
+    ["--base=<ref>", "Override the exact comparison base."],
+    ["--json", "Emit JSON only."],
+    ["--help", "Show help without validating."]
+  ]
+});
+
 if (isMain) {
-  const json = process.argv.includes("--json");
-  const result = runChangePolicy({ branch: parseFlag("branch"), base: parseFlag("base") });
+  const parsed = parseChangePolicyCli(process.argv.slice(2));
+  const json = parsed.values.json === true;
+  if (!parsed.ok) {
+    const result = { status: "FAIL", branch: "", branchSource: "unknown", eventType: "unknown", comparisonRange: "", base: "", baseSource: "unknown", policy: "unknown", changes: [], errors: parsed.errors, warnings: [] };
+    emitChangePolicy(result, json);
+    process.exitCode = 1;
+  } else if (parsed.values.help) {
+    if (json) process.stdout.write(`${JSON.stringify({ status: "PASS", mode: "help", help: changePolicyHelp })}\n`);
+    else process.stdout.write(`${changePolicyHelp}\n`);
+    process.exitCode = 0;
+  } else {
+    const result = runChangePolicy({ branch: parsed.values.branch, base: parsed.values.base });
+    emitChangePolicy(result, json);
+    process.exitCode = result.status === "PASS" ? 0 : 1;
+  }
+}
+
+function emitChangePolicy(result, json) {
   if (json) {
     process.stdout.write(`${JSON.stringify(result)}\n`);
-  } else {
-    console.log("Change policy validation");
-    console.log(`Branch: ${result.branch || "unknown"} (${result.branchSource})`);
-    console.log(`Base: ${result.base || "not resolved"} (${result.baseSource})`);
-    console.log(`Policy: ${result.policy}`);
-    console.log(`Changed paths: ${result.changes.length}`);
-    for (const warning of result.warnings) console.warn(`WARN ${warning}`);
-    for (const error of result.errors) console.error(`- ${error}`);
-    console.log(`Result: ${result.status}`);
+    return;
   }
-  process.exitCode = result.status === "PASS" ? 0 : 1;
+  console.log("Change policy validation");
+  console.log(`Event: ${result.eventType || "unknown"}`);
+  console.log(`Branch: ${result.branch || "unknown"} (${result.branchSource})`);
+  console.log(`Base: ${result.base || "not resolved"} (${result.baseSource})`);
+  console.log(`Comparison: ${result.comparisonRange || "not required"}`);
+  console.log(`Policy: ${result.policy}`);
+  console.log(`Changed paths: ${result.changes.length}`);
+  for (const warning of result.warnings) console.warn(`WARN ${warning}`);
+  for (const error of result.errors) console.error(`- ${error}`);
+  console.log(`Result: ${result.status}`);
 }

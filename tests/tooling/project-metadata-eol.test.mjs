@@ -13,7 +13,9 @@ const managedFiles = [
   "package-lock.json",
   "README.md",
   "docs/development.md",
-  "docs/architecture/validation-system.md"
+  "docs/architecture/validation-system.md",
+  "config/project-metadata-consumers.json",
+  "scripts/doctor-electron.mjs"
 ];
 
 test("project metadata check preserves CRLF working-tree line endings", () => {
