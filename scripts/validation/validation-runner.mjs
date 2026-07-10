@@ -134,7 +134,7 @@ function runValidationCheck(check, packageJson, options) {
   const durationMs = performance.now() - start;
   const executedCommand = formatProcessCommand(execution.command, execution.args);
 
-  if (execution.error) {
+  if (execution.error && execution.status === null) {
     return createValidationResult({
       id: check.id,
       label: check.label,
@@ -177,7 +177,7 @@ function runValidationCheck(check, packageJson, options) {
 
 function executeCheck(check, cwd) {
   if (check.executionMode === "npm" || check.commandMode === "npm") {
-    return runNpmScript(check.npmScript, [], { cwd });
+    return runNpmScript(check.npmScript, check.args ?? [], { cwd });
   }
   if (check.command && Array.isArray(check.args)) {
     return runExecutable(check.command, check.args, { cwd });
