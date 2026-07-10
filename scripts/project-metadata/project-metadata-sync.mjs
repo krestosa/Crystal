@@ -169,7 +169,7 @@ function addGeneratedDocument(expectedFiles, projectRoot, relativePath, blockId,
   }
   const current = fs.readFileSync(absolutePath, "utf8");
   try {
-    expectedFiles.set(relativePath, replaceGeneratedBlock(current, blockId, body, { filePath: relativePath }));
+    expectedFiles.set(relativePath, replaceGeneratedBlock(current, blockId, body, { filePath: relativePath, appendIfMissing: false }));
   } catch (error) {
     errors.push(error.message);
   }

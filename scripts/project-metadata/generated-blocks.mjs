@@ -48,7 +48,7 @@ export function replaceGeneratedBlock(content, id, generatedBody, options = {}) 
   const replacement = `${startMarker}${eol}${body}${eol}${endMarker}`;
 
   if (startIndex === -1 && endIndex === -1) {
-    if (options.appendIfMissing === false) throw new Error(`${filePath} is missing generated block ${id}.`);
+    if (options.appendIfMissing !== true) throw new Error(`${filePath} is missing generated block ${id}.`);
     const separator = content.endsWith(eol) ? eol : `${eol}${eol}`;
     return `${content}${separator}${replacement}${eol}`;
   }
