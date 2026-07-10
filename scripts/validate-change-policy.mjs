@@ -117,8 +117,22 @@ export function parseNameStatus(output) {
   return changes;
 }
 
+export function selectChangePolicy(branch, policyConfig) {
+  const matchingPolicies = policyConfig.policies.filter(
+    (candidate) => branch.startsWith(candidate.branchPrefix)
+  );
+
+  if (matchingPolicies.length === 0) return null;
+
+  return matchingPolicies.reduce((selected, candidate) => {
+    const selectedPriority = selected.priority ?? 0;
+    const candidatePriority = candidate.priority ?? 0;
+    return candidatePriority > selectedPriority ? candidate : selected;
+  });
+}
+
 export function evaluateChangePolicy(branch, changes, policyConfig) {
-  const policy = policyConfig.policies.find((candidate) => branch.startsWith(candidate.branchPrefix));
+  const policy = selectChangePolicy(branch, policyConfig);
   if (!policy) return { policy: "unrestricted", errors: [] };
 
   const errors = [];
@@ -161,7 +175,7 @@ export function runChangePolicy(options = {}) {
     };
   }
 
-  const selectedPolicy = policyConfig.policies.find((candidate) => branchInfo.branch.startsWith(candidate.branchPrefix));
+  const selectedPolicy = selectChangePolicy(branchInfo.branch, policyConfig);
   if (!selectedPolicy) {
     return {
       status: "PASS",

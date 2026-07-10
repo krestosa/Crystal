@@ -15,7 +15,11 @@
     { "contract": "ANSI-safe truncation and padding preserve visible width", "replacementType": "node:test behavioral fixture", "fixture": "tests/tooling/tooling-hardening.test.mjs" },
     { "contract": "direct-node arguments match generated npm representation", "replacementType": "node:test behavioral fixture", "fixture": "tests/tooling/validation-catalog.test.mjs" },
     { "contract": "generated metadata drift fails read-only checks", "replacementType": "node:test behavioral fixture", "fixture": "tests/tooling/tooling-hardening.test.mjs" },
-    { "contract": "missing generated document markers fail without mutation", "replacementType": "node:test behavioral fixture", "fixture": "tests/tooling/generated-markers.test.mjs" }
+    { "contract": "missing generated document markers fail without mutation", "replacementType": "node:test behavioral fixture", "fixture": "tests/tooling/generated-markers.test.mjs" },
+    { "contract": "tracked source tree accepts only registered application, runtime, and package owners", "replacementType": "node:test behavioral fixture", "fixture": "tests/tooling/source-tree-boundaries.test.mjs" },
+    { "contract": "tracked source tree metadata exception is exact", "replacementType": "node:test behavioral fixture", "fixture": "tests/tooling/source-tree-boundaries.test.mjs" },
+    { "contract": "tracked source tree paths fail safely without mutation or duplicate violations", "replacementType": "node:test behavioral fixture", "fixture": "tests/tooling/source-tree-boundaries.test.mjs" },
+    { "contract": "source tree validation distinguishes tracked files from untracked filesystem content", "replacementType": "node:test behavioral fixture", "fixture": "tests/tooling/source-tree-boundaries.test.mjs" }
   ],
   "structuralContracts": [
     { "contract": "required source and test files exist", "reason": "File presence is structural." },

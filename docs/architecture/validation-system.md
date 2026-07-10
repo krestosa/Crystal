@@ -11,7 +11,8 @@
 | Is this implemented? | Yes, as script-based static and local validators. |
 | Can validators patch files? | No. Validators read and fail; they do not mutate source. |
 | Runtime owner | npm scripts and Node validators. |
-| Current quick suite size | 28 required checks. |
+| Current quick suite size | 32 required checks. |
+| Phase 0A addition | `validate:source-tree-boundaries`. |
 | Phase 6C addition | `validate:history-foundation`. |
 | Phase 6D addition | `validate:design-editing-preflight`. |
 | Phase 7A addition | `validate:inspector-editing-foundation`. |
@@ -22,7 +23,7 @@
 | Guided docs addition | `validate:guided-docs`. |
 | Strict reporter addition | `validate:local:quick` now runs through `scripts/validate-local-quick.mjs`. |
 | Meta validation addition | `validate:validation-system` validates the validation runner, reporter, suite metadata, render modes, failure types, and static wiring. |
-| Safety risk controlled | Prevents forbidden shortcuts and false write/edit/cascade claims from entering unnoticed. |
+| Safety risk controlled | Prevents unregistered physical source owners, forbidden shortcuts, and false write/edit/cascade claims from entering unnoticed. |
 
 ## Purpose
 
@@ -72,7 +73,11 @@ The meta-validator must print `Files checked`, `Checks executed`, and `Result`, 
 
 ## Current implementation
 
-Validation is script-based and uses the existing Node toolchain. The root scripts cover build, typecheck, structure, Project Graph, watcher behavior, Preview, DOM Snapshot, Preview Selection, Preview Inspector, Design Canvas, Visual Selection Overlay, HTML Element Library, Source Patch Preview, History Foundation, Design Editing Preflight, Inspector Editing Foundation, Editable Inspector Surface, Style Engine Foundation, CSS/Sass Inspector Surface, Authored Style Matching, Guided Docs, UI flow, Electron diagnostics, architecture docs, and validation-system meta checks.
+Validation is script-based and uses the existing Node toolchain. The root scripts cover build, typecheck, required structure, tracked source-tree ownership, Project Graph, watcher behavior, Preview, DOM Snapshot, Preview Selection, Preview Inspector, Design Canvas, Visual Selection Overlay, HTML Element Library, Source Patch Preview, History Foundation, Design Editing Preflight, Inspector Editing Foundation, Editable Inspector Surface, Style Engine Foundation, CSS/Sass Inspector Surface, Authored Style Matching, Guided Docs, UI flow, Electron diagnostics, architecture docs, and validation-system meta checks.
+
+Phase 0A — Source Tree Boundary Validation Foundation
+
+`validate:source-tree-boundaries` runs `git ls-files -z -- apps packages`, normalizes and deduplicates repository-relative paths, and permits only `apps/desktop/package.json`, the `main`/`preload`/`renderer` runtime owners, and the `core`/`shared`/`adapters` package owners. Enumeration and policy failures are read-only and fail closed. The validator does not inspect imports.
 
 Phase 6C models are planning-only.
 
@@ -92,7 +97,8 @@ Phase 8C boundary: Authored Style Matching over DOM Snapshot only. No real casca
 
 | Implemented | Blocked | Future |
 | --- | --- | --- |
-| Feature validators. | Validators applying source changes. | Import-boundary checks. |
+| Source Tree Boundaries validator. | Unregistered tracked application, runtime, and package roots. | Import-boundary checks. |
+| Feature validators. | Validators applying source changes. | Static dependency graph checks. |
 | Docs validator. | Docs claiming future writes. | Write runtime safety checks. |
 | Guided docs validator. | Broken read-next navigation. | Generated docs site navigation. |
 | Local aggregate runners. | Hidden mutation during validation. | Transaction execution checks. |
@@ -116,7 +122,7 @@ Read `package.json` first to see the command graph. The scripts below are the fe
 <!-- crystal-generated:validation-catalog:start -->
 <!-- Do not edit manually. Run npm run sync:project-metadata. -->
 
-Canonical checks: 31. Local quick checks: 31. Full validation checks: 31.
+Canonical checks: 32. Local quick checks: 32. Full validation checks: 32.
 
 | Group | ID | Label | npm script | Ownership | Required | Local quick | Full | Execution | Direct script | Args |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -131,6 +137,7 @@ Canonical checks: 31. Local quick checks: 31. Full validation checks: 31.
 | Build | `build-ts` | Build TS | `build:ts` | generated | yes | yes | yes | direct-node | `scripts/build-ts.mjs` | — |
 | Build | `typecheck` | Typecheck | `typecheck` | external | yes | yes | yes | npm | — | — |
 | Core | `structure` | Structure | `validate:structure` | generated | yes | yes | yes | direct-node | `scripts/validate-structure.mjs` | — |
+| Core | `source-tree-boundaries` | Source Tree Boundaries | `validate:source-tree-boundaries` | generated | yes | yes | yes | direct-node | `scripts/validate-source-tree-boundaries.mjs` | — |
 | Core | `project-graph` | Project Graph | `validate:project-graph` | generated | yes | yes | yes | direct-node | `scripts/validate-project-graph.mjs` | — |
 | Core | `project-watch` | Project Watch | `validate:project-watch` | generated | yes | yes | yes | direct-node | `scripts/validate-project-watch.mjs` | — |
 | Core | `history-foundation` | History Foundation | `validate:history-foundation` | generated | yes | yes | yes | direct-node | `scripts/validate-history-foundation.mjs` | — |
@@ -170,7 +177,10 @@ Canonical checks: 31. Local quick checks: 31. Full validation checks: 31.
 | `scripts/validation/validation-performance.mjs` | Summarizes duration, slowest checks, execution modes, process launches, and duplicate execution warnings. | Validation results. | Fail performance thresholds in this phase. |
 | `scripts/validation/validation-meta.mjs` | Implements static hardening checks for validation suite and reporter wiring. | Package scripts, suite, runner, reporter, docs, critical validators. | Execute the local quick runner. |
 | `scripts/validation/validation-assertions.mjs` | Provides deterministic file, token, package script, and forbidden-token assertions. | Source files and package.json. | Mutate source files. |
-| `scripts/validate-structure.mjs` | Checks source structure. | Source tree. | Rewrite modules. |
+| `scripts/validate-structure.mjs` | Checks required source paths and generated outputs. | Filesystem paths. | Rewrite modules. |
+| `scripts/validation/source-tree-boundary-policy.mjs` | Classifies normalized tracked paths against registered physical owners. | Pure path inputs. | Read Git, filesystem, process state, or mutate inputs. |
+| `scripts/validation/list-tracked-source-tree-files.mjs` | Enumerates tracked product-source paths with NUL-delimited Git output. | Git index through the process runner. | Render output or classify policy violations. |
+| `scripts/validate-source-tree-boundaries.mjs` | Coordinates enumeration, policy evaluation, reporting, and exit status. | Enumerator and pure policy. | Write files or inspect imports. |
 | `scripts/validate-source-patch-preview.mjs` | Guards preview/write boundary. | Source and renderer files. | Permit patch apply. |
 | `scripts/validate-history-foundation.mjs` | Guards Phase 6C planning boundary. | History, refresh, transaction-planning, package scripts, docs. | Permit write execution. |
 | `scripts/validate-design-editing-preflight.mjs` | Guards Phase 6D readiness boundary. | Dirty-state, source-conflict, write-runtime, design-editing, package scripts, docs. | Permit Apply enablement. |
@@ -187,6 +197,7 @@ Canonical checks: 31. Local quick checks: 31. Full validation checks: 31.
 | Input | Decision | Output |
 | --- | --- | --- |
 | Source files | Do feature constraints still hold? | Pass or explicit failure. |
+| Tracked paths under `apps/**` and `packages/**` | Does every path belong to a registered physical owner? | Pass or structured source-tree violation. |
 | Required quick check | Does the npm script exist and execute? | PASS, FAIL, or visible SKIPPED. |
 | Missing required script | Is the check required? | FAIL. |
 | Missing direct Node script | Does the direct execution target exist? | FAIL. |
@@ -216,6 +227,7 @@ flowchart TD
     Build[build]
     Typecheck[typecheck]
     Structure[validate:structure]
+    SourceTree[validate:source-tree-boundaries]
     SourcePatch[validate:source-patch-preview]
     History[validate:history-foundation]
     DesignEditing[validate:design-editing-preflight]
@@ -249,6 +261,7 @@ flowchart TD
   Claims --> Quick
   Meta --> Quick
   Structure --> QuickCore
+  SourceTree --> QuickCore
   History --> QuickCore
   DesignEditing --> QuickCore
   InspectorEditing --> QuickCore
@@ -331,6 +344,7 @@ Still out of scope for Phase 8C:
 | Performance gating | Performance is reported, not enforced, in this phase. |
 | Auto-formatting | Validators should not mutate docs. |
 | Auto-fixes | Validation reports likely resolution only; it does not apply changes. |
+| Import-direction validation between registered owners | Physical ownership does not inspect import specifiers, aliases, re-exports, or dynamic imports. |
 | Complete import graph validation | Future work. |
 
 ## Common misunderstanding
@@ -338,6 +352,8 @@ Still out of scope for Phase 8C:
 > **Common misunderstanding:** `validate:css-sass-inspector-surface` means the CSS/Sass Inspector visual surface is present and read-only. It does not mean style editing exists, does not mean CSS/Sass sources can be written, and does not mean computed styles or real cascade are available.
 
 > **Common misunderstanding:** `validate:authored-style-matching` means DOM Snapshot-only authored candidate contracts and surface wiring are present and guarded. It does not mean browser-applied styles, real cascade, computed styles, CSSOM, live DOM matching, source writes, or Apply exist.
+
+> **Common misunderstanding:** `validate:source-tree-boundaries` proves tracked physical ownership only. It does not prove that imports between main, preload, renderer, core, shared, and adapters follow the intended direction.
 
 > **Common misunderstanding:** `validate:local:quick` is not a chain that stops at the first failed npm command by default. It runs the strict suite, records each required check, prints the failure output, and still emits a final summary unless `--fail-fast` is passed.
 
@@ -349,6 +365,7 @@ Run:
 
 ```bash
 npm run validate:validation-system
+npm run validate:source-tree-boundaries
 npm run validate:guided-docs
 npm run validate:history-foundation
 npm run validate:design-editing-preflight
@@ -411,4 +428,4 @@ Related:
 - Strict runner: [`validate:local:quick`](../../scripts/validate-local-quick.mjs)
 
 Why this matters:
-Validation is the enforcement layer for the documentation story. It keeps read-only Preview, dry-run commands, disabled Inspector surfaces, Style Engine inventory, CSS/Sass Inspector read-only UI, authored matching over DOM Snapshot, strict reporter output, meta-validation, and future write language from collapsing into unsupported implementation claims.
+Validation is the enforcement layer for the documentation story. It keeps tracked physical source ownership, read-only Preview, dry-run commands, disabled Inspector surfaces, Style Engine inventory, CSS/Sass Inspector read-only UI, authored matching over DOM Snapshot, strict reporter output, meta-validation, and future write language from collapsing into unsupported implementation claims.

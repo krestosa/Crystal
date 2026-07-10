@@ -86,6 +86,7 @@ npm ci
 npm run build
 npm run typecheck
 npm run validate:structure
+npm run validate:source-tree-boundaries
 npm run validate:project-graph
 npm run validate:project-watch
 npm run validate:preview
@@ -93,6 +94,8 @@ npm run validate:dom-snapshot
 npm run validate:local:watch
 npm run doctor:electron
 ```
+
+`validate:structure` verifies that required source paths and generated outputs exist. `validate:source-tree-boundaries` separately enumerates tracked files under `apps/**` and `packages/**` and rejects unregistered physical owners.
 
 It prints each command, measures duration per step, stops on the first failure, prints a final summary, exits with code `1` on failure, and exits with code `0` only when every check passes.
 

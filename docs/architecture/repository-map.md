@@ -4,11 +4,11 @@
 
 ## Purpose
 
-This document maps the physical repository layout to architectural responsibility. It is not a full file inventory; it identifies the directories a developer should inspect before changing a subsystem.
+This document maps the physical repository layout to architectural responsibility. It identifies the registered source owners a developer should inspect before changing a subsystem and the tracked-path policy that prevents new owners from appearing implicitly.
 
 ## Current implementation
 
-Crystal is organized as an npm workspace monorepo. Runtime source lives under `apps/desktop/electron`. Shared contracts, core models, adapters, and validation scripts live outside the app shell.
+Crystal is organized as an npm workspace monorepo. `apps/` and `packages/` are container roots, not product-source owners. `apps/desktop` is the only registered application owner; `apps/desktop/package.json` is its only direct metadata file. Runtime source lives under the registered `main`, `preload`, and `renderer` owners in `apps/desktop/electron`. The registered package owners are `packages/core`, `packages/shared`, and `packages/adapters`.
 
 ```mermaid
 flowchart TD
@@ -44,16 +44,20 @@ Build scripts assemble the modular renderer HTML, compile SCSS, and bundle TypeS
 
 ## Boundaries
 
+- `apps/desktop/package.json` is the only tracked file permitted directly under `apps/desktop`.
 - `apps/desktop/electron/main/**` may use Electron main APIs and Node IO.
 - `apps/desktop/electron/preload/**` may use `contextBridge` and `ipcRenderer`, but only to expose the controlled API.
 - `apps/desktop/electron/renderer/**` must remain a browser UI runtime.
+- A fourth runtime root under `apps/desktop/electron/**` is rejected until its owner and validation contract are explicitly introduced.
 - `packages/core/**` should stay pure application logic where possible.
+- `packages/shared/**` owns cross-runtime contracts and no effects.
 - `packages/adapters/**` isolates external tools or Node-specific effects.
+- New tracked roots under `apps/**` or `packages/**` require an explicit policy and behavioral test update; container-level source files are rejected.
 - `scripts/**` validates or builds; scripts must not become runtime feature backdoors.
 
 ## Validation
 
-`validate:structure` checks architectural structure. Feature validators check specific source boundaries. The docs validator checks that this documentation remains navigable and includes Mermaid diagrams without requiring new dependencies.
+`validate:structure` checks that required source paths and generated outputs exist. `validate:source-tree-boundaries` enumerates tracked files with `git ls-files -z -- apps packages` and rejects physical source ownership outside the registered application, runtime, package, and metadata paths. It does not inspect imports. Feature validators check narrower behavior boundaries. The docs validator checks that this documentation remains navigable and includes Mermaid diagrams without requiring new dependencies.
 
 ## Related docs
 

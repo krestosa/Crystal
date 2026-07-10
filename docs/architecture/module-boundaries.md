@@ -6,7 +6,7 @@
 
 | Question | Answer |
 | --- | --- |
-| Is this implemented? | Partially, through current folder structure and feature validators. |
+| Is this implemented? | Physical source ownership is enforced; import-direction enforcement remains partial. |
 | Can UI modules import effects? | No. |
 | Runtime owner | Renderer, main, core, adapters, and shared contracts each own different concerns. |
 | Safety risk controlled | Prevents preview UI and dry-run modules from gaining side-effect authority. |
@@ -36,7 +36,8 @@ Renderer components compose UI and hold only local interaction state. Core packa
 
 | Implemented | Blocked | Future |
 | --- | --- | --- |
-| Modular renderer components. | UI importing filesystem adapters. | Import-boundary validation. |
+| Registered physical owners for apps and packages. | Unregistered tracked source roots. | Import-boundary validation. |
+| Modular renderer components. | UI importing filesystem adapters. | Static import graph enforcement. |
 | Core command preview modules. | Preview modules writing files. | Separate execution runtime. |
 | Shared IPC contracts. | Ad-hoc string channels. | Stronger ownership checks. |
 
@@ -106,9 +107,9 @@ flowchart TD
 
 ## Boundaries
 
-A UI panel must not import filesystem adapters, watcher adapters, protocol handlers, or Electron main services. Core command preview modules must not import renderer components. Source patch modules must not write files.
+`validate:source-tree-boundaries` enforces where tracked product source may live: `main`, `preload`, `renderer`, `core`, `shared`, and `adapters`, plus the exact desktop package metadata file. A UI panel must not import filesystem adapters, watcher adapters, protocol handlers, or Electron main services. Core command preview modules must not import renderer components. Source patch modules must not write files.
 
-> **Implementation note:** Some import-boundary rules are currently enforced by review and feature validators rather than a complete static import graph.
+> **Implementation note:** Physical ownership validation does not inspect import specifiers, re-exports, aliases, or dynamic imports. Those import-boundary rules are still enforced by review and feature validators rather than a complete static import graph.
 
 ## What this does not do
 
@@ -124,7 +125,7 @@ A UI panel must not import filesystem adapters, watcher adapters, protocol handl
 
 ## Validation
 
-Current validators focus on the highest-risk feature boundaries. Import-boundary validation is still future work, so reviewers should treat this document as an architectural rule even where tooling is not yet exhaustive.
+`npm run validate:source-tree-boundaries` rejects tracked files outside the registered physical owners. Current feature validators focus on the highest-risk behavioral boundaries. Import-boundary validation is still future work, so reviewers should treat dependency direction as an architectural rule even where tooling is not yet exhaustive.
 
 ## Related docs
 

@@ -23,7 +23,8 @@ const REQUIRED_TOOLING_TESTS = [
   "tests/tooling/configuration-schemas.test.mjs",
   "tests/tooling/markdown-links.test.mjs",
   "tests/tooling/change-policy-base.test.mjs",
-  "tests/tooling/validation-workflow-security.test.mjs"
+  "tests/tooling/validation-workflow-security.test.mjs",
+  "tests/tooling/source-tree-boundaries.test.mjs"
 ];
 
 export function runValidationSystemMetaChecks(options = {}) {

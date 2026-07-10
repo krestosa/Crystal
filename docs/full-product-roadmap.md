@@ -136,12 +136,12 @@ Included:
 - Electron launch scripts.
 - Preload bridge baseline.
 - Structure validation.
+- Source tree boundary validation.
 - Local validation runner.
 - Electron diagnostic script.
 
 Future hardening:
 
-- Source tree boundary validation.
 - Import boundary validation.
 - Dist manifest validation.
 - Worker bundle validation.

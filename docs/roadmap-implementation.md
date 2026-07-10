@@ -41,13 +41,31 @@ Covered:
 
 Still future hardening:
 
-- source tree boundary validation
 - import boundary validation
 - dist manifest validation
 - worker bundle validation
 - WASM build validation
 - HTML include source map support
 - circular include reporting
+
+### Phase 0A — Source Tree Boundary Validation Foundation
+
+Covered:
+
+- tracked-file enumeration through `git ls-files -z -- apps packages`
+- pure physical ownership policy for `apps/desktop/package.json`
+- registered Electron runtime owners under `apps/desktop/electron/main/**`, `preload/**`, and `renderer/**`
+- registered package owners under `packages/core/**`, `packages/shared/**`, and `packages/adapters/**`
+- deterministic structured violations for invalid paths, unknown roots, and misplaced product source
+- `validate:source-tree-boundaries` wired into the canonical catalog, local quick validation, full validation, and `validate:local:quick:core`
+- behavioral fixtures for path safety, deduplication, NUL parsing, Git failure handling, and tracked-versus-untracked behavior
+
+Still future hardening:
+
+- import boundary validation
+- dist manifest validation
+- worker bundle validation
+- WASM build validation
 
 ### Phase 1 — Project Graph foundation
 
@@ -432,7 +450,7 @@ Covered:
 
 - strict local quick validation runner with granular per-check reporting
 - PASS/FAIL/SKIPPED final summary
-- 28-check suite including Validation System meta-validator and Authored Style Matching validator
+- 32-check suite including Validation System meta-validator, Source Tree Boundaries, and Authored Style Matching validators
 - direct-node execution for known Node scripts while preserving npm script contracts
 - Windows-safe npm fallback and command-execution failure reporting
 - render modes for unicode, ascii/plain, raw, json-summary, compact, verbose, no-progress, color/no-color
@@ -563,6 +581,12 @@ For iterative validation after dependencies are already installed, run:
 
 ```bash
 npm run validate:local:quick
+```
+
+For Phase 0A physical source ownership validation, run:
+
+```bash
+npm run validate:source-tree-boundaries
 ```
 
 For Phase 8C-specific validation, run:
