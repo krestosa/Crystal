@@ -52,6 +52,7 @@ export const validationCatalog = Object.freeze([
   entry("build-ts", "Build TS", "build", "build:ts", directNode("scripts/build-ts.mjs"), "Build"),
   entry("typecheck", "Typecheck", "build", "typecheck", externalNpm(), "Build", { scriptOwnership: VALIDATION_SCRIPT_OWNERSHIP_EXTERNAL }),
   entry("structure", "Structure", "core", "validate:structure", directNode("scripts/validate-structure.mjs"), "Core"),
+  entry("source-tree-boundaries", "Source Tree Boundaries", "core", "validate:source-tree-boundaries", directNode("scripts/validate-source-tree-boundaries.mjs"), "Core"),
   entry("project-graph", "Project Graph", "core", "validate:project-graph", directNode("scripts/validate-project-graph.mjs"), "Core"),
   entry("project-watch", "Project Watch", "core", "validate:project-watch", directNode("scripts/validate-project-watch.mjs"), "Core"),
   entry("history-foundation", "History Foundation", "core", "validate:history-foundation", directNode("scripts/validate-history-foundation.mjs"), "Core"),

@@ -126,7 +126,9 @@ Renderer must not import Node filesystem primitives or main services. Main must 
 
 ## Validation
 
-`validate:structure` checks the broad source layout. Feature validators add narrower guardrails around Preview, Selection, Inspector, Design Canvas, Element Library, and Source Patch Preview behavior.
+`validate:structure` checks that the required source layout and generated outputs exist. `validate:source-tree-boundaries` checks tracked physical ownership under `apps/**` and `packages/**`; only `main`, `preload`, and `renderer` are registered Electron runtime roots, so a fourth runtime under `apps/desktop/electron/**` fails until it is explicitly introduced.
+
+This physical boundary does not analyze imports between main, preload, and renderer. Import-direction validation remains future work. Feature validators add narrower guardrails around Preview, Selection, Inspector, Design Canvas, Element Library, and Source Patch Preview behavior.
 
 ## Related docs
 
