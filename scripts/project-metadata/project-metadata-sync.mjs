@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { readProjectBaseline, getNodeTypesMajor, parseSemver, satisfiesVersionRange } from "./project-baseline.mjs";
 import { replaceGeneratedBlock } from "./generated-blocks.mjs";
+import { runProjectMetadataWriteTransaction } from "./project-metadata-transaction.mjs";
 import { validationCatalog, applyCatalogScripts, getValidationCatalogStats, validateValidationCatalog } from "../validation/validation-suite.mjs";
 import { runExecutable } from "../tooling/process-runner.mjs";
 
@@ -74,15 +75,27 @@ export function synchronizeProjectMetadata(options = {}) {
   if (errors.length > 0) return report("FAIL", write, [], errors, unique(hints));
 
   const changedFiles = [];
+  const changedContents = new Map();
   for (const [relativePath, expectedContent] of expectedFiles) {
     const absolutePath = path.join(projectRoot, relativePath);
     const currentContent = fs.existsSync(absolutePath) ? fs.readFileSync(absolutePath, "utf8") : null;
     const platformExpectedContent = currentContent === null ? expectedContent : preserveExistingEol(expectedContent, currentContent);
     if (currentContent === platformExpectedContent) continue;
     changedFiles.push(relativePath);
-    if (write) {
-      fs.mkdirSync(path.dirname(absolutePath), { recursive: true });
-      fs.writeFileSync(absolutePath, platformExpectedContent, "utf8");
+    changedContents.set(relativePath, platformExpectedContent);
+  }
+
+  if (write && changedContents.size > 0) {
+    try {
+      runProjectMetadataWriteTransaction(projectRoot, changedContents, {
+        testHooks: options.testHooks,
+        lockOptions: {
+          ...(options.lockOptions ?? {}),
+          command: options.command ?? "sync:project-metadata --write"
+        }
+      });
+    } catch (error) {
+      return report("FAIL", true, changedFiles, [error.message], unique(hints));
     }
   }
 
