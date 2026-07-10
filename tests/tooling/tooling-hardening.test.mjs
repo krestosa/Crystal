@@ -7,7 +7,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { validateProjectBaseline } from "../../scripts/project-metadata/project-baseline.mjs";
 import { synchronizeProjectMetadata, renderValidationCatalog } from "../../scripts/project-metadata/project-metadata-sync.mjs";
 import { replaceGeneratedBlock, validateGeneratedMarkers } from "../../scripts/project-metadata/generated-blocks.mjs";
-import { evaluateChangePolicy, detectBranch, parseNameStatus, runChangePolicy } from "../../scripts/validate-change-policy.mjs";
+import { evaluateChangePolicy, detectBranch, parseNameStatus, runChangePolicy, selectChangePolicy } from "../../scripts/validate-change-policy.mjs";
 import { validateMarkdownText } from "../../scripts/validate-markdown-integrity.mjs";
 import { runExecutable } from "../../scripts/tooling/process-runner.mjs";
 import { parseValidationRunnerFlags } from "../../scripts/validation/validation-runner.mjs";
@@ -232,6 +232,62 @@ test("change policy distinguishes docs and tooling branches", () => {
   assert.equal(evaluateChangePolicy("docs/readme", [{ status: "M", statusToken: "M", path: "package-lock.json", oldPath: null }], config).errors.length, 1);
   assert.equal(evaluateChangePolicy("tooling/harden", [{ status: "M", statusToken: "M", path: "package-lock.json", oldPath: null }], config).errors.length, 0);
   assert.equal(evaluateChangePolicy("docs/readme", [{ status: "D", statusToken: "D", path: "packages/core/runtime.ts", oldPath: null }], config).errors.length, 1);
+});
+
+test("change policy selects a later specific policy by priority", () => {
+  const general = { name: "tooling", branchPrefix: "tooling/", priority: 10 };
+  const specific = { name: "obsolete-root-scaffold-cleanup", branchPrefix: "tooling/remove-obsolete-root-scaffolds", priority: 100 };
+  assert.equal(
+    selectChangePolicy("tooling/remove-obsolete-root-scaffolds", { policies: [general, specific] })?.name,
+    "obsolete-root-scaffold-cleanup"
+  );
+});
+
+test("change policy selects an earlier specific policy by priority", () => {
+  const general = { name: "tooling", branchPrefix: "tooling/", priority: 10 };
+  const specific = { name: "obsolete-root-scaffold-cleanup", branchPrefix: "tooling/remove-obsolete-root-scaffolds", priority: 100 };
+  assert.equal(
+    selectChangePolicy("tooling/remove-obsolete-root-scaffolds", { policies: [specific, general] })?.name,
+    "obsolete-root-scaffold-cleanup"
+  );
+});
+
+test("change policy treats an absent priority as zero", () => {
+  const policy = { name: "tooling", branchPrefix: "tooling/" };
+  assert.equal(selectChangePolicy("tooling/harden", { policies: [policy] }), policy);
+});
+
+test("change policy returns null when no branch prefix matches", () => {
+  const policy = { name: "tooling", branchPrefix: "tooling/" };
+  assert.equal(selectChangePolicy("feature/runtime", { policies: [policy] }), null);
+});
+
+test("evaluateChangePolicy honors the highest-priority matching policy", () => {
+  const config = {
+    policies: [
+      {
+        name: "tooling",
+        branchPrefix: "tooling/",
+        priority: 10,
+        allow: ["scripts/**"],
+        denyExtensions: []
+      },
+      {
+        name: "obsolete-root-scaffold-cleanup",
+        branchPrefix: "tooling/remove-obsolete-root-scaffolds",
+        priority: 100,
+        allow: ["packages/engine/**"],
+        denyExtensions: []
+      }
+    ]
+  };
+  const result = evaluateChangePolicy(
+    "tooling/remove-obsolete-root-scaffolds",
+    [{ status: "D", statusToken: "D", path: "packages/engine/preview/preview-engine.ts", oldPath: null }],
+    config
+  );
+  assert.equal(result.policy, "obsolete-root-scaffold-cleanup");
+  assert.deepEqual(result.errors, []);
 });
 
 test("name-status parser keeps deletions and rename paths", () => {
@@ -497,7 +553,6 @@ test("validation runner preserves all failure taxonomy values", () => {
     checks: [{ id: "missing-npm", label: "Missing npm", category: "validation", npmScript: "missing", required: true, executionMode: "direct-node", directScriptPath: "missing.mjs", command: process.execPath, args: ["missing.mjs"], displayCommand: "npm run missing" }]
   });
   assert.equal(JSON.parse(missingNpm.stdout).results[0].failureType, "missing-npm-script");
-
   const missingDirect = runValidationHarness({
     packageScripts: { missing: "node missing.mjs" },
     checks: [{ id: "missing-direct", label: "Missing direct", category: "validation", npmScript: "missing", required: true, executionMode: "direct-node", directScriptPath: "missing.mjs", command: process.execPath, args: ["missing.mjs"], displayCommand: "npm run missing" }]

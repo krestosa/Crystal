@@ -18,6 +18,7 @@
     {
       "name": "tooling",
       "branchPrefix": "tooling/",
+      "priority": 10,
       "allow": [
         ".github/**",
         ".nvmrc",
@@ -28,6 +29,19 @@
         "package-lock.json",
         "scripts/**",
         "tests/**"
+      ],
+      "denyExtensions": []
+    },
+    {
+      "name": "obsolete-root-scaffold-cleanup",
+      "branchPrefix": "tooling/remove-obsolete-root-scaffolds",
+      "priority": 100,
+      "allow": [
+        "config/change-policy.json",
+        "scripts/validate-change-policy.mjs",
+        "tests/tooling/tooling-hardening.test.mjs",
+        "packages/engine/**",
+        "packages/build-tools/**"
       ],
       "denyExtensions": []
     }
