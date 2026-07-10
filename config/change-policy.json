@@ -31,34 +31,6 @@
         "tests/**"
       ],
       "denyExtensions": []
-    },
-    {
-      "name": "source-tree-boundary-foundation",
-      "branchPrefix": "tooling/source-tree-boundary-validation-foundation",
-      "priority": 100,
-      "allow": [
-        "config/change-policy.json",
-        "scripts/validate-change-policy.mjs",
-        "tests/tooling/tooling-hardening.test.mjs",
-        "packages/engine/**",
-        "packages/build-tools/**",
-        "scripts/validation/source-tree-boundary-policy.mjs",
-        "scripts/validation/list-tracked-source-tree-files.mjs",
-        "scripts/validate-source-tree-boundaries.mjs",
-        "tests/tooling/source-tree-boundaries.test.mjs",
-        "scripts/validation/validation-suite.mjs",
-        "scripts/validation/validation-meta.mjs",
-        "docs/metadata/validation-behavior-contracts.json",
-        "package.json",
-        "docs/roadmap-implementation.md",
-        "docs/full-product-roadmap.md",
-        "docs/architecture/module-boundaries.md",
-        "docs/architecture/repository-map.md",
-        "docs/architecture/runtime-boundaries.md",
-        "docs/architecture/validation-system.md",
-        "docs/development.md"
-      ],
-      "denyExtensions": []
     }
   ]
 }
