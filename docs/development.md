@@ -1,8 +1,8 @@
 # Development environment
 
-Crystal currently targets a Node 24.18.0 local development environment. Use the `.nvmrc` version as the project baseline.
+Crystal reads its local Node, npm, Electron, embedded Node, and Chromium baseline from `config/project-baseline.json`. Use `.nvmrc` and the generated toolchain block below instead of duplicating version constants in human-maintained prose.
 
-Electron 43.1.0 embeds Node 24.18.0 internally, and the local toolchain uses `@types/node` 24.x. Keeping the host Node runtime on Node 24.18.0 keeps Crystal aligned with the Node runtime embedded by the stable Electron baseline.
+The local type definitions follow the canonical Node major. Dependency resolution remains owned by npm and the committed lockfile.
 
 ## Windows baseline
 

@@ -29,6 +29,16 @@ function createFixture() {
     npm: { engine: ">=10.0.0" },
     electron: { version: "43.1.0", packageRange: "^43.1.0", embeddedNode: "24.18.0", chromium: "150.0.7871.47" }
   }, null, 2) + "\n");
+  fs.writeFileSync(path.join(root, "config", "project-metadata-consumers.json"), JSON.stringify({
+    schemaVersion: 1,
+    consumers: [
+      { field: "node.baseline", kind: "generated-file", path: ".nvmrc" },
+      { field: "node.engine", kind: "generated-json", path: "package.json", targetPath: ["engines", "node"] },
+      { field: "node.engine", kind: "generated-json", path: "package-lock.json", targetPath: ["packages", "", "engines", "node"] },
+      { field: "node.baseline", kind: "generated-document", path: "README.md", block: "toolchain" },
+      { field: "node.baseline", kind: "generated-document", path: "docs/development.md", block: "toolchain" }
+    ]
+  }, null, 2) + "\n");
   fs.writeFileSync(path.join(root, ".nvmrc"), "24.18.0\n");
   fs.writeFileSync(path.join(root, "package.json"), JSON.stringify({
     name: "crystal",

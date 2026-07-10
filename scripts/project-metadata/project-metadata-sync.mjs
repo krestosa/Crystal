@@ -3,6 +3,7 @@ import path from "node:path";
 import { readProjectBaseline, getNodeTypesMajor, parseSemver, satisfiesVersionRange } from "./project-baseline.mjs";
 import { replaceGeneratedBlock } from "./generated-blocks.mjs";
 import { runProjectMetadataWriteTransaction } from "./project-metadata-transaction.mjs";
+import { validateProjectMetadataConsumers } from "./project-metadata-consumers.mjs";
 import { validationCatalog, applyCatalogScripts, getValidationCatalogStats, validateValidationCatalog } from "../validation/validation-suite.mjs";
 import { runExecutable } from "../tooling/process-runner.mjs";
 
@@ -70,6 +71,7 @@ export function synchronizeProjectMetadata(options = {}) {
   addGeneratedDocument(expectedFiles, projectRoot, "README.md", "toolchain", renderReadmeToolchain(baseline), errors);
   addGeneratedDocument(expectedFiles, projectRoot, "docs/development.md", "toolchain", renderDevelopmentToolchain(baseline), errors);
   addGeneratedDocument(expectedFiles, projectRoot, "docs/architecture/validation-system.md", "validation-catalog", renderValidationCatalog(catalog), errors);
+  errors.push(...validateProjectMetadataConsumers({ projectRoot, baseline, expectedFiles }));
 
   if (checkGit && fs.existsSync(path.join(projectRoot, ".git"))) validateLockfileGitPolicy(projectRoot, errors);
   if (errors.length > 0) return report("FAIL", write, [], errors, unique(hints));
