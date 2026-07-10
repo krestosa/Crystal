@@ -1,0 +1,78 @@
+name: Validation
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+      - "tooling/**"
+
+permissions:
+  contents: read
+
+jobs:
+  validation:
+    name: Windows validation
+    runs-on: windows-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Upload checked-out source snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: crystal-source-${{ github.sha }}
+          path: .
+          include-hidden-files: true
+          retention-days: 1
+
+      - name: Set up Node from .nvmrc
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci --foreground-scripts
+
+      - name: Validate project metadata
+        run: npm run validate:project-metadata
+
+      - name: Validate validation system
+        run: npm run validate:validation-system
+
+      - name: Validate changed-file policy
+        run: npm run validate:change-policy
+
+      - name: Validate Markdown integrity
+        run: npm run validate:markdown-integrity
+
+      - name: Run strict local quick validation
+        run: npm run validate:local:quick
+
+      - name: Parse JSON validation summary
+        shell: pwsh
+        run: |
+          $json = npm --silent run validate:local:quick:json | Out-String | ConvertFrom-Json
+          if ($json.status -ne "PASS") { throw "Expected PASS" }
+          if ($json.failed -ne 0) { throw "Expected zero failed" }
+          if ($json.skipped -ne 0) { throw "Expected zero skipped" }
+          $json | ConvertTo-Json -Depth 8
+
+      - name: Run tooling hardening regression tests
+        run: npm run test:tooling-hardening
+
+      - name: Build generated and compiled outputs
+        run: npm run build
+
+      - name: Verify build leaves no generated drift
+        run: git diff --exit-code
+
+      - name: Audit dependency graph without fixes
+        run: npm audit
