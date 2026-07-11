@@ -1,0 +1,52 @@
+name: Temporary runtime export
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  export-runtime:
+    name: Install, build, and export runtime
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Node from .nvmrc
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci --foreground-scripts --no-audit --no-fund
+
+      - name: Build application
+        run: npm run build
+
+      - name: Create runtime archive
+        shell: bash
+        run: |
+          node --version > /tmp/runtime-info.txt
+          npm --version >> /tmp/runtime-info.txt
+          tar -czf /tmp/crystal-runtime-linux.tar.gz node_modules dist
+          sha256sum /tmp/crystal-runtime-linux.tar.gz > /tmp/crystal-runtime-linux.tar.gz.sha256
+
+      - name: Upload runtime archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: crystal-runtime-linux
+          path: |
+            /tmp/crystal-runtime-linux.tar.gz
+            /tmp/crystal-runtime-linux.tar.gz.sha256
+            /tmp/runtime-info.txt
+          if-no-files-found: error
+          retention-days: 1
