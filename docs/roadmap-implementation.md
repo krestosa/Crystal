@@ -29,7 +29,7 @@ This page describes what exists in `main`. It is not a delivery schedule. A phas
 
 ## Editing foundations
 
-| Phase | Status | What exists | What remains blocked |
+| Phase or foundation | Status | What exists | What remains blocked |
 | --- | --- | --- | --- |
 | Phase 6A | Implemented, preview-only | Element Library intent, target eligibility, insertion modes. | HTML insertion and file writes. |
 | Phase 6B | Implemented, dry-run | Source Patch Preview and Command Preview Bus. | Patch apply, write IPC, persistence. |
@@ -37,8 +37,11 @@ This page describes what exists in `main`. It is not a delivery schedule. A phas
 | Phase 6D | Implemented, preflight-only | Design editing readiness and conflict/capability summaries. | Apply enablement and source mutation. |
 | Phase 7A | Implemented, intent-only | Editable Inspector draft and edit-intent contracts. | Applied Inspector edits. |
 | Phase 7B | Implemented, read-only | **Editable Inspector read-only draft surface** with disabled controls. | Active input state, Apply handlers, persistence. |
+| Source Revision and Freshness Foundation | Implemented, read-only foundation | Canonical `sha256:<byteLength>:<digest>` revisions from exact file bytes, root-contained observation, typed failures, and canonical match/mismatch evidence for `SourceConflictPreview`. | Command execution, writer-time recheck, patch apply, dirty state, history execution, refresh execution, and Apply. |
 
-The existence of a transaction descriptor, readiness result, field draft, or disabled control does not imply an execution path. Current IPC constants and preload methods contain no write channel.
+The source revision token uses SHA-256, lowercase hexadecimal, and byte length without content, Unicode, or line-ending normalization. The Node adapter accepts a project root plus a project-relative path, resolves canonical paths, blocks traversal and symlink escape, bounds reads by `maxBytes`, and returns typed evidence without exposing write authority. A `clean-preview` result remains evidence only: `canApplyWithoutRecheck` is still always `false`, and any future mutation must repeat the revision check immediately before writing.
+
+The existence of a transaction descriptor, readiness result, field draft, disabled control, or source freshness result does not imply an execution path. Current IPC constants and preload methods contain no write channel.
 
 ## Style Engine and CSS/Sass Inspector
 
@@ -67,6 +70,8 @@ No current path provides:
 - Rust/WebAssembly analyzer runtime;
 - production packaging and distribution.
 
+The read-only source freshness foundation does not complete the write runtime's `conflict-detector` capability because no writer invokes the check at the mutation boundary.
+
 ## Canonical phase boundary statements
 
 The repository validators preserve the following historical phase contracts verbatim. They describe the scope of each increment when it landed; they do not erase later read-only additions.
@@ -86,6 +91,6 @@ Phase 8C boundary: Authored Style Matching over DOM Snapshot only. No real casca
 
 ## Validation status model
 
-The canonical quick suite contains 32 required checks. PASS means every required check executed and succeeded. A required skip remains visible and makes strict validation fail unless the caller explicitly opts into `--allow-skips`.
+The canonical quick suite contains 33 required checks. PASS means every required check executed and succeeded. A required skip remains visible and makes strict validation fail unless the caller explicitly opts into `--allow-skips`.
 
 Read [Validation system](./architecture/validation-system.md) for the command graph and [Full product roadmap](./full-product-roadmap.md) for future direction.

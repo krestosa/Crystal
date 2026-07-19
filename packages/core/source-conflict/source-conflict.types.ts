@@ -1,3 +1,5 @@
+import type { SourceRevisionReadResult } from "./source-version.types";
+
 export type SourceConflictPreviewStatus = "not-checked" | "clean-preview" | "conflict-risk" | "blocked" | "unsupported";
 
 export interface SourceConflictPreview {
@@ -20,6 +22,15 @@ export interface SourceConflictPreviewInput {
   readonly observedSourceVersion?: string;
   readonly requiresFreshSource?: boolean;
   readonly blockedReason?: string;
+  readonly safetyNotes?: readonly string[];
+}
+
+export interface SourceConflictRevisionCheckInput {
+  readonly conflictPreviewId: string;
+  readonly affectedFiles?: readonly string[];
+  readonly expectedSourceVersion?: string;
+  readonly revisionReadResult: SourceRevisionReadResult;
+  readonly requiresFreshSource?: boolean;
   readonly safetyNotes?: readonly string[];
 }
 
