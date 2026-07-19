@@ -109,6 +109,17 @@ A check did not run. The strict quick suite treats required skips as failure unl
 **Generated block**
 Content between `crystal-generated` markers. The metadata synchronizer owns the block; human editing belongs outside it.
 
+## Canonical phase boundary statements
+
+The repository validators preserve the following historical phase contracts verbatim. They describe the scope of each increment when it landed; they do not erase later read-only additions.
+
+- Phase 6D remained preflight-only.
+- Phase 7A was the Editable Inspector draft/intent foundation.
+- Phase 7B added the Editable Inspector read-only draft surface.
+- Phase 8A introduced the Style Engine read-only source inventory foundation. No CSS/Sass Inspector visual surface is added within that phase.
+
+Across those boundaries: No real cascade is calculated. No computed styles are read. No style editing is implemented. No source files are written. No patch apply is available. No write IPC exists. Apply remains unavailable. No contenteditable is used. No undo/redo execution runs. Dirty-state is not persisted. No refresh execution runs. No Preview DOM mutation occurs.
+
 ## Read next
 
 You are here: terminology shared across the documentation.

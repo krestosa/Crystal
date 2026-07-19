@@ -36,6 +36,14 @@ Project Graph dependency metadata becomes style-source references and inventory.
 
 The surface may display authored inventory and candidate information. It cannot calculate cascade, read computed styles, access `document.styleSheets`, parse Sass semantics, edit declarations, enable Apply, write files, or mutate Preview DOM.
 
+## Canonical Phase 8B boundary
+
+Phase 8B — CSS/Sass Inspector read-only visual surface
+
+Phase 8B boundary: CSS/Sass Inspector read-only visual surface only. No real cascade is calculated. No computed styles are read. No style editing is implemented. No source files are written. No patch apply is available. No write IPC exists. Apply remains unavailable. No contenteditable is used. No undo/redo execution runs. Dirty-state is not persisted. No refresh execution runs. No Preview DOM mutation occurs.
+
+The phase also excludes real cascade calculation, computed style inspection, style editing, CSS/Sass source writes, Sass compilation, Sass import resolution, patch apply, IPC write, save/apply workflow, real undo/redo execution, dirty-state persistence, refresh execution, DOM mutation, and Apply enablement.
+
 ## Validation
 
 Run `npm run validate:css-sass-inspector-surface`, together with Style Engine and authored-matching validators when shared contracts change.

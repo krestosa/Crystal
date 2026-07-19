@@ -120,6 +120,31 @@ A passing documentation gate does not prove runtime behavior. A passing feature 
 
 > **Common misunderstanding:** A validator is evidence only for the contract it actually executed. Passing Markdown integrity does not prove Preview behavior, and a missing runtime check cannot be restated as success.
 
+## Canonical phase boundary statements
+
+The repository validators preserve the following historical phase contracts verbatim. They describe the scope of each increment when it landed; they do not erase later read-only additions.
+
+- Phase 6D remained preflight-only.
+- Phase 7A was the Editable Inspector draft/intent foundation.
+- Phase 7B added the Editable Inspector read-only draft surface.
+- Phase 8A introduced the Style Engine read-only source inventory foundation. No CSS/Sass Inspector visual surface is added within that phase.
+
+Across those boundaries: No real cascade is calculated. No computed styles are read. No style editing is implemented. No source files are written. No patch apply is available. No write IPC exists. Apply remains unavailable. No contenteditable is used. No undo/redo execution runs. Dirty-state is not persisted. No refresh execution runs. No Preview DOM mutation occurs.
+
+## Canonical Phase 8B boundary
+
+Phase 8B — CSS/Sass Inspector read-only visual surface
+
+Phase 8B boundary: CSS/Sass Inspector read-only visual surface only. No real cascade is calculated. No computed styles are read. No style editing is implemented. No source files are written. No patch apply is available. No write IPC exists. Apply remains unavailable. No contenteditable is used. No undo/redo execution runs. Dirty-state is not persisted. No refresh execution runs. No Preview DOM mutation occurs.
+
+The phase also excludes real cascade calculation, computed style inspection, style editing, CSS/Sass source writes, Sass compilation, Sass import resolution, patch apply, IPC write, save/apply workflow, real undo/redo execution, dirty-state persistence, refresh execution, DOM mutation, and Apply enablement.
+
+## Canonical Phase 8C boundary
+
+Phase 8C — Authored Style Matching over DOM Snapshot
+
+Phase 8C boundary: Authored Style Matching over DOM Snapshot only. No real cascade is calculated. No computed styles are read. No document.styleSheets or CSSOM is used. No iframe internals are read. No live Preview DOM matching is performed. No source files are written. No patch apply is available. No write IPC exists. Apply remains unavailable. No contenteditable is used. No undo/redo execution runs. Dirty-state is not persisted. No refresh execution runs. No Preview DOM mutation occurs.
+
 ## Validation
 
 Run `npm run validate:validation-system` to check the validator platform itself. Use `npm run validate:local:quick` for the canonical strict local suite and `npm --silent run validate:local:quick:json` for parseable summary output.

@@ -37,6 +37,12 @@ A trusted selection identifies a snapshot node. The node is normalized into tag,
 
 Supported forms are element, class, ID, attribute presence/equality, and single-node compounds. Combinators, pseudo classes/elements, universal and namespace selectors, complex escapes, Sass nesting, conditional-rule evaluation, inheritance, specificity resolution, browser defaults, and real cascade remain outside the model.
 
+## Canonical Phase 8C boundary
+
+Phase 8C — Authored Style Matching over DOM Snapshot
+
+Phase 8C boundary: Authored Style Matching over DOM Snapshot only. No real cascade is calculated. No computed styles are read. No document.styleSheets or CSSOM is used. No iframe internals are read. No live Preview DOM matching is performed. No source files are written. No patch apply is available. No write IPC exists. Apply remains unavailable. No contenteditable is used. No undo/redo execution runs. Dirty-state is not persisted. No refresh execution runs. No Preview DOM mutation occurs.
+
 ## Validation
 
 Run `npm run validate:authored-style-matching`, `validate:style-engine-foundation`, and `validate:css-sass-inspector-surface`. The validator rejects live DOM, CSSOM, selector-engine shortcuts, writes, Apply, and Preview mutation.

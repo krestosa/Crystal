@@ -81,6 +81,17 @@ No planning, readiness, draft, disabled-surface, inventory, or authored-matching
 
 > **Common misunderstanding:** More complete planning does not gradually become execution. The boundary remains binary until an explicit writer owns all required effects.
 
+## Canonical phase boundary statements
+
+The repository validators preserve the following historical phase contracts verbatim. They describe the scope of each increment when it landed; they do not erase later read-only additions.
+
+- Phase 6D remained preflight-only.
+- Phase 7A was the Editable Inspector draft/intent foundation.
+- Phase 7B added the Editable Inspector read-only draft surface.
+- Phase 8A introduced the Style Engine read-only source inventory foundation. No CSS/Sass Inspector visual surface is added within that phase.
+
+Across those boundaries: No real cascade is calculated. No computed styles are read. No style editing is implemented. No source files are written. No patch apply is available. No write IPC exists. Apply remains unavailable. No contenteditable is used. No undo/redo execution runs. Dirty-state is not persisted. No refresh execution runs. No Preview DOM mutation occurs.
+
 ## Validation
 
 Current validators must fail if write behavior appears in preview, planning, readiness, Inspector, or style modules. Use the focused history, editing-preflight, Inspector, Style Engine, matching, surface, source-patch, and architecture gates.
