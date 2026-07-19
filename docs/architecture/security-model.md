@@ -1,4 +1,4 @@
-# Security Model
+# Security model
 
 [Docs index](../README.md)
 
@@ -6,133 +6,88 @@
 
 | Question | Answer |
 | --- | --- |
-| Is this implemented? | Yes, through hardened Electron preferences, constrained preload, and safe Preview serving. |
-| Can Preview content access Crystal privileges? | No. |
-| Runtime owner | Main process owns privileged filesystem and protocol decisions. |
-| Safety risk controlled | Prevents project HTML, renderer bugs, or UI shortcuts from escalating to filesystem authority. |
-| Related next phase | Future write paths must add gates without weakening Preview isolation. |
+| BrowserWindow hardening | `contextIsolation: true`, `nodeIntegration: false`, `sandbox: true`, `webSecurity: true`. |
+| Preload exposure | Named typed methods only. |
+| Preview serving | Project-root-contained custom protocol. |
+| Selection transport | Bounded postMessage payloads with repeated validation. |
+| Writes | No write contract exists. |
 
 ## Purpose
 
-Crystal must display arbitrary project HTML while also managing local files. The security model keeps those facts from colliding: a page loaded in Preview may contain scripts, broken markup, remote references, or hostile code, but it must never inherit Crystal's desktop privileges.
-
-## Why this exists
-
-The highest-risk future work is visual editing. Before editing exists, Crystal needs stable boundaries that prevent renderer UI and project HTML from becoming privileged code.
-
-## How to read this page
-
-| Concern | Relevant boundary |
-| --- | --- |
-| Renderer privilege | BrowserWindow preferences and preload shape. |
-| Project file serving | `crystal-preview://` root containment. |
-| Selection messages | Bounded `postMessage` payloads and validation. |
-| Future writes | Main/core write services only after explicit contracts exist. |
+Crystal must render projects that may contain broken markup, scripts, remote references, or hostile content while retaining access to local project files. The security model keeps the rendered page useful without making it privileged.
 
 ## Current implementation
 
-Main creates the BrowserWindow with `contextIsolation: true`, `nodeIntegration: false`, `sandbox: true`, and `webSecurity: true`. Preload exposes only the typed `window.crystal` surface. Project files for Preview are served through `crystal-preview://current/<relative-project-path>` after main resolves each request against the active project root.
-
-| Implemented | Blocked | Future |
-| --- | --- | --- |
-| Hardened BrowserWindow preferences. | Renderer Node access. | Write-gated main/core persistence. |
-| Constrained preload API. | Raw IPC exposure. | Transaction-aware write IPC if designed. |
-| Root-contained Preview protocol. | Traversal/out-of-root reads. | Additional safe protocol diagnostics. |
-| Bounded selection messages. | Live iframe document reads. | Richer selection states with same isolation. |
+Main creates the application window from the hardened preference object. Preload exposes `window.crystal` rather than raw IPC. Preview resources are resolved inside the active project root. Static source feeds DOM Snapshot; renderer never relies on `iframe.contentDocument` or `iframe.contentWindow.document`. Selection messages are checked at the renderer boundary and again before core mapping.
 
 ## Key files
 
-These files are the security entry points. Read them before changing BrowserWindow options, preload shape, Preview serving, or selection messages.
+The following paths are the shortest reliable entry points. They are not a substitute for following the data flow through the subsystem.
 
 ## Key files and responsibilities
 
-| File | Responsibility | Reads | Must not do |
+| File or path | Responsibility | Reads | Must not do |
 | --- | --- | --- | --- |
-| `apps/desktop/electron/main/security/web-preferences.ts` | Defines hardened web preferences. | Electron option constants. | Enable Node integration or disable sandbox. |
-| `apps/desktop/electron/preload/bridges/crystal-api.bridge.ts` | Exposes controlled API. | IPC channel contracts. | Expose raw `ipcRenderer`. |
-| `apps/desktop/electron/main/preview/project-preview-protocol.ts` | Serves active-root resources. | Active project root and safe paths. | Serve traversal or outside-root paths. |
-| `apps/desktop/electron/main/preview-selection/project-preview-selection-service.ts` | Validates selection state in main. | Bounded payloads. | Trust renderer blindly. |
-| `apps/desktop/electron/renderer/components/project-preview-panel/selection/project-preview-selection-message-bridge.ts` | Receives iframe selection messages. | Source window and message shape. | Read iframe DOM directly. |
+| `apps/desktop/electron/main/security/web-preferences.ts` | Defines hardened window preferences. | Electron options | disable sandbox or web security |
+| `apps/desktop/electron/preload/bridges/crystal-api.bridge.ts` | Exposes the controlled API. | allowed channel set | expose arbitrary IPC |
+| `apps/desktop/electron/main/preview/project-preview-protocol.ts` | Contains Preview reads to the active root. | normalized project-relative paths | serve traversal or outside-root paths |
+| `project-preview-selection-message-bridge.ts` | Checks iframe message origin and shape. | MessageEvent data | read the iframe document |
+| `project-preview-selection-service.ts` | Validates and stores bounded selection state. | candidate payloads | trust renderer blindly |
 
 ## Data flow
 
 | Input | Decision | Output |
 | --- | --- | --- |
-| Renderer IPC call | Is the channel exposed by preload? | Allowed main request or no access. |
-| Preview URL | Is the path normalized and inside the active root? | Served resource or sanitized issue. |
-| Iframe selection message | Is source window and payload shape valid? | Bounded selected-node state. |
-| Future write request | Is there an explicit write contract? | Currently blocked. |
-
-## Main diagram
-
-Allowed paths are solid. Forbidden shortcuts are dotted. Future write work is shown as a separate blocked area, not as a current edge.
+| Preview URL | Does it normalize inside the active root? | Resource or sanitized issue |
+| Renderer call | Is the method exposed and channel valid? | Main request or no access |
+| Iframe message | Is the source window and payload expected? | Candidate state or ignored input |
+| Future edit intent | Does an explicit write runtime exist? | Currently blocked |
 
 ```mermaid
 flowchart TD
-  subgraph Allowed[Allowed today]
-    Renderer[Renderer shell] --> Preload[contextBridge API]
-    Preload --> Main[Main IPC handlers]
-    Main --> FS[(Filesystem through services)]
-    Main --> Protocol[crystal-preview protocol]
-    Protocol --> Iframe[Sandboxed Preview iframe]
-    Iframe --> Message[Bounded postMessage]
-    Message --> Renderer
-  end
-
-  subgraph Forbidden[Forbidden today]
-    RawIPC[Raw ipcRenderer]
-    DirectFS[Direct renderer filesystem]
-    IframeDOM[iframe.contentDocument / iframe.contentWindow.document]
-    NodeAPI[Node APIs in renderer]
-    Traversal[Traversal/out-of-root file serving]
-  end
-
-  subgraph FutureOnly[Future only]
-    WriteIPC[Write IPC contract]
-    PatchApply[Patch apply]
-    Undo[Undo transaction]
-  end
-
-  Renderer -. blocked .-> RawIPC
-  Renderer -. blocked .-> DirectFS
-  Renderer -. blocked .-> IframeDOM
-  Iframe -. blocked .-> NodeAPI
-  Protocol -. blocks .-> Traversal
-  Main -. not implemented .-> WriteIPC
-  WriteIPC -. future .-> PatchApply
-  PatchApply -. future .-> Undo
+  Renderer[Renderer shell] --> Preload[Constrained preload]
+  Preload --> Main[Electron main]
+  Main --> Files[(Project files)]
+  Main --> Protocol[crystal-preview protocol]
+  Protocol --> Frame[Sandboxed iframe]
+  Frame --> Message[Bounded postMessage]
+  Message --> Renderer
+  Renderer -. blocked .-> RawIPC[raw ipcRenderer]
+  Renderer -. blocked .-> DirectFS[direct filesystem]
+  Renderer -. blocked .-> IframeDOM[iframe document]
+  Protocol -. blocks .-> Outside[paths outside root]
 ```
 
 ## Boundaries
 
-`nodeIntegration: false` prevents renderer scripts from importing Node. `contextIsolation: true` prevents the page context from mutating the preload environment. `sandbox: true` limits renderer process privileges. `webSecurity: true` preserves browser security checks. Avoiding `iframe.contentDocument` and `iframe.contentWindow.document` prevents renderer code from depending on same-origin access to project HTML.
+Do not weaken window or iframe isolation to obtain easier inspection. Missing information should become a better bounded model or explicit unsupported state. Future persistence must add authority behind main/core gates rather than exposing it to renderer or project code.
 
-> **Safety boundary:** Do not relax Electron or iframe security to make inspection easier. Inspection must use bounded state and main/core validation.
+> **Safety boundary:** State that crosses a boundary is evidence to validate, not authority to perform a privileged effect.
 
 ## What this does not do
 
-| Not provided | Reason |
+| Not provided | Why |
 | --- | --- |
-| File mutation | No write runtime exists. |
-| Live DOM inspection from renderer | Would weaken Preview isolation. |
-| Arbitrary local file serving | Preview protocol is project-root scoped. |
-| Editable Inspector | Would require command execution and history. |
+| Arbitrary local file serving | The protocol is scoped to the active project root. |
+| Live iframe inspection | Renderer does not read iframe internals. |
+| Project-content privilege | The page cannot call Crystal or Node APIs. |
+| Write IPC | No current channel performs project mutation. |
 
 ## Common misunderstanding
 
-> **Common misunderstanding:** The Preview iframe rendering a project page does not mean renderer can safely inspect or mutate that page's live DOM.
+> **Common misunderstanding:** Security options are not incidental Electron configuration. They define who may hold authority and therefore constrain every future editing design.
 
 ## Validation
 
-Security-sensitive validators look for forbidden iframe access, write-channel shortcuts, and DOM mutation patterns. `validate:source-patch-preview` guards the line between previewing a possible source edit and applying one.
+Preview, selection, Inspector, source-patch, UI-flow, and architecture validators check forbidden shortcuts. Review `web-preferences.ts`, preload exposure, and protocol containment for every security-sensitive change.
 
 ## Related docs
 
-- [Preview safety](./preview/preview-safety.md)
 - [Runtime boundaries](./runtime-boundaries.md)
+- [Preview safety](./preview/preview-safety.md)
 - [Security boundaries diagram](./diagrams/security-boundaries.md)
 - [ADR 0001](../decisions/0001-electron-security-boundaries.md)
 
 ## Future work
 
-Future write-capable flows must add validation and transaction layers without weakening these protections. A write runtime may need more information, but it should get that information through main/core services, not by trusting the Preview iframe or giving renderer raw filesystem access.
+A write runtime may need additional source information, but it must obtain it through validated main/core services. It must not rely on same-origin iframe access or renderer filesystem helpers.

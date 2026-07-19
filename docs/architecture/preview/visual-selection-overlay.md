@@ -6,123 +6,85 @@
 
 | Question | Answer |
 | --- | --- |
-| Is this implemented? | Yes, as read-only external projection. |
-| Can it write source files? | No. |
-| Runtime owner | Renderer projects core-derived selection state over the Preview frame. |
-| Safety risk controlled | Keeps Crystal overlay UI outside the user's document. |
-| Related next phase | Overlay hardening and refresh invalidation. |
+| Status | Implemented, read-only. |
+| Location | Outside the iframe, inside the transformed Design Canvas stage. |
+| Input | Matched selection, validated rectangle, frame geometry, and canvas transform. |
+| Interaction | `pointer-events: none`. |
+| Editing handles | Not implemented. |
 
 ## Purpose
 
-The Visual Selection Overlay makes a read-only selection visible without inserting Crystal UI into the user's document. Overlay graphics belong to Crystal's workspace, not to the project being previewed.
-
-## Why this exists
-
-Visual feedback is needed for selection, but injecting handles or highlight nodes into user HTML would contaminate the page and blur the editor/document boundary.
-
-## How to read this page
-
-| Need | Focus |
-| --- | --- |
-| Projection inputs | Data flow table. |
-| Safety boundary | What this does not do. |
-| Future overlay work | Future work and related docs. |
+Crystal needs visual feedback for a matched selection, but inserting highlight nodes or handles into project HTML would change the document being inspected. The overlay therefore belongs to Crystal UI.
 
 ## Current implementation
 
-The overlay sits outside the Preview iframe and projects highlight geometry for a matched selection. It is driven by Preview Selection, DOM Snapshot mapping, Preview frame geometry, and Design Canvas viewport state.
-
-| Implemented | Blocked | Future |
-| --- | --- | --- |
-| External selection highlight. | Editing handles. | Hover outlines. |
-| Defensive missing-state behavior. | DOM injection. | Measurements and guides. |
-| Canvas-aware projection. | Layout/style editing. | Scroll/reflow hardening. |
+The injected selection script reports a bounded rectangle in iframe-viewport coordinates. After transport validation and trusted Snapshot mapping, renderer projects that rectangle into Design Canvas coordinates. The overlay follows pan, zoom, Fit, Center, Reset, and resize. Defensive mapping or invalid geometry yields no false highlight.
 
 ## Key files
 
-The current overlay types live in core; renderer integration is inside the Design Canvas and Preview panel surfaces.
+The following paths are the shortest reliable entry points. They are not a substitute for following the data flow through the subsystem.
 
 ## Key files and responsibilities
 
 | File or path | Responsibility | Reads | Must not do |
 | --- | --- | --- | --- |
-| `packages/core/project/design-canvas/selection-overlay/project-design-canvas-selection-overlay.types.ts` | Overlay model contract. | Selection/canvas state shapes. | Define edit handles. |
-| `apps/desktop/electron/renderer/components/design-canvas/**` | Canvas transform and projection surface. | Canvas viewport + frame geometry. | Mutate user DOM. |
-| `apps/desktop/electron/renderer/components/project-preview-panel/**` | Selection UI integration. | Preview and selection state. | Apply source changes. |
-| `scripts/validate-visual-selection-overlay.mjs` | Overlay boundary validation. | Source files. | Patch runtime code. |
+| `packages/core/project/design-canvas/selection-overlay` | Defines projection states and contracts. | selection and viewport inputs | define mutation effects |
+| `components/design-canvas` | Owns stage transforms and frame geometry. | canvas viewport state | inspect live iframe DOM |
+| `components/project-preview-panel` | Coordinates selection lifecycle. | Preview and selection state | apply source changes |
+| `project-preview-selection-message-bridge.ts` | Receives bounded selection rectangles. | MessageEvent data | trust invalid coordinates |
+| `scripts/validate-visual-selection-overlay.mjs` | Guards projection and no-mutation assumptions. | source files and fixtures | patch runtime |
 
 ## Data flow
 
 | Input | Decision | Output |
 | --- | --- | --- |
-| Matched selection | Is mapping trusted? | Overlay can project. |
-| Preview geometry | Is frame measurable? | Highlight coordinates. |
-| Canvas transform | How should coordinates be scaled? | External overlay box. |
-| Missing data | Can projection be trusted? | Defensive empty state. |
-
-## Main diagram
+| Matched selection | Is mapping current and trusted? | Projection candidate or no overlay |
+| Selection rectangle | Is it finite, bounded, non-zero, and in expected coordinates? | Safe geometry or defensive state |
+| Canvas transform | How does frame map to stage? | Projected external rectangle |
+| Preview lifecycle | Did target/load/selection change? | Clear or recompute overlay |
 
 ```mermaid
 flowchart TD
-  subgraph Inputs[Derived inputs]
-    Selection[Preview Selection]
-    Snapshot[DOM Snapshot mapping]
-    Geometry[Preview frame geometry]
-    Canvas[Canvas viewport]
-  end
-
-  subgraph Projection[Renderer projection]
-    CanProject{Can project safely?}
-    Highlight[External highlight]
-    Empty[No overlay]
-  end
-
-  subgraph Forbidden[Forbidden]
-    DOMNode[Injected DOM node]
-    Handle[Edit handle]
-    Mutation[Source mutation]
-  end
-
-  Selection --> CanProject
-  Snapshot --> CanProject
-  Geometry --> CanProject
-  Canvas --> CanProject
-  CanProject -->|yes| Highlight
-  CanProject -->|no| Empty
-  Highlight -. must not create .-> DOMNode
-  Highlight -. must not expose .-> Handle
-  Highlight -. must not trigger .-> Mutation
+  Selection[Matched Preview Selection] --> Gate{Trusted geometry?}
+  Rect[Bounded iframe rectangle] --> Gate
+  Frame[Preview frame geometry] --> Gate
+  Canvas[Design Canvas transform] --> Gate
+  Gate -->|yes| Overlay[External highlight]
+  Gate -->|no| None[No false overlay]
+  Overlay -. never creates .-> DOM[Project DOM nodes]
+  Overlay -. no .-> Handles[Editing handles]
 ```
 
 ## Boundaries
 
-The overlay is read-only. It does not select by itself, edit source, compute styles, inspect live layout internals, create resize handles, or inject nodes into the user's DOM.
+The overlay cannot select by itself, block iframe interaction, mutate project DOM, compute styles, expose editable handles, or trigger source commands. Geometry is visual evidence tied to the current load and mapping state.
 
-> **Safety boundary:** External projection keeps Crystal UI separate from project HTML.
+> **Safety boundary:** State that crosses a boundary is evidence to validate, not authority to perform a privileged effect.
 
 ## What this does not do
 
-| Not provided | Reason |
+| Not provided | Why |
 | --- | --- |
-| Editing handles | Requires command execution and undo. |
-| DOM injection | Would pollute user document. |
-| Persistent bounding boxes | Future overlay system. |
+| DOM injection | Crystal UI remains separate from project HTML. |
+| Move or resize handles | No write command or history exists. |
+| Persistent browser layout model | Geometry is current bounded message data. |
+| WebGPU rendering | The MVP uses renderer HTML/CSS. |
 
 ## Common misunderstanding
 
-> **Common misunderstanding:** The overlay is not a layer inside the iframe. It is Crystal UI projected over the iframe.
+> **Common misunderstanding:** The highlight is not a child of the selected element. It is Crystal-owned UI projected over the iframe.
 
 ## Validation
 
-`validate:visual-selection-overlay` checks lifecycle, defensive states, and no user-DOM mutation assumptions.
+`npm run validate:visual-selection-overlay` checks rectangle bounds, lifecycle clearing, projection states, pointer transparency, and absence of project-DOM mutation.
 
 ## Related docs
 
 - [Preview Selection](./preview-selection.md)
 - [Design view](../renderer-shell/design-view.md)
-- [Preview Inspector](./preview-inspector.md)
-- [Preview selection sequence](../diagrams/preview-selection-sequence.md)
+- [Overlay MVP note](../../visual-selection-overlay.md)
+- [Preview Selection sequence](../diagrams/preview-selection-sequence.md)
 
 ## Future work
 
-Overlay hardening should address iframe scroll, resize, reflow, hover, layout badges, measurements, rulers, and guides. Editing handles remain future work until command execution and undo/redo are real.
+Hover outlines, measurements, guides, rulers, reflow hardening, and edit handles should remain separate capabilities. Handles require executable commands and history; WebGPU requires a proven rendering contract and fallback.

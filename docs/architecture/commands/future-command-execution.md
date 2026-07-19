@@ -1,4 +1,4 @@
-# Future Command Execution
+# Future command execution
 
 [Docs index](../../README.md)
 
@@ -6,150 +6,92 @@
 
 | Question | Answer |
 | --- | --- |
-| Is this implemented? | No. |
-| Can current commands write source files? | No. |
-| Runtime owner | Future main/core execution services. |
-| Phase 6C addition | Command transaction plan preview only. |
-| Phase 6D addition | Design editing readiness preflight only. |
-| Phase 7A addition | Editable Inspector draft/intent foundation only. |
-| Phase 7B addition | Editable Inspector read-only draft surface only. |
-| Phase 8A addition | Style Engine read-only source inventory foundation only. |
-| Safety risk controlled | Keeps dry-run previews, planning, readiness summaries, Inspector edit intents, disabled Inspector UI, and Style Engine inventory separate from side effects. |
-
-> **Future-only:** This page describes the shape a future runtime needs. It must not be cited as current write support.
+| Write runtime | Not implemented. |
+| Planning foundations | Implemented through transaction, refresh, and readiness descriptors. |
+| Inspector foundations | Draft/intent models and disabled read-only surface implemented. |
+| Style foundations | 8A inventory, 8B read-only surface, and 8C snapshot candidates implemented. |
+| Apply | Unavailable throughout. |
 
 ## Purpose
 
-This page keeps future command execution separate from current preview behavior. Phase 6C adds transaction planning descriptors. Phase 6D adds Apply-blocked design readiness. Phase 7A adds Inspector draft/intent contracts. Phase 7B renders those Inspector contracts as disabled UI. Phase 8A adds Style Engine source inventory contracts for a future CSS/Sass Inspector without command execution.
+This page marks the exact boundary between the models Crystal has and the effectful runtime it does not. It should be read as an execution contract under design, not as current write support.
 
 ## Current implementation
 
-No real command execution runtime exists. No source patch apply path exists. No write IPC exists. No save/apply workflow exists. No renderer behavior writes project files. Phase 8A only introduces read-only style source inventory and textual preview models under `packages/core/style-engine/`.
-
-Phase 8A boundary: Style Engine read-only source inventory foundation only. No CSS/Sass Inspector visual surface is added. No real cascade is calculated. No computed styles are read. No style editing is implemented. No source files are written. No patch apply is available. No write IPC exists. Apply remains unavailable. No contenteditable is used. No undo/redo execution runs. Dirty-state is not persisted. No refresh execution runs. No Preview DOM mutation occurs.
-
-| Implemented | Blocked | Future |
-| --- | --- | --- |
-| Dry-run command previews. | Command execution. | Explicit execution runtime. |
-| Source Patch Preview. | File writes. | Patch apply service. |
-| History transaction preview. | Undo/redo execution. | Durable transaction log. |
-| Refresh boundary plan. | Refresh execution. | Post-write orchestration. |
-| Design editing readiness preview. | Apply enablement. | Dirty-state workflow. |
-| Inspector edit draft/intent previews. | Applied Inspector edits. | Gated Inspector Apply flow. |
-| Disabled Editable Inspector surface. | Editable input state. | Gated Inspector Apply flow. |
-| Style Engine source inventory. | CSS/Sass editing. | CSS/Sass Inspector. |
-| Selector/declaration/rule previews. | Real cascade. | Cascade Map. |
-| Selected-node style readiness. | Computed style reads. | Authored/computed style correlation. |
+No command execution runtime, patch apply service, write IPC, save workflow, executable history, dirty-state store, or post-write refresh executor exists. Current modules can produce Source Patch Preview, history/refresh transaction plans, design-editing readiness, Inspector field drafts and intents, a disabled Editable Inspector, style-source inventory, a passive CSS/Sass Inspector, and authored rule candidates over DOM Snapshot. Every one of those outputs is read-only, preview-only, or planning-only.
 
 ## Key files
 
-The following files are preview, planning, preflight, draft/intent, read-only surface, or inventory files only. Do not cite them as an implemented execution runtime.
+The following paths are the shortest reliable entry points. They are not a substitute for following the data flow through the subsystem.
 
 ## Key files and responsibilities
 
 | File or path | Responsibility | Reads | Must not do |
 | --- | --- | --- | --- |
-| `packages/core/commands/command-preview-bus/**` | Dry-run preview routing. | Command preview input. | Execute commands. |
-| `packages/core/source-patch/**` | Preview anchors and payloads. | DOM Snapshot source location. | Persist files. |
-| `packages/core/history/**` | Future transaction descriptor. | Patch metadata. | Execute undo/redo. |
-| `packages/core/refresh-boundary/**` | Future invalidation descriptor. | Affected files. | Mutate derived state. |
-| `packages/core/commands/transaction-planning/**` | Preview-only bridge across the above models. | Preview results. | Execute or apply. |
-| `packages/core/design-editing/**` | Preview-only readiness summary. | Preflight models. | Enable Apply. |
-| `packages/core/inspector-editing/**` | Draft/intent and read-only surface models. | Selection paths and readiness previews. | Mutate DOM or write source. |
-| `packages/core/style-engine/**` | Read-only style inventory, selector, declaration, rule, and selected-node style readiness previews. | Caller-supplied source text and Project Graph-style paths. | Read iframe styles, calculate real cascade, edit styles, write files, or enable Apply. |
-| `apps/desktop/electron/renderer/views/inspector/editable-inspector/**` | Disabled surface for Editable Inspector preview. | Inspector editing view model. | Attach editing or Apply handlers. |
-
-Future execution files do not exist yet.
+| `packages/core/commands/command-preview-bus` | Dry-run command routing. | preview request | execute |
+| `packages/core/history` | HistoryTransactionPreview descriptors. | patch metadata | undo or redo |
+| `packages/core/refresh-boundary` | RefreshBoundaryPlan descriptors. | affected paths | reload state |
+| `packages/core/design-editing` | Apply-blocked readiness. | transaction and capability inputs | enable Apply |
+| `packages/core/inspector-editing` | Field drafts and edit-intent previews. | trusted source-mapped context | mutate source |
+| `packages/core/style-engine` | Inventory and snapshot candidate previews. | plain source text and snapshot data | calculate real cascade or edit |
 
 ## Data flow
 
-| Current input | Current decision | Current output |
+| Input | Decision | Output |
 | --- | --- | --- |
-| Command Preview Result | Is it preview-ready? | Plan may continue or block. |
-| Source Patch Preview | Is it ready and does it include affected files? | History/refresh planning or blocked plan. |
-| CommandTransactionPlanPreview | What dirty/conflict/write capability checks are needed? | Design editing readiness preview. |
-| Preview Inspector selection | Can Inspector fields be represented as drafts? | Inspector editable field preview. |
-| InspectorEditingReadinessPreview | Can Apply be enabled? | No, Apply remains unavailable. |
-| Caller-supplied HTML/source text | Can style sources be inventoried textually? | StyleSourceInventoryPreview. |
-| StyleSourceInventoryPreview | Can authored styles be inspected as inventory? | SelectedNodeStyleReadinessPreview. |
-| Style readiness | Can styles be edited or applied? | No, Apply remains unavailable. |
+| Command Preview Result | Is it preview-ready? | Planning can continue or block |
+| Source Patch Preview | Which files and reversibility questions matter? | Transaction/refresh descriptors |
+| Readiness inputs | Are all future requirements represented? | Apply remains false |
+| Inspector draft | Can intent be modeled safely? | Read-only field and intent preview |
+| Style evidence | Can inventory/candidates be represented? | Passive Inspector data |
+| Future validated transaction | Does an execution runtime exist? | Currently no |
 
 ```mermaid
 flowchart TD
-  subgraph Preview[Current preview]
-    Command[Command Preview Result]
-    Patch[Source Patch Preview]
-    Selection[Read-only Preview Inspector selection]
-  end
-
-  subgraph Planning[Planning and preflight]
-    Plan[CommandTransactionPlanPreview]
-    Ready[DesignEditingReadinessPreview]
-    InspectorReady[InspectorEditingReadinessPreview]
-  end
-
-  subgraph Style8A[Phase 8A Style Engine inventory]
-    Sources[StyleSourceReferencePreview]
-    Inventory[StyleSourceInventoryPreview]
-    Rules[StyleRulePreview]
-    StyleReady[SelectedNodeStyleReadinessPreview]
-  end
-
-  subgraph Blocked[Blocked execution]
-    Apply[Apply unavailable]
-    Write[(File write)]
-    Ipc[(Write IPC)]
-  end
-
-  Command --> Patch --> Plan --> Ready
-  Selection --> InspectorReady
-  Sources --> Inventory --> StyleReady
-  Rules --> StyleReady
-  Ready -. optional readiness context .-> InspectorReady
-  InspectorReady -. optional readiness context .-> StyleReady
-  StyleReady -. inventory only .-> Apply
-  Apply -. no current edge .-> Write
-  Apply -. no current edge .-> Ipc
+  Preview[Command and Source Patch Preview] --> Plan[Transaction and refresh planning]
+  Plan --> Ready[Design-editing readiness]
+  Selection[Trusted Inspector selection] --> Draft[Inspector drafts and intents]
+  Sources[Style source inventory] --> Style[Read-only style surface and candidates]
+  Ready --> Blocked[Apply unavailable]
+  Draft --> Blocked
+  Style --> Blocked
+  Blocked -. no current edge .-> Writer[Future main/core writer]
+  Writer --> Persist[Persistence and dirty state]
+  Persist --> History[Executable undo/redo]
+  Persist --> Refresh[Refresh execution]
 ```
 
 ## Boundaries
 
-Do not add hidden apply behavior under preview functions. Do not add renderer filesystem writes. Do not add write IPC before command execution policy, transaction state, dirty state, conflict detection, and refresh execution are designed. Phase 8A Style Engine models must remain pure inventory contracts: no CSS/Sass Inspector visual surface, no real cascade, no computed styles, no style editing, no source write, no patch apply, no write IPC, no contenteditable, no refresh execution, no dirty-state persistence, no undo/redo execution, and no Preview DOM mutation.
+No planning, readiness, draft, disabled-surface, inventory, or authored-matching module may hide an apply path. Renderer must not write files. Main must not gain write IPC before source freshness, conflict policy, transaction execution, dirty state, refresh execution, and user approval are explicit.
 
-> **Safety boundary:** Execution must be a separate, explicit runtime path; it cannot be smuggled into preview helpers, planning helpers, readiness helpers, Inspector draft/intent helpers, the Phase 7B read-only surface, or the Phase 8A Style Engine inventory.
+> **Safety boundary:** State that crosses a boundary is evidence to validate, not authority to perform a privileged effect.
 
 ## What this does not do
 
-| Not provided | Reason |
+| Not provided | Why |
 | --- | --- |
-| File write | Future only. |
-| Patch apply | Future only. |
-| Undo/redo execution | Future only. |
-| Save/apply workflow | Future only. |
-| Preview reload after write | No write occurs. |
-| Dirty-state persistence | Future only. |
-| CSS/Sass Inspector visual surface | Phase 8A is core inventory only. |
-| Real cascade | Phase 8A only stores textual previews. |
-| Computed styles | Phase 8A forbids computed style reads. |
-| Applied style editing | Style declarations remain `canEdit: false` and `canApply: false`. |
+| File writes or patch apply | Future writer files do not exist. |
+| Undo/redo execution | History previews cannot replay effects. |
+| Refresh execution | Plans describe invalidation only. |
+| Enabled Inspector or CSS editing | Current surfaces remain passive. |
+| Real cascade or computed styles | Style evidence is textual and snapshot-derived. |
 
 ## Common misunderstanding
 
-> **Common misunderstanding:** A style source inventory is not a Cascade Map. A selector preview is not a DOM match. A declaration preview is not an editable style control. A selected-node style readiness preview is not Apply permission.
+> **Common misunderstanding:** More complete planning does not gradually become execution. The boundary remains binary until an explicit writer owns all required effects.
 
 ## Validation
 
-`validate:style-engine-foundation` checks that Phase 8A modules exist, exports remain barrel-only, style sources cannot write, style inventory cannot edit/apply, selected-node style readiness cannot inspect computed styles, forbidden stylesheet/browser/iframe/write APIs are absent, package scripts are wired, and docs keep the Phase 8A boundary explicit.
+Current validators must fail if write behavior appears in preview, planning, readiness, Inspector, or style modules. Use the focused history, editing-preflight, Inspector, Style Engine, matching, surface, source-patch, and architecture gates.
 
 ## Related docs
 
 - [Future write flow](../flows/future-write-flow.md)
-- [Command Preview Bus](./command-preview-bus.md)
 - [Source Patch Preview](./source-patch-preview.md)
-- [Validation system](../validation-system.md)
-- [ADR 0003](../../decisions/0003-command-preview-before-write.md)
-- [Roadmap implementation](../../roadmap-implementation.md)
+- [CSS/Sass Inspector surface](../css-sass-inspector-readonly-surface.md)
+- [Implementation status](../../roadmap-implementation.md)
 
 ## Future work
 
-A later phase can add CSS/Sass Inspector visual UI, authored-style matching against DOM Snapshot, real cascade analysis, computed style inspection, and controlled style editing only after write ownership, patch application, dirty state, conflict detection, refresh execution, Inspector Apply UX, and history execution are explicit and validated.
+Implement command execution only as a separate main/core runtime path with exact patching, safe IO, conflict detection, executable transactions, dirty-state persistence, refresh orchestration, and reviewable Apply/Save/Undo/Redo behavior.

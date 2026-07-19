@@ -1,123 +1,72 @@
-# Runtime Boundaries Diagram
+# Runtime boundaries diagram
 
 [Docs index](../../README.md)
 
-## At a glance
-
-| Question | Answer |
-| --- | --- |
-| Is this implemented? | Yes, as a documented runtime split. |
-| Can renderer bypass preload? | No. |
-| Runtime owner | Renderer, Preview iframe, preload, main, core, validators. |
-| Safety risk controlled | Prevents cross-runtime shortcuts. |
-| Related next phase | Explicit contracts for future runtimes. |
-
 ## Purpose
 
-This diagram shows runtime ownership. It prevents solving a renderer feature by importing main-process authority into the browser runtime.
-
-## Why this exists
-
-Most security-sensitive regressions start as convenience shortcuts across runtime boundaries.
-
-## How to read this page
-
-Each subgraph is an authority zone. Cross-subgraph arrows should be explicit and typed.
+This diagram answers where code executes and which runtime may own effects. Use it before moving behavior across renderer, preload, main, core, or Preview.
 
 ## Current implementation
 
-The allowed path is renderer → preload → main → core/adapters. Core is portable; adapters own effects. Renderer UI does not touch filesystem or watcher effects directly.
-
-| Implemented | Blocked | Future |
-| --- | --- | --- |
-| Renderer/preload/main split. | Renderer to filesystem shortcut. | Workers/WASM/WebGPU ports. |
-| Core pure models. | Core importing Electron. | Import-boundary checks. |
-| Validator scripts. | Validators mutating source. | Write-runtime gates. |
-
-## Key files
-
-Read these directories by runtime, not by feature.
-
-## Key files and responsibilities
-
-| Path | Responsibility | Reads | Must not do |
-| --- | --- | --- | --- |
-| `apps/desktop/electron/renderer/**` | Browser UI. | Preload API, shared types. | Import main/adapters. |
-| `apps/desktop/electron/preload/**` | Bridge. | IPC constants. | Expose raw IPC. |
-| `apps/desktop/electron/main/**` | Privileged services. | Core/adapters. | Render UI. |
-| `packages/core/**` | Pure state/planning. | Model inputs. | Use Electron/FS effects. |
-| `scripts/**` | Validation. | Source/docs files. | Change runtime behavior. |
-
-## Data flow
-
-Renderer expresses intent; preload exposes a constrained API; main performs privileged work; core calculates model results; adapters perform effects.
-
-## Main diagram
+The allowed path for privileged work is renderer → constrained preload → main. Main coordinates core and adapters. Preview iframe remains a separate untrusted runtime that can emit only bounded messages. Validator scripts inspect source and docs from Node without entering the product runtime.
 
 ```mermaid
-graph LR
+flowchart LR
   subgraph Renderer[Renderer]
     Shell[Shell UI]
-    Panels[Panels]
+    Panels[Feature panels]
   end
-
-  subgraph PreviewIframe[Preview iframe]
+  subgraph Preview[Preview iframe]
     Page[Project HTML]
-    SelectionScript[Selection script]
+    Select[Selection script]
   end
-
   subgraph Preload[Preload]
-    CrystalAPI[window.crystal]
-    ChannelGuard{Allowed channel?}
+    API[window.crystal]
+    Guard{Named method?}
   end
-
-  subgraph Main[Main]
+  subgraph Main[Electron main]
     IPC[IPC handlers]
     Services[Project services]
     Protocol[Preview protocol]
   end
-
-  subgraph Core[Core pure models]
+  subgraph Core[Portable core]
     Models[Models]
-    Validators[Validators]
     Planners[Dry-run planners]
   end
-
-  subgraph Validation[Validator scripts]
-    Structure[structure]
-    PreviewChecks[preview]
-    Docs[docs]
+  subgraph Validation[Node validators]
+    Checks[Static and behavioral checks]
   end
-
-  Shell --> CrystalAPI --> ChannelGuard
-  ChannelGuard -->|yes| IPC --> Services --> Core
+  Shell --> API --> Guard -->|yes| IPC --> Services
+  Services --> Models
+  Services --> Planners
   Protocol --> Page
-  SelectionScript --> Shell
-  Validation --> Renderer
-  Validation --> Core
+  Select --> Shell
+  Checks --> Renderer
+  Checks --> Core
   Shell -. blocked .-> Services
-  Page -. blocked .-> Services
+  Page -. blocked .-> API
 ```
+
+## Key files
+
+- `apps/desktop/electron/renderer`
+- `apps/desktop/electron/preload`
+- `apps/desktop/electron/main`
+- `packages/core`
+- `packages/adapters`
+- `scripts`
+
+## Data flow
+
+Cross-runtime data uses typed plain contracts. Renderer cannot import main effects. Core does not require Electron. Preview content cannot call preload. Validators read repository state and report results outside the application.
 
 ## Boundaries
 
-Renderer cannot bypass preload. Core should not import Electron. Adapters isolate side effects.
-
-## What this does not do
-
-| Not provided | Reason |
-| --- | --- |
-| Future runtime contracts | Not implemented yet. |
-| Write authority | Future-only. |
-| Full dependency lint | Future validation. |
-
-## Common misunderstanding
-
-> **Common misunderstanding:** Preview iframe is not part of the trusted renderer shell.
+A process boundary is an authority boundary. Moving code to a shared package does not make its effects portable. Future worker or WASM calls require explicit typed ports and output validation.
 
 ## Validation
 
-Covered by `validate:structure`, `validate:ui-flow`, and feature validators.
+`validate:structure`, `validate:source-tree-boundaries`, `validate:ui-flow`, and feature validators cover current runtime direction and forbidden shortcuts.
 
 ## Related docs
 
@@ -127,4 +76,4 @@ Covered by `validate:structure`, `validate:ui-flow`, and feature validators.
 
 ## Future work
 
-Future workers, WASM, and WebGPU need dedicated runtime boxes and explicit bridges.
+Add dedicated boxes for workers, WebGPU, WASM, and write execution when their messages, effects, fallbacks, and validators are concrete.

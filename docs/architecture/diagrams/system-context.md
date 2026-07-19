@@ -1,124 +1,77 @@
-# System Context Diagram
+# System context diagram
 
 [Docs index](../../README.md)
 
-## At a glance
-
-| Question | Answer |
-| --- | --- |
-| Is this implemented? | Yes, as documentation of the current system shape. |
-| Can this diagram show file writes as current? | No. |
-| Runtime owner | Renderer, preload, main, core, adapters, validators. |
-| Safety risk controlled | Keeps current dry-run boundary visible. |
-| Related next phase | Future write runtime diagrams after contracts exist. |
-
 ## Purpose
 
-This diagram gives a one-screen view of Crystal's current system shape. Use it to see which runtime owns which kind of responsibility before reading a specific feature page.
-
-## Why this exists
-
-The system has multiple runtimes and model layers. A context diagram reduces the chance of starting a change from the wrong layer.
-
-## How to read this page
-
-Solid edges are current allowed flows. Dotted edges mark blocked or future-only behavior.
+This view shows the whole current system on one screen: user-facing shell, constrained bridge, privileged services, portable models, effects, and the isolated Preview page.
 
 ## Current implementation
 
-Renderer presents UI. Preload narrows the bridge. Main owns privileged effects. Core packages model state and dry-run planning. Adapters touch filesystem and watcher effects.
-
-| Implemented | Blocked | Future |
-| --- | --- | --- |
-| Read-only Preview and dry-run planning. | Command preview writing files. | Write execution runtime. |
-| Main-owned filesystem effects. | Renderer direct filesystem access. | Worker/WASM/WebGPU runtimes. |
-
-## Key files
-
-These are entry points for the diagram boxes.
-
-## Key files and responsibilities
-
-| File or path | Responsibility | Reads | Must not do |
-| --- | --- | --- | --- |
-| `apps/desktop/electron/main/main.ts` | Main startup. | Main modules. | Expose renderer shortcuts. |
-| `crystal-api.bridge.ts` | Preload API. | IPC contracts. | Expose raw IPC. |
-| `bootstrap.ts` | Renderer startup. | Browser UI modules. | Import main effects. |
-| `packages/core/**` | Models/planners. | Pure state. | Perform IO. |
-| `packages/adapters/**` | Effects. | Main service calls. | Own UI policy. |
-
-## Data flow
-
-User actions start in renderer, pass through preload when privileged work is needed, reach main services, and use core/adapters depending on whether the work is pure or effectful.
-
-## Main diagram
+Renderer expresses intent and presents state. Preload exposes named operations. Main owns privileged coordination and Preview protocol serving. Core models Project Graph, DOM Snapshot, selection, Inspector, command previews, and style evidence. Adapters reach project files and watcher/compiler tools.
 
 ```mermaid
 flowchart TD
   subgraph UserSpace[User-facing shell]
     User[User]
     Renderer[Renderer shell]
-    Diagnostics[Diagnostics UI]
-    ElementLibrary[Element Library]
+    Library[Element Library]
+    Diagnostics[Diagnostics]
   end
-
   subgraph Bridge[Preload]
     API[window.crystal API]
   end
-
   subgraph MainRuntime[Electron main]
-    Main[Main services]
-    PreviewProtocol[crystal-preview protocol]
+    Services[Project services]
+    Protocol[crystal-preview protocol]
   end
-
-  subgraph PureCore[Core pure models]
-    ProjectGraph[Project Graph]
-    CommandPreview[Command Preview Bus dry-run]
+  subgraph PureCore[Portable core]
+    Graph[Project Graph]
     Snapshot[DOM Snapshot]
+    PreviewBus[Command Preview Bus]
+    Styles[Style inventory and candidates]
   end
-
   subgraph Effects[Effects]
     Adapters[Adapters]
-    ProjectFiles[(Project files)]
+    Files[(Project files)]
   end
-
-  User --> Renderer --> API --> Main
-  Main --> ProjectGraph
-  Main --> Snapshot
-  Main --> PreviewProtocol
-  Main --> Adapters --> ProjectFiles
-  ElementLibrary --> CommandPreview
-  CommandPreview -. no write .-> ProjectFiles
-  PreviewProtocol --> Renderer
-  Diagnostics --> Renderer
+  User --> Renderer --> API --> Services
+  Services --> Graph
+  Services --> Snapshot
+  Services --> Adapters --> Files
+  Services --> Protocol --> Frame[Sandboxed Preview iframe]
+  Frame --> Renderer
+  Library --> PreviewBus
+  Snapshot --> Styles
+  PreviewBus -. no write .-> Files
 ```
+
+## Key files
+
+- `apps/desktop/electron/main/main.ts`
+- `apps/desktop/electron/preload/bridges/crystal-api.bridge.ts`
+- `apps/desktop/electron/renderer/app/bootstrap/bootstrap.ts`
+- `packages/core`
+- `packages/adapters`
+
+## Data flow
+
+User actions either remain local UI state or cross preload to main. Main selects pure core logic or an adapter effect. Preview serving reaches project files only through root containment. Dry-run command and style models return to renderer without persistence.
 
 ## Boundaries
 
-Renderer has no direct filesystem access. Command Preview Bus does not apply changes.
-
-## What this does not do
-
-| Not provided | Reason |
-| --- | --- |
-| Write runtime | Future only. |
-| Security proof | Read with security docs. |
-| Full source inventory | Use repository map. |
-
-## Common misunderstanding
-
-> **Common misunderstanding:** `Project files` being in the diagram does not mean every subsystem can write to them.
+The `Project files` node does not grant every subsystem write access. Current edges to files are read/scan/watch/build effects owned by main/adapters; no command-preview or renderer edge applies mutations.
 
 ## Validation
 
-Covered by runtime, preview, command, and docs validators.
+Runtime, Preview, command, style, source-tree, and architecture validators collectively guard the relationships shown.
 
 ## Related docs
 
 - [System overview](../system-overview.md)
-- [Runtime boundaries](./runtime-boundaries.md)
-- [Security boundaries](./security-boundaries.md)
+- [Runtime boundaries diagram](./runtime-boundaries.md)
+- [Security boundaries diagram](./security-boundaries.md)
 
 ## Future work
 
-Add future worker, WASM, and WebGPU nodes only when their runtime contracts exist.
+Workers, WebGPU, Rust/WASM, and a writer belong in this diagram only after explicit runtime and authority contracts exist.
