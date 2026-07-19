@@ -77,7 +77,18 @@ export class ProjectScanner {
       }
       const kind = classifyProjectFile(entry.absolutePath);
       const relativePath = normalizeProjectPath(path.relative(rootPath, entry.absolutePath));
-      files.push({ absolutePath: normalizeProjectPath(entry.absolutePath), relativePath, name: entry.name, extension: path.extname(entry.name).toLowerCase(), kind, sizeBytes: entry.sizeBytes, isText: isProjectTextFileKind(kind), isBinaryHeavy: isBinaryHeavyProjectKind(kind), discoveredAt: Date.now() });
+      files.push({
+        absolutePath: normalizeProjectPath(entry.absolutePath),
+        relativePath,
+        name: entry.name,
+        extension: path.extname(entry.name).toLowerCase(),
+        kind,
+        sizeBytes: entry.sizeBytes,
+        modifiedAtMs: entry.modifiedAtMs,
+        isText: isProjectTextFileKind(kind),
+        isBinaryHeavy: isBinaryHeavyProjectKind(kind),
+        discoveredAt: Date.now()
+      });
       if (files.length >= context.maxFiles) break;
     }
   }

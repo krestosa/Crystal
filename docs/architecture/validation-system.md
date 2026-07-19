@@ -6,7 +6,7 @@
 
 | Question | Answer |
 | --- | --- |
-| Canonical checks | 33 required checks in quick and full validation. |
+| Canonical checks | 34 required checks in quick and full validation. |
 | Result semantics | PASS, FAIL, and visible SKIPPED. |
 | Mutation policy | Validators read and fail; they do not repair source. |
 | Reporter modes | Human, plain, raw, and JSON summary without semantic drift. |
@@ -18,16 +18,16 @@ Many of Crystal’s most important guarantees are negative: renderer cannot reac
 
 ## Current implementation
 
-The script graph covers generated metadata, change policy, Markdown integrity, guided docs, architecture docs, build outputs, typecheck, source ownership, project models, Preview, selection, Inspector, canvas, overlays, command previews, editing readiness, canonical source revision and freshness behavior, style inventory, authored matching, local watch, Electron diagnostics, and validation-system self-checks. The strict quick runner fails on required failures and required skips by default.
+The script graph covers generated metadata, change policy, Markdown integrity, guided docs, architecture docs, build outputs, typecheck, source ownership, project models, Repository Graph View, Preview, selection, Inspector, canvas, overlays, command previews, editing readiness, canonical source revision and freshness behavior, style inventory, authored matching, local watch, Electron diagnostics, and validation-system self-checks. The strict quick runner fails on required failures and required skips by default.
 
-The source freshness validator compiles and executes the real portable core and Node adapter against temporary files outside the repository. It does not infer behavior from filenames or token searches alone.
+The source freshness validator compiles and executes the real portable core and Node adapter against temporary files outside the repository. The Repository Graph View validator likewise bundles and executes the real portable graph model before checking renderer integration and read-only security boundaries. These validators do not infer behavior from filenames or token searches alone.
 
 ## Generated validator catalog
 
 <!-- crystal-generated:validation-catalog:start -->
 <!-- Do not edit manually. Run npm run sync:project-metadata. -->
 
-Canonical checks: 33. Local quick checks: 33. Full validation checks: 33.
+Canonical checks: 34. Local quick checks: 34. Full validation checks: 34.
 
 | Group | ID | Label | npm script | Ownership | Required | Local quick | Full | Execution | Direct script | Args |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -56,6 +56,7 @@ Canonical checks: 33. Local quick checks: 33. Full validation checks: 33.
 | Preview | `preview-selection` | Preview Selection | `validate:preview-selection` | generated | yes | yes | yes | direct-node | `scripts/validate-preview-selection.mjs` | — |
 | Preview | `preview-inspector` | Preview Inspector | `validate:preview-inspector` | generated | yes | yes | yes | direct-node | `scripts/validate-preview-inspector.mjs` | — |
 | UI | `design-canvas` | Design Canvas | `validate:design-canvas` | generated | yes | yes | yes | direct-node | `scripts/validate-design-canvas.mjs` | — |
+| UI | `repository-graph-view` | Repository Graph View | `validate:repository-graph-view` | generated | yes | yes | yes | direct-node | `scripts/validate-repository-graph-view.mjs` | — |
 | UI | `visual-selection-overlay` | Visual Selection Overlay | `validate:visual-selection-overlay` | generated | yes | yes | yes | direct-node | `scripts/validate-visual-selection-overlay.mjs` | — |
 | UI | `html-element-library` | HTML Element Library | `validate:html-element-library` | generated | yes | yes | yes | direct-node | `scripts/validate-html-element-library.mjs` | — |
 | UI | `source-patch-preview` | Source Patch Preview | `validate:source-patch-preview` | generated | yes | yes | yes | direct-node | `scripts/validate-source-patch-preview.mjs` | — |
@@ -79,6 +80,7 @@ The following paths are the shortest reliable entry points. They are not a subst
 | `scripts/validation/validation-runner.mjs` | Executes checks and calculates status. | child-process results | convert failure to warning |
 | `scripts/validation/validation-reporter.mjs` | Formats terminal, raw, and JSON output. | observed results | change status semantics |
 | `scripts/validate-source-freshness-foundation.mjs` | Executes canonical byte-revision, path-containment, failure-state, and conflict-preview fixtures. | temporary files and compiled foundation modules | write repository source or claim Apply authority |
+| `scripts/validate-repository-graph-view.mjs` | Executes deterministic graph fixtures and checks renderer and security wiring. | portable graph model and source files | infer runtime behavior only from text or add write authority |
 | `scripts/validate-validation-system.mjs` | Meta-validates validation wiring. | scripts, metadata, and docs | recursively run the quick suite |
 
 ## Data flow
@@ -152,10 +154,11 @@ Phase 8C boundary: Authored Style Matching over DOM Snapshot only. No real casca
 
 ## Validation
 
-Run `npm run validate:source-freshness-foundation` for the focused behavioral foundation, `npm run validate:validation-system` to check the validator platform itself, `npm run validate:local:quick` for the canonical strict local suite, and `npm --silent run validate:local:quick:json` for parseable summary output.
+Run `npm run validate:repository-graph-view` for the focused read-only graph model and renderer integration, `npm run validate:source-freshness-foundation` for canonical source revision behavior, `npm run validate:validation-system` to check the validator platform itself, `npm run validate:local:quick` for the canonical strict local suite, and `npm --silent run validate:local:quick:json` for parseable summary output.
 
 ## Related docs
 
+- [Repository Graph View](./repository-graph-view.md)
 - [Validation platform hardening](./validation-platform-hardening-phase-2.md)
 - [Validation flow](./flows/validation-flow.md)
 - [Validation gates diagram](./diagrams/validation-gates.md)
@@ -173,6 +176,7 @@ Before this:
 - [Architecture overview](./README.md) explains which boundaries validation protects.
 
 Next:
+- [Repository Graph View](./repository-graph-view.md) explains the read-only repository canvas and its deterministic model.
 - [Future write flow](./flows/future-write-flow.md) places read-only source revision evidence before the future mutation boundary.
 - [Authored Style Matching over DOM Snapshot](./authored-style-matching-dom-snapshot.md) is another concrete example of a narrowly guarded read-only capability.
 - [Validation platform hardening](./validation-platform-hardening-phase-2.md) explains metadata generation, process execution, and CI constraints.

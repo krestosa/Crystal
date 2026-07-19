@@ -1,0 +1,55 @@
+<section class="crystal-view crystal-repository-graph-view" data-crystal-view="graph" data-repository-graph-view hidden>
+  <header class="crystal-repository-graph-view__toolbar">
+    <div class="crystal-repository-graph-view__identity">
+      <h2>Graph View</h2>
+      <p data-repository-graph-summary>0 nodes · 0 edges</p>
+    </div>
+    <label class="crystal-repository-graph-view__field crystal-repository-graph-view__field--search">
+      <span>Search</span>
+      <input type="search" placeholder="Name or relative path" autocomplete="off" data-repository-graph-search>
+    </label>
+    <label class="crystal-repository-graph-view__field">
+      <span>Type</span>
+      <select data-repository-graph-kind><option value="all">All types</option></select>
+    </label>
+    <label class="crystal-repository-graph-view__field">
+      <span>Edges</span>
+      <select data-repository-graph-edge-mode>
+        <option value="all">All</option>
+        <option value="selected">Selected</option>
+        <option value="hidden">Hidden</option>
+      </select>
+    </label>
+    <label class="crystal-repository-graph-view__toggle">
+      <input type="checkbox" data-repository-graph-hide-isolated>
+      <span>Hide isolated</span>
+    </label>
+    <div class="crystal-repository-graph-view__actions">
+      <button type="button" data-repository-graph-fit>Fit</button>
+      <button type="button" data-repository-graph-reset>Reset</button>
+      <button type="button" data-repository-graph-center-selection disabled>Center selection</button>
+      <span data-repository-graph-zoom>100%</span>
+    </div>
+  </header>
+
+  <div class="crystal-repository-graph-view__body">
+    <div class="crystal-repository-graph-view__surface" data-repository-graph-surface tabindex="0" aria-label="Repository Graph canvas">
+      <p class="crystal-repository-graph-view__status" data-repository-graph-status>No project open.</p>
+      <div class="crystal-repository-graph-view__stage" data-repository-graph-stage>
+        <svg class="crystal-repository-graph-view__edges" data-repository-graph-edges aria-hidden="true">
+          <defs>
+            <marker id="crystal-repository-graph-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z"></path>
+            </marker>
+          </defs>
+        </svg>
+        <div class="crystal-repository-graph-view__nodes" data-repository-graph-nodes></div>
+      </div>
+    </div>
+
+    <aside class="crystal-repository-graph-view__detail" data-repository-graph-detail aria-label="Selected file details">
+      <h3>File details</h3>
+      <p>Select a node to inspect read-only Project Graph metadata.</p>
+    </aside>
+  </div>
+</section>

@@ -21,6 +21,7 @@
 @use "./components/design-canvas/project-design-canvas";
 @use "./components/design-canvas/selection-overlay/project-design-canvas-selection-overlay";
 @use "./components/project-dom-tree-panel/project-dom-tree-panel";
+@use "./components/repository-graph-view/repository-graph-view";
 @use "./views/design/design";
 @use "./views/inspector/inspector";
 @use "./views/developer/developer";

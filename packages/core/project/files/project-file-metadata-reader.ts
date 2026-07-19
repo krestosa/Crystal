@@ -15,7 +15,7 @@ export async function readProjectFileMetadata(input: {
   const metadata: ProjectFileMetadata[] = [];
 
   for (const file of input.files) {
-    const stats = input.fileSystem ? await input.fileSystem.readFileMetadata(file.absolutePath) : { mtimeMs: file.discoveredAt, size: file.sizeBytes };
+    const stats = input.fileSystem ? await input.fileSystem.readFileMetadata(file.absolutePath) : { mtimeMs: file.modifiedAtMs, size: file.sizeBytes };
     metadata.push({
       absolutePath: file.absolutePath,
       relativePath: file.relativePath,

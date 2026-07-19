@@ -1,4 +1,4 @@
-type CrystalViewName = "design" | "inspector" | "developer";
+type CrystalViewName = "design" | "graph" | "inspector" | "developer";
 
 export function initializeTabs(): void {
   const tabs = Array.from(document.querySelectorAll<HTMLButtonElement>("[data-crystal-view-tab]"));
@@ -7,17 +7,11 @@ export function initializeTabs(): void {
   for (const tab of tabs) {
     tab.addEventListener("click", () => {
       const nextView = tab.dataset.crystalViewTab as CrystalViewName | undefined;
-      if (!nextView) {
-        return;
-      }
+      if (!nextView) return;
 
-      for (const item of tabs) {
-        item.setAttribute("aria-pressed", String(item === tab));
-      }
-
-      for (const view of views) {
-        view.hidden = view.dataset.crystalView !== nextView;
-      }
+      for (const item of tabs) item.setAttribute("aria-pressed", String(item === tab));
+      for (const view of views) view.hidden = view.dataset.crystalView !== nextView;
+      window.dispatchEvent(new CustomEvent("crystal:view-changed", { detail: { view: nextView } }));
     });
   }
 }

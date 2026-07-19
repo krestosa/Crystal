@@ -18,7 +18,8 @@ This page describes what exists in `main`. It is not a delivery schedule. A phas
 | Area | Status | Evidence-backed boundary |
 | --- | --- | --- |
 | Electron shell | Implemented | Hardened main/preload/renderer separation; renderer has no Node integration. |
-| Project Graph | Implemented, shallow | Scans files, pages, direct dependencies, assets, missing local routes, and issues. |
+| Project Graph | Implemented, shallow | Scans files, pages, direct dependencies, assets, missing local routes, issues, byte size, and real file modification timestamps. |
+| Repository Graph View | Implemented, read-only | Files are rectangular nodes and resolved internal dependencies are directed SVG edges, with deterministic layout, navigation, session-only drag, search, filters, and file detail. No persistence, editing, Git history, semantic clustering, or advanced graph layout. |
 | Watcher and cache | Implemented foundation | Normalized batched events and in-memory cache; no disk cache. |
 | Project Preview | Implemented, read-only | Root-contained protocol, target state, reload planning, bounded diagnostics. |
 | DOM Snapshot | Implemented, read-only | Static source parser with limits and issues; not the live browser DOM. |
@@ -91,6 +92,6 @@ Phase 8C boundary: Authored Style Matching over DOM Snapshot only. No real casca
 
 ## Validation status model
 
-The canonical quick suite contains 33 required checks. PASS means every required check executed and succeeded. A required skip remains visible and makes strict validation fail unless the caller explicitly opts into `--allow-skips`.
+The canonical quick suite contains 34 required checks. PASS means every required check executed and succeeded. A required skip remains visible and makes strict validation fail unless the caller explicitly opts into `--allow-skips`.
 
-Read [Validation system](./architecture/validation-system.md) for the command graph and [Full product roadmap](./full-product-roadmap.md) for future direction.
+Read [Validation system](./architecture/validation-system.md) for the command graph, [Repository Graph View](./architecture/repository-graph-view.md) for the read-only graph canvas boundary, and [Full product roadmap](./full-product-roadmap.md) for future direction.
