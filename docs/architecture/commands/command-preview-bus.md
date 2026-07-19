@@ -6,102 +6,81 @@
 
 | Question | Answer |
 | --- | --- |
-| Is this implemented? | Yes, as a dry-run bus. |
-| Is it an execution bus? | No. |
-| Runtime owner | Core pure command preview modules. |
-| Safety risk controlled | Prevents previewable command intent from gaining side effects. |
-| Related next phase | Future execution bus must be separate and transaction-aware. |
-
-> **Implementation note:** The Command Preview Bus is not a replacement for `packages/core/commands/command-bus.ts` and not an execution bus.
+| Status | Implemented, dry-run. |
+| Input | Supported command preview request and current context. |
+| Output | Preview-ready, blocked, or unsupported result. |
+| Current user path | HTML insertion preview from Element Library. |
+| Execution | Not available. |
 
 ## Purpose
 
-The Command Preview Bus gives command-like user intent a safe dry-run path. It normalizes preview outcomes so the UI can explain what would happen, what is blocked, or what is unsupported.
-
-## Why this exists
-
-The UI needs one place to ask for a command preview without knowing every planner. That should not imply that a central writer exists.
-
-## How to read this page
-
-| Need | Focus |
-| --- | --- |
-| Status model | State diagram. |
-| Legacy bus distinction | Boundaries and common misunderstanding. |
-| Current supported path | Key files and data flow. |
+The UI needs one place to ask what a supported command would look like without learning every planner. That coordination point remains pure and side-effect free.
 
 ## Current implementation
 
-The bus accepts supported command preview inputs and returns a `CommandPreviewResult` with statuses such as preview-ready, blocked, or unsupported. The current user-facing path is Element Library preview for `AddHtmlElementCommand`.
-
-| Implemented | Blocked | Future |
-| --- | --- | --- |
-| Dry-run preview routing. | Command execution. | Separate execution bus. |
-| Blocked/unsupported statuses. | File write. | Transaction-aware command runtime. |
-| HTML insertion preview path. | Undo/redo registration. | Refresh invalidation. |
+The bus identifies supported command intent, validates context through the relevant command module, and routes to a pure preview planner. It normalizes the result for renderer presentation. It is not a replacement for `packages/core/commands/command-bus.ts` and not an execution bus.
 
 ## Key files
 
-The `command-preview-bus` folder is the dry-run bus. It should not be confused with the existing `packages/core/commands/command-bus.ts`, which is a different legacy module boundary.
+The following paths are the shortest reliable entry points. They are not a substitute for following the data flow through the subsystem.
 
 ## Key files and responsibilities
 
-| File | Responsibility | Reads | Must not do |
+| File or path | Responsibility | Reads | Must not do |
 | --- | --- | --- | --- |
-| `command-preview-bus.types.ts` | Defines preview result status model. | Preview command contracts. | Define execution effects. |
-| `command-preview-bus.preview.ts` | Routes supported dry-run previews. | Command + context. | Write files or call Electron. |
-| `html-insertion-command.validators.ts` | Validates command/context. | Catalog and target state. | Treat unsafe target as previewable. |
-| `html-insertion-command.planner.ts` | Builds dry-run preview. | Anchor and command data. | Apply patch. |
-| `validate-source-patch-preview.mjs` | Guards preview/write boundary. | Source files. | Weaken write restrictions. |
+| `command-preview-bus.types.ts` | Defines preview result statuses. | preview command contracts | define effects |
+| `command-preview-bus.preview.ts` | Routes supported dry-runs. | command and current context | execute or persist |
+| `html-insertion-command.validators.ts` | Validates the supported insertion context. | target and command data | mark unsafe input ready |
+| `html-insertion-command.planner.ts` | Builds the current Source Patch Preview. | safe source anchor | apply patches |
+| `validate-source-patch-preview.mjs` | Guards bus and write boundary. | source and fixtures | weaken policy |
 
 ## Data flow
 
 | Input | Decision | Output |
 | --- | --- | --- |
-| Command preview request | Is command type supported? | Unsupported or next validation. |
-| Supported command | Is context safe? | Blocked or planning. |
-| Planning result | Can preview text be created? | Preview-ready or blocked. |
-| Preview-ready result | Should execution run? | No; renderer displays only. |
-
-## Main diagram
+| Preview request | Is the command type supported? | Unsupported or validation |
+| Supported request | Is context complete and trustworthy? | Blocked or planning |
+| Planning | Can a safe preview be built? | Preview-ready or blocked |
+| Preview-ready | What should renderer do? | Display the result only |
+| Any status | Should an execution side effect run? | No |
 
 ```mermaid
 stateDiagram-v2
-  [*] --> Received: preview request
-  Received --> Unsupported: command type unsupported
+  [*] --> Received
+  Received --> Unsupported: unknown preview command
   Received --> Validating: supported command
-  Validating --> Blocked: unsafe / missing context
-  Validating --> Planning: safe dry-run context
-  Planning --> PreviewReady: SourcePatchPreview created
-  Planning --> Blocked: no safe source anchor
-  PreviewReady --> DisplayOnly: renderer renders preview
-  Unsupported --> DisplayOnly
+  Validating --> Blocked: unsafe or incomplete context
+  Validating --> Planning: valid dry-run context
+  Planning --> PreviewReady: preview created
+  Planning --> Blocked: source anchor unavailable
+  PreviewReady --> DisplayOnly
   Blocked --> DisplayOnly
+  Unsupported --> DisplayOnly
   DisplayOnly --> [*]
 ```
 
 ## Boundaries
 
-The Command Preview Bus is not a replacement for `packages/core/commands/command-bus.ts` and not an execution bus. It must not write files, mutate DOM, call Electron IPC, refresh Preview, or register undo/redo.
+The preview bus cannot call Electron, filesystem adapters, patch application, refresh execution, dirty-state storage, or history execution. Centralizing dry-run classification does not centralize mutation.
 
-> **Safety boundary:** A bus that returns preview statuses must stay side-effect free.
+> **Safety boundary:** State that crosses a boundary is evidence to validate, not authority to perform a privileged effect.
 
 ## What this does not do
 
-| Not provided | Reason |
+| Not provided | Why |
 | --- | --- |
-| Command execution | Requires separate policy and transaction layer. |
+| Command execution | A future execution bus needs stronger policy and transaction contracts. |
+| Legacy bus replacement | The existing `command-bus.ts` remains a different boundary. |
 | Patch application | Source Patch Preview is descriptive. |
-| Undo/redo registration | No history model exists. |
-| Legacy bus replacement | Existing `command-bus.ts` remains a different module boundary. |
+| Undo/redo registration | No executable transaction is created. |
 
 ## Common misunderstanding
 
-> **Common misunderstanding:** Centralizing dry-run preview is not the same as centralizing writes.
+> **Common misunderstanding:** A bus can unify result states without becoming an effectful service. The word “bus” does not imply execution authority.
 
 ## Validation
 
-`validate:source-patch-preview` checks bus exports, statuses, blocked reasons, renderer preview rendering, and absence of write behavior.
+`npm run validate:source-patch-preview` checks exports, statuses, blocked reasons, current routing, renderer behavior, and the absence of side effects.
 
 ## Related docs
 
@@ -112,4 +91,4 @@ The Command Preview Bus is not a replacement for `packages/core/commands/command
 
 ## Future work
 
-A write-capable command runtime should add transaction creation, patch application, persistence, refresh invalidation, and undo/redo descriptors without overloading this dry-run bus.
+Create a separately named execution path only after command policy, transactions, conflict detection, persistence, dirty state, refresh, and history execution are designed as one lifecycle.

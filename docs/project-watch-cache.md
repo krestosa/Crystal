@@ -1,42 +1,38 @@
 # Project Graph watcher and cache
 
-This document describes the extended Phase 1 watcher/cache foundation.
+[Docs index](./README.md)
 
-## Watcher
+The watcher keeps Project Graph state responsive without turning raw filesystem events into uncontrolled rescans. Node-specific watching stays behind `packages/adapters/file-watcher/`; core receives normalized events and decides how conservatively the graph should refresh.
 
-The filesystem watcher lives behind `packages/adapters/file-watcher/`. Core modules receive normalized Project Graph watch events and do not import Electron or Node watcher APIs directly.
+## What is watched
 
-Ignored directories include `node_modules`, `.git`, `dist`, `.cache`, `.crystal-cache`, `.next`, `.nuxt`, `.vite`, and `coverage`. Temporary files such as `.tmp`, `.temp`, `.swp`, `.DS_Store`, and `Thumbs.db` are ignored.
+The adapter ignores common dependency, build, cache, and VCS directories such as `node_modules`, `.git`, `dist`, `.cache`, `.crystal-cache`, `.next`, `.nuxt`, `.vite`, and `coverage`. Temporary editor and operating-system files are ignored as noise.
 
-The renderer does not access `fs`. It can only call explicit preload methods for starting/stopping the watcher, reading watcher state, refreshing the graph, and clearing the graph cache.
+Renderer never opens a watcher or imports `fs`. It requests start, stop, state, graph refresh, or cache clearing through the preload API. Main owns the watcher lifecycle and emits sanitized state updates.
 
-## Batching
+## Batching and refresh
 
-Watch events are batched with a short debounce window. Duplicate path events are collapsed, and stronger events such as deletes dominate ordinary changes. This prevents one graph refresh per raw filesystem notification.
+Raw notifications are debounced into a short batch. Duplicate path events collapse, while stronger events such as delete or rename take precedence over ordinary change notifications.
 
-## Cache
+Small, unambiguous batches may use the semi-incremental refresh planner. Deletes, renames, unknown events, and large batches force a full rescan. This is deliberately conservative: the current graph is shallow, so correctness is more valuable than pretending every filesystem event can be updated incrementally.
 
-The current cache is in-memory only. It stores:
+## Cache model
 
-- root path
-- graph snapshot
-- file metadata
-- scan timestamp
-- cache schema version
-- Crystal cache version
-- issues from the last scan
+The cache is in-memory only. It stores the active root, graph snapshot, file metadata, scan timestamp, schema/version data, and issues from the last scan. Disk persistence is not implemented.
 
-Disk cache is deferred. If added later, it should use `.crystal-cache/`, avoid unsafe path writes, and avoid heavy content payloads.
+A future disk cache would need a safe project-relative location, version invalidation, bounded payloads, and explicit cleanup. The existing `.crystal-cache` ignore rule reserves a possible location; it does not mean a disk cache exists.
 
-## Refresh
+## Preview relationship
 
-The refresh strategy is conservative:
+Watcher events do not reload Preview directly. Graph refresh completes first. Preview reload is considered afterward for the active page and its direct dependencies, which keeps file notification noise from bypassing project-state reasoning.
 
-- clear small changes use `semi-incremental` mode
-- deletes, renames, unknown events, or large batches force a full Project Graph rescan
+## Validation
 
-This is not a perfect incremental parser. It is a controlled Phase 1 foundation designed to be replaced or hardened by a future diff/parser pipeline.
+Run:
 
-## Phase 2 boundary
+```bash
+npm run validate:project-watch
+npm run validate:local:watch
+```
 
-Real Chromium preview, preview reload, DOM tree, DOM selection, bounding boxes, Design MVP, Inspector MVP, Developer IDE, WebGPU overlay, and Rust/WASM analyzer are not implemented here.
+These gates cover normalization, batching, refresh planning, ignored paths, cache behavior, and lifecycle wiring.

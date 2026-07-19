@@ -2,7 +2,7 @@
 
 [Docs index](../README.md)
 
-> **Decision in one sentence:** Crystal previews command effects as inspectable source descriptions before any write execution path exists.
+> **Decision in one sentence:** Crystal makes command intent and source effects inspectable as dry-run previews before creating any write execution path.
 
 ## Status
 
@@ -10,36 +10,38 @@ Accepted.
 
 ## Context
 
-HTML insertion and later visual editing need trustworthy source planning. Applying patches before preview, validation, history, and refresh planning would make source mutation fragile.
+HTML insertion and later visual editing need more than a target and a string. They need source locations, command validation, reviewable output, conflict checks, reversibility, dirty state, refresh behavior, and user approval.
+
+Applying patches before those contracts exist would couple UI intent directly to fragile source mutation and make failures difficult to explain or undo.
 
 ## Decision
 
-Introduce command contracts, Source Patch Preview, HTML insertion preview planning, and Command Preview Bus dry-run results before implementing command execution. Keep real writes, patch apply, write IPC, undo/redo, and save/apply workflow blocked.
+Introduce typed command intent, target eligibility, source anchors, HTML insertion preview planning, Source Patch Preview, and Command Preview Bus result states before implementing execution.
+
+Keep file writes, patch application, write IPC, real undo/redo, save/apply, and refresh execution blocked. `preview-ready` means that Crystal can display a dry-run result; it is not a write-ready status.
 
 ## Options considered
 
 | Option | Why rejected or accepted |
 | --- | --- |
-| Preview before write | Accepted because users and validators can inspect intent. |
-| Hidden apply inside preview helpers | Rejected because side effects would be hard to validate. |
-| Renderer-owned file writes | Rejected because main/core must own privileged mutation. |
-| Treat `preview-ready` as write-ready | Rejected because preview lacks transaction and freshness checks. |
+| Preview before write | Accepted because intent and source effects become reviewable and testable. |
+| Hidden apply inside preview helpers | Rejected because side effects would escape transaction and policy gates. |
+| Renderer-owned writes | Rejected because privileged mutation belongs to main/core services. |
+| Treat `preview-ready` as permission | Rejected because preview does not prove freshness, persistence, or reversibility. |
 
 ## Consequences
 
-The Element Library can show what a future insertion may look like, but it cannot insert. `preview-ready` means previewable only; it is not an applied state and not permission to write.
+The Element Library can provide useful feedback without inserting HTML. Transaction, refresh, editing-readiness, Inspector, and style models may build on preview metadata while remaining read-only or planning-only.
+
+A future execution runtime must be separately named and must own the complete lifecycle rather than appending a writer call to current planners.
 
 ## Current implementation
 
-Implemented dry-run modules:
-
-- `packages/core/commands/command-preview-bus/**`
-- `packages/core/commands/html-insertion/**`
-- `packages/core/source-patch/**`
-- `apps/desktop/electron/renderer/components/html-element-library-panel/**`
+Dry-run command modules live under command-preview, HTML insertion, source-patch, and Element Library paths. Planning and readiness foundations extend the evidence but do not execute it.
 
 ## Related docs
 
-- [Command Preview Bus](../architecture/commands/command-preview-bus.md)
+- [Commands architecture](../architecture/commands/README.md)
 - [Source Patch Preview](../architecture/commands/source-patch-preview.md)
+- [Command Preview Bus](../architecture/commands/command-preview-bus.md)
 - [Future write flow](../architecture/flows/future-write-flow.md)

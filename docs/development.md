@@ -1,10 +1,10 @@
-# Development environment
+# Development
 
-Crystal reads its local Node, npm, Electron, embedded Node, and Chromium baseline from `config/project-baseline.json`. Use `.nvmrc` and the generated toolchain block below instead of duplicating version constants in human-maintained prose.
+[Docs index](./README.md)
 
-The local type definitions follow the canonical Node major. Dependency resolution remains owned by npm and the committed lockfile.
+Crystal's local workflow is intentionally explicit: select the canonical runtime, install from the lockfile, build generated outputs deterministically, and use validators that report exactly what ran.
 
-## Windows baseline
+## Toolchain
 
 <!-- crystal-generated:toolchain:start -->
 <!-- Do not edit manually. Run npm run sync:project-metadata. -->
@@ -33,192 +33,85 @@ npm --version
 Install reproducibly with `npm ci --foreground-scripts`. Use `npm install` or `npm install --package-lock-only` only when intentionally resolving a direct dependency change. Metadata synchronization never resolves packages or rewrites transitive dependency nodes.
 <!-- crystal-generated:toolchain:end -->
 
-## Electron runtime installation
+## Install and build
 
-A clean `npm ci` prepares the locked Electron runtime automatically through the root `postinstall` script. Use `npm ci --foreground-scripts` when install diagnostics must remain visible in the terminal.
-
-The repository installer checks `node_modules/electron/path.txt` and the executable referenced by that file. If either is missing or `path.txt` is empty, it executes only the locked local installer at `node_modules/electron/install.js`, then verifies the runtime again.
-
-For an explicit repair without resolving dependencies again, run:
+From the repository root:
 
 ```bash
-npm run install:electron-runtime
-```
-
-`npm run doctor:electron` is diagnostic-only. It verifies the environment and runtime but never installs or modifies Electron.
-
-`npm ci --ignore-scripts` and `npm_config_ignore_scripts` bypass the root `postinstall` guarantee and can leave the Electron package without a usable runtime. `ELECTRON_SKIP_BINARY_DOWNLOAD` also prevents installation and is treated as an error.
-
-`node_modules/electron/path.txt` and the platform executable under `node_modules/electron/dist` are local installation outputs. They must never be committed.
-
-## Electron diagnostics
-
-Use:
-
-```bash
-npm run doctor:electron
-```
-
-The diagnostic checks Node, npm, Electron install files, Electron executable availability, and known Electron install environment variables.
-
-## Development command
-
-The development command is:
-
-```bash
-npm run build && electron dist/main/main.cjs
-```
-
-The command first builds the app and then launches the Electron main entrypoint from `dist/main/main.cjs`. Electron main and preload are emitted as explicit CommonJS files, `dist/main/main.cjs` and `dist/preload/preload.cjs`, because the repository root keeps `"type": "module"` for `.js` files. If Electron is missing, corrupted, or blocked by install settings, the command must fail visibly.
-
-## Local validation runner
-
-Before requesting a PR merge, run:
-
-```bash
-npm run validate:local
-```
-
-The runner executes the local validation command graph. For reproducible setup before validation, use `npm ci` from the committed `package-lock.json`.
-
-```txt
-npm ci
+npm ci --foreground-scripts
 npm run build
-npm run typecheck
-npm run validate:structure
-npm run validate:source-tree-boundaries
-npm run validate:project-graph
-npm run validate:project-watch
-npm run validate:preview
-npm run validate:dom-snapshot
-npm run validate:local:watch
-npm run doctor:electron
 ```
 
-`validate:structure` verifies that required source paths and generated outputs exist. `validate:source-tree-boundaries` separately enumerates tracked files under `apps/**` and `packages/**` and rejects unregistered physical owners.
+The build synchronizes registered project metadata, assembles renderer HTML, compiles SCSS, and bundles TypeScript into the compact Electron outputs under `dist/`. Generated metadata must be stable: a second metadata check should produce no diff.
 
-It prints each command, measures duration per step, stops on the first failure, prints a final summary, exits with code `1` on failure, and exits with code `0` only when every check passes.
-
-`npm run validate:local` does not run `npm run dev` by default. To include the interactive Electron launch check:
+## Run the application
 
 ```bash
-npm run validate:local -- --with-dev
+npm run dev
 ```
 
-With `--with-dev`, Electron opens during `npm run dev`. The user must close the app manually before the validation runner can finish.
+Use the Status Bar action when you need DevTools. The development command does not open them automatically.
 
-## Preview validation
-
-Use:
+For watcher work:
 
 ```bash
-npm run validate:preview
-```
-
-This is a non-visual validation. It checks Preview target resolution, traversal blocking, outside-root guard reporting, MIME mapping and fallback reporting, missing asset diagnostics, issue coalescing, Project Graph target selection, Preview URL handling, and watcher reload planning. It intentionally does not use Playwright, Cypress, Spectron, or screenshot testing.
-
-Preview diagnostics must not expose absolute filesystem paths. Validation checks that missing-resource and outside-root issues keep only safe relative paths or sanitized request URLs.
-
-## DOM snapshot validation
-
-Use:
-
-```bash
-npm run validate:dom-snapshot
-```
-
-This is a non-visual validation for the read-only DOM snapshot foundation. It checks the static HTML fixture, document root creation, `html`/`head`/`body` element detection, basic attributes, text preview truncation, node/depth limits, missing-file issues, traversal blocking, absolute path rejection, and absence of absolute filesystem paths in issues.
-
-The DOM snapshot parser is intentionally minimal. It is not a browser DOM implementation and does not validate CSS cascade, layout, script execution, iframe runtime state, computed styles, selection, overlays, or screenshots.
-
-## Preview manual check
-
-Use `fixtures/sample-html-project` for manual Preview checks:
-
-1. Run `npm run dev`.
-2. Open the fixture folder from the Project Graph panel.
-3. In the Design view, load `preview.html` and press `Load Preview`.
-4. Confirm the HTML renders and `styles/preview.css`, `scripts/preview.js`, and `assets/preview-icon.svg` load without critical issues.
-5. Load `preview-missing-assets.html`.
-6. Confirm the Preview issues section shows `file-not-found` entries for missing local CSS, script, or image resources.
-7. Press `Reload Preview` and confirm repeated resource failures are coalesced with a count instead of creating noisy duplicate rows.
-8. Start the watcher, change `preview.html` or `styles/preview.css`, and confirm controlled reload after Project Graph refresh.
-9. Create an ignored file such as `scratch.tmp` and confirm Preview does not reload because of it.
-
-The Preview issues panel is diagnostic only. It is not an Inspector, browser console, visual editing surface, or overlay engine.
-
-## DOM snapshot manual check
-
-Use `fixtures/sample-html-project` for manual DOM snapshot checks:
-
-1. Run `npm run dev`.
-2. Open the fixture folder from the Project Graph panel.
-3. Load a Preview target.
-4. Press `Build DOM Snapshot` in the DOM Tree panel.
-5. Confirm a read-only textual tree appears.
-6. Confirm tags and basic attributes are visible.
-7. Confirm long text nodes are truncated.
-8. Confirm there is no click selection, hover highlight, overlay, bounding box, scroll-to-node behavior, style inspector, or editing.
-9. Press `Reload Preview` and confirm Preview still reloads normally.
-10. Run `npm run validate:local` before merge.
-
-## Watcher filesystem validation
-
-Use:
-
-```bash
+npm run dev:watch
 npm run validate:local:watch
 ```
 
-This check creates a temporary project under `.tmp/validation/watch-run-<timestamp>`, performs real filesystem operations, validates graph-relevant and ignored paths, verifies that ignored paths do not count as refresh-triggering events, stops the watcher harness, and removes the temporary project in a `finally` cleanup block.
+The watcher is a development convenience, not an alternate authority model. Main still owns filesystem-backed project services.
 
-The temporary project includes:
+## Validation during development
 
-```txt
-index.html
-styles/main.css
-styles/delete-watch.css
-scripts/main.js
-```
+Choose the smallest gate that proves the change, then finish with the aggregate suite appropriate to the branch.
 
-The validation modifies HTML and JavaScript files, creates a CSS file, deletes a CSS file, creates/deletes `scratch.tmp`, and verifies `.crystal-cache` as ignored.
+| Change | First focused command |
+| --- | --- |
+| Documentation | `npm run validate:markdown-integrity` |
+| Guided navigation | `npm run validate:guided-docs` |
+| Architecture docs | `npm run validate:architecture-docs` |
+| Preview | `npm run validate:preview` |
+| DOM Snapshot | `npm run validate:dom-snapshot` |
+| Selection or Inspector | `npm run validate:preview-selection` / `npm run validate:preview-inspector` |
+| Command previews | `npm run validate:source-patch-preview` |
+| Style inventory or matching | `npm run validate:style-engine-foundation` / `npm run validate:authored-style-matching` |
 
-The script uses Node standard library APIs only. It intentionally does not use Playwright, Cypress, Spectron, or another UI automation framework.
-
-## Project Graph watcher development
-
-After opening a project folder or HTML file in the app, the Project Graph panel can start and stop the watcher, manually refresh the graph, clear the in-memory cache, and display recent file events.
-
-Use `fixtures/sample-html-project` for manual local checks. Modify `styles/watch-target.css`, create a small SVG placeholder, or delete a temporary fixture file to verify event classification and refresh behavior. Ambiguous events should fall back to full rescan.
-
-Manual UI checks remain required only where there is not enough automation yet. The validation runner must be updated whenever a roadmap phase adds new required checks.
-
-## Dependency installation policy
-
-Use `npm ci` for reproducible local installation from the committed `package-lock.json`. The root `postinstall` prepares the locked Electron runtime; `npm ci --foreground-scripts` exposes lifecycle output directly.
-
-Use `npm install` only when intentionally updating dependencies, such as refreshing the Electron/Node baseline. `package-lock.json` must remain versioned, must not be ignored, and must not be deleted.
-
-## Do not use forced audit fixes
-
-Do not run:
+Then run:
 
 ```bash
-npm audit fix --force
+npm run validate:local:quick
 ```
 
-Forced audit fixes may replace major dependency versions, rewrite the lockfile, and change Electron or build tooling outside the scope of the current phase. Security fixes must be reviewed as explicit dependency updates.
-
-## Required validation sequence
-
-After a clean install, run:
+Use the full suite before merging broader runtime changes:
 
 ```bash
 npm run validate:local
 ```
 
-For the explicit Electron launch check, run:
+For machine-readable quick validation:
 
 ```bash
-npm run validate:local -- --with-dev
+npm --silent run validate:local:quick:json
 ```
+
+Plain `npm run ... -- --json-summary` can print npm lifecycle banners before the JSON payload; silent npm or direct Node invocation avoids that ambiguity.
+
+## Source ownership
+
+Runtime code belongs under registered owners: `main`, `preload`, `renderer`, `core`, `shared`, and `adapters`. Do not place product source directly under the `apps/` or `packages/` container roots. The physical source-tree validator enforces registered paths; import-direction review remains necessary because complete static import graph enforcement is not implemented.
+
+## Documentation changes
+
+Generated blocks are not prose-editing surfaces. Change canonical configuration and run `npm run sync:project-metadata` when a generated value must move. Human-authored explanation should stay outside marker pairs.
+
+For documentation-only work, the permitted change boundary is `README.md` and `docs/**`. Run metadata, Markdown integrity, guided-docs, architecture-docs, and change-policy validation before the aggregate quick suite.
+
+## Troubleshooting
+
+If Electron fails before the window opens, run:
+
+```bash
+npm run doctor:electron
+```
+
+If a validation report says SKIPPED, do not restate it as PASS. Resolve the missing command, file, runtime, or dependency and run the gate again.

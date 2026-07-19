@@ -2,7 +2,7 @@
 
 [Docs index](../README.md)
 
-> **Decision in one sentence:** Crystal builds read-only Preview, Snapshot, Selection, Overlay, and Inspector foundations before enabling any source mutation.
+> **Decision in one sentence:** Crystal establishes reliable Preview, source structure, selection, overlay, and Inspector behavior before enabling any source mutation.
 
 ## Status
 
@@ -10,34 +10,34 @@ Accepted.
 
 ## Context
 
-Crystal eventually needs to edit source, but a visual editor without reliable Preview, snapshot, selection, and diagnostics would be unsafe. The browser can recover malformed HTML differently than the static parser, and scripts can change the live DOM after load.
+A visual editor cannot safely write a source node until it knows which project page is active, how the browser rendered it, what static source structure exists, and whether a visual interaction maps to that structure. Chromium may recover malformed markup differently from a bounded parser, and scripts may alter the live DOM after load.
+
+Starting with visible editing would make the easiest implementation—the live DOM—look authoritative even when it diverges from source.
 
 ## Decision
 
-Build read-only Preview, DOM Snapshot, Preview Selection, Visual Selection Overlay, and Preview Inspector before enabling writes. Treat missing, stale, mismatched, or ambiguous mapping as defensive state.
+Build a root-contained read-only Project Preview, static DOM Snapshot, bounded Preview Selection, defensive source mapping, external Visual Selection Overlay, and read-only Preview Inspector before implementing writes.
+
+Treat missing, stale, mismatched, and ambiguous mapping as valid defensive states. Keep the project page isolated and keep Crystal overlays outside its DOM.
 
 ## Options considered
 
 | Option | Why rejected or accepted |
 | --- | --- |
-| Read-only foundations first | Accepted because source reasoning must precede mutation. |
-| Visual editing before mapping | Rejected because a click would not be trustworthy enough to write. |
-| Live iframe DOM as source truth | Rejected because runtime DOM can diverge from source. |
-| Editable Inspector in same phase | Rejected because it requires command/history/write contracts. |
+| Read-only foundations first | Accepted because source identity and failure states precede mutation. |
+| Visual editing before mapping | Rejected because a click alone is not enough authority to patch source. |
+| Live iframe DOM as source truth | Rejected because browser runtime state can diverge from authored source. |
+| Editable Inspector in the same phase | Rejected because command, transaction, persistence, and refresh contracts were absent. |
 
 ## Consequences
 
-The current product can inspect and preview possible changes, but it cannot edit project files. This keeps source correctness and security ahead of visible editing speed.
+The current product can render, navigate, select, inspect, project a highlight, and preview possible source text while remaining read-only. This limits visible editing progress, but it protects project source and creates reusable evidence for later commands.
+
+A matched selection is still not permission to write; future execution must revalidate source freshness and command policy.
 
 ## Current implementation
 
-Implemented across:
-
-- `packages/core/project/preview/**`
-- `packages/core/project/dom/**`
-- `packages/core/project/preview-selection/**`
-- `packages/core/project/preview-inspector/**`
-- `packages/core/project/design-canvas/selection-overlay/**`
+The decision is implemented across Project Preview, DOM Snapshot, Preview Selection, Preview Inspector, Design Canvas, and selection-overlay modules and validators.
 
 ## Related docs
 

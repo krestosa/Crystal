@@ -1,131 +1,89 @@
-# Validation Gates Diagram
+# Validation gates diagram
 
 [Docs index](../../README.md)
 
-## At a glance
-
-| Question | Answer |
-| --- | --- |
-| Is this implemented? | Yes, as command graph documentation. |
-| Can validation prove future writes exist? | No. |
-| Runtime owner | npm scripts and Node validators. |
-| Safety risk controlled | Separates docs, structure, preview, UI, and aggregate local gates. |
-| Related next phase | More import-boundary and write-runtime checks. |
-
 ## Purpose
 
-This diagram shows how documentation and runtime checks fit into the local validation path.
-
-## Why this exists
-
-A docs-only change and a runtime feature change need different evidence. This diagram keeps those gates distinct.
-
-## How to read this page
-
-Use the subgraphs to see which class of validation is being exercised.
+The diagram groups evidence by what it can prove. Documentation coherence, build integrity, runtime boundaries, and feature behavior remain separate checks even when the quick suite runs them together.
 
 ## Current implementation
 
-The docs validator runs before the quick build/typecheck gate. It does not prove runtime behavior; it keeps the architecture map and safety language intact.
-
-| Implemented | Blocked | Future |
-| --- | --- | --- |
-| Docs checks. | Docs replacing runtime validation. | Import-boundary checks. |
-| Structure checks. | Validators mutating source. | Write runtime checks. |
-| Preview/UI checks. | Future claims as implemented. | Transaction validation. |
-
-## Key files
-
-These files define the validation command graph and docs-specific checks.
-
-## Key files and responsibilities
-
-| File | Responsibility | Reads | Must not do |
-| --- | --- | --- | --- |
-| `package.json` | Script graph. | Command names. | Add dependencies unnecessarily. |
-| `validate-local.mjs` | Aggregate runner. | npm scripts. | Hide failures. |
-| `validate-architecture-docs.mjs` | Docs checks. | Markdown docs. | Prove runtime behavior. |
-| `validate-source-patch-preview.mjs` | Command preview boundary. | Source files. | Allow writes. |
-| `validate-ui-flow.mjs` | Shell UI checks. | Renderer source. | Change runtime. |
-
-## Data flow
-
-Code validation and docs validation are separate static gates. The docs gate checks navigation, sections, Mermaid coverage, roadmap links, and blocked write claims.
-
-## Main diagram
+Generated metadata, policy, documentation, build, typecheck, source ownership, feature, UI, watcher, Electron, and validation-platform checks all participate in the canonical strict suite. Required skips fail by default.
 
 ```mermaid
 flowchart TD
-  subgraph Docs[Docs]
-    DocsIndex[docs links]
-    Rich[rich Markdown checks]
-    Claims[forbidden claims]
+  subgraph Metadata[Metadata and policy]
+    ProjectMeta[validate:project-metadata]
+    Policy[validate:change-policy]
   end
-
-  subgraph Structure[Structure]
-    Build[build]
-    Typecheck[typecheck]
-    SourceLayout[validate:structure]
+  subgraph Docs[Documentation]
+    Markdown[validate:markdown-integrity]
+    Guided[validate:guided-docs]
+    Architecture[validate:architecture-docs]
   end
-
-  subgraph Preview[Preview]
-    PreviewBase[validate:preview]
-    Snapshot[validate:dom-snapshot]
-    Selection[validate:preview-selection]
-    Inspector[validate:preview-inspector]
+  subgraph Build[Build integrity]
+    HTML[build:html]
+    SCSS[build:scss]
+    TS[build:ts]
+    Types[typecheck]
   end
-
-  subgraph UIFlow[UI flow]
-    Canvas[validate:design-canvas]
-    Overlay[validate:visual-selection-overlay]
-    Shell[validate:ui-flow]
+  subgraph Runtime[Runtime and feature]
+    Structure[structure and source ownership]
+    Preview[Preview pipeline]
+    Editing[Editing foundations]
+    Style[Style inventory and matching]
+    UI[Renderer UI]
   end
-
-  subgraph Aggregate[Local aggregate]
-    Quick[validate:local:quick]
-    Full[validate:local]
+  subgraph Environment[Environment]
+    Watch[local watch]
+    Electron[Electron doctor]
   end
-
-  DocsIndex --> Quick
-  Rich --> Quick
-  Claims --> Quick
-  Build --> Quick
-  Typecheck --> Quick
-  SourceLayout --> Full
-  PreviewBase --> Full
-  Snapshot --> Full
-  Selection --> Full
-  Inspector --> Full
-  Canvas --> Full
-  Overlay --> Full
-  Shell --> Full
+  ProjectMeta --> Quick[validate:local:quick]
+  Policy --> Quick
+  Markdown --> Quick
+  Guided --> Quick
+  Architecture --> Quick
+  HTML --> Quick
+  SCSS --> Quick
+  TS --> Quick
+  Types --> Quick
+  Structure --> Quick
+  Preview --> Quick
+  Editing --> Quick
+  Style --> Quick
+  UI --> Quick
+  Watch --> Quick
+  Electron --> Quick
+  Quick -->|all required pass| Pass[PASS]
+  Quick -->|failure or required skip| Fail[FAIL]
 ```
+
+## Key files
+
+- `package.json`
+- `scripts/validation/validation-suite.mjs`
+- `scripts/validation/validation-runner.mjs`
+- `scripts/validation/validation-reporter.mjs`
+- `scripts/validate-validation-system.mjs`
+
+## Data flow
+
+Focused checks produce observed status and output. The aggregate runner resolves each required command, executes it, and preserves its result. Renderers may format the report differently but cannot reinterpret status.
 
 ## Boundaries
 
-Docs validation does not replace runtime validation. Runtime validation does not prove future features are implemented.
-
-## What this does not do
-
-| Not provided | Reason |
-| --- | --- |
-| CI status proof | Local commands and CI are separate. |
-| Runtime proof for docs | Docs checks validate docs shape. |
-| Auto-repair | Validators fail explicitly. |
-
-## Common misunderstanding
-
-> **Common misunderstanding:** A passing docs validator means the map is coherent, not that runtime behavior changed.
+Documentation validation does not prove runtime behavior. Runtime validation does not implement future features. Missing execution cannot become PASS, and validators do not repair the repository.
 
 ## Validation
 
-Run `npm run validate:architecture-docs` and the normal local validation command appropriate for the branch.
+The diagram itself is covered by `validate:architecture-docs`; the platform is covered by `validate:validation-system` and the strict aggregate suite.
 
 ## Related docs
 
 - [Validation system](../validation-system.md)
 - [Validation flow](../flows/validation-flow.md)
+- [Development](../../development.md)
 
 ## Future work
 
-Add import-boundary validation and docs path drift checks after the docs structure stabilizes.
+Add new gates when a new contract creates testable risk. Keep suite membership and required/optional semantics in the canonical catalog.

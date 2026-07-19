@@ -1,39 +1,28 @@
 # Crystal
 
-Crystal is a desktop application for creating a safe visual/code workbench around real HTML projects and their related assets.
+Crystal is a desktop workbench for understanding real HTML projects without converting them into a proprietary format. It opens an existing project, builds a structural graph, renders a selected page in Chromium, and connects what you see back to source-derived models that Crystal can validate.
 
-> **Read this first:** Crystal currently provides read-only and dry-run foundations. It can inspect, preview, map, and describe possible edits, but it does not write project files.
+The current application is deliberately read-only at the project boundary. You can inspect a project, navigate the Design Canvas, select rendered elements, review source-derived structure, and preview a possible HTML insertion. Crystal does not yet apply patches, save project files, execute undo or redo, or expose an editing-capable IPC channel.
 
-## At a glance
+## What works today
 
-| Question | Answer |
-| --- | --- |
-| Current product shape | Electron/Node desktop workbench for real HTML projects. |
-| Implemented today | Project Graph, secure Preview, DOM Snapshot, Preview Selection, Inspector, Design Canvas navigation, Visual Selection Overlay, Element Library intent, Source Patch Preview, Command Preview Bus dry-run. |
-| Blocked today | Real file writes, patch apply, write IPC, DOM mutation, real undo/redo, editable Inspector. |
-| Main safety rule | Renderer displays state and intent; main owns privileged effects; core owns portable models and planning. |
-| Start reading | `docs/README.md`, then architecture, runtime, security, Preview, and commands docs. |
+- Open an HTML file or project folder and build a Project Graph.
+- Watch the project and refresh the graph through a controlled main-process service.
+- Render project files through the root-contained `crystal-preview://` protocol.
+- Build a bounded DOM Snapshot from static HTML source.
+- Select a rendered node and map it defensively to the snapshot.
+- Inspect matched structure and project an external read-only selection overlay.
+- Navigate the Design Canvas with pan, zoom, Fit, Center, and Reset.
+- Browse the HTML Element Library and produce dry-run Source Patch Preview results.
+- Inspect authored style sources and conservative selector candidates derived from DOM Snapshot data.
 
-## Documentation
+## What remains unavailable
 
-| Goal | Start with | Then read |
-| --- | --- | --- |
-| Understand the app boundary | [Runtime boundaries](docs/architecture/runtime-boundaries.md) | [Security model](docs/architecture/security-model.md) |
-| Understand Preview and selection | [Preview architecture](docs/architecture/preview/README.md) | [Preview Selection](docs/architecture/preview/preview-selection.md), [DOM Snapshot flow](docs/architecture/flows/dom-snapshot-flow.md) |
-| Understand command previews | [Commands overview](docs/architecture/commands/README.md) | [Source Patch Preview](docs/architecture/commands/source-patch-preview.md), [Command Preview Bus](docs/architecture/commands/command-preview-bus.md) |
-| Understand future writing | [Future write flow](docs/architecture/flows/future-write-flow.md) | [ADR 0003](docs/decisions/0003-command-preview-before-write.md) |
-| Validate a docs-only change | [Validation system](docs/architecture/validation-system.md) | `npm run validate:architecture-docs` |
+Crystal has planning and readiness models for future editing, but no write runtime. A `preview-ready` command result is display state, not permission to mutate a file. The disabled Inspector and CSS/Sass surfaces are also read-only: they do not calculate the browser cascade, read computed styles, access CSSOM, inspect the live iframe DOM, or enable Apply.
 
-Primary references:
+WebGPU overlays, Rust/WebAssembly analyzers, packaged distribution, and the broader visual editing workflow remain roadmap work. Their presence in planning documents is not evidence of implementation.
 
-- [Documentation index](docs/README.md)
-- [Architecture documentation](docs/architecture/README.md)
-- [Architecture decisions](docs/decisions/README.md)
-- [Glossary](docs/glossary.md)
-- [Current implementation status](docs/roadmap-implementation.md)
-- [Full product roadmap](docs/full-product-roadmap.md)
-
-## Requirements
+## Install
 
 <!-- crystal-generated:toolchain:start -->
 <!-- Do not edit manually. Run npm run sync:project-metadata. -->
@@ -49,66 +38,52 @@ Primary references:
 | Lockfile policy | Keep `package-lock.json` tracked; use `npm install` only for explicit dependency resolution. |
 <!-- crystal-generated:toolchain:end -->
 
-## Install
+From the repository root:
 
 ```bash
-npm ci
+npm ci --foreground-scripts
 ```
 
-Use `npm ci` for reproducible installs from the committed `package-lock.json`. Use `npm install` only when intentionally updating dependencies. `package-lock.json` must remain versioned and must not be ignored.
+The lockfile is part of the reproducible baseline. Use `npm install` only when intentionally changing dependency resolution.
 
-## Development
+## Run Crystal
 
 ```bash
 npm run dev
 ```
 
-The development command builds the current source and opens the Electron shell from `dist/main/main.cjs`. Electron main and preload are emitted as explicit CommonJS outputs so the root `"type": "module"` setting can remain unchanged.
+The development command builds the application and launches Electron. DevTools open only through the explicit shell action; development mode does not open them automatically.
 
-## Build and validation
-
-| Command | Use when |
-| --- | --- |
-| `npm run validate:architecture-docs` | Reviewing architecture docs only. |
-| `npm run validate:local:quick` | Dependencies are installed and a quick local gate is enough. |
-| `npm run validate:local` | Full local validation before asking for PR merge. |
-| `npm run validate:local -- --with-dev` | The branch also needs the manual Electron launch check. |
-
-Manual sequence:
+Useful focused commands:
 
 ```bash
-npm ci
 npm run build
 npm run typecheck
-npm run validate:structure
-npm run validate:project-graph
-npm run validate:project-watch
-npm run validate:preview
-npm run validate:dom-snapshot
-npm run validate:preview-selection
-npm run validate:preview-inspector
-npm run validate:design-canvas
-npm run validate:visual-selection-overlay
-npm run validate:html-element-library
-npm run validate:source-patch-preview
-npm run validate:architecture-docs
-npm run validate:ui-flow
-npm run validate:local:watch
-npm run doctor:electron
+npm run validate:local:quick
+npm run validate:local
 ```
 
-## Current scope
+`validate:local:quick` is strict: a required failed or skipped check makes the command fail unless skips are explicitly allowed. Use the full local suite before merging runtime work.
 
-| Implemented | Blocked | Future |
-| --- | --- | --- |
-| Project Graph scanner, watcher, cache, validation foundation. | Real file write. | Transaction skeletons and refresh-boundary planning. |
-| Secure `crystal-preview://current/<relative-project-path>` Preview protocol. | Patch apply. | Controlled command execution after validators exist. |
-| Static DOM Snapshot and read-only DOM Tree. | Write IPC channels. | Dirty-state and save/apply workflow. |
-| Read-only Preview Selection and Inspector. | DOM mutation and editable Inspector. | Reversible undo/redo transactions. |
-| Source Patch Preview and Command Preview Bus dry-run. | Real undo/redo execution. | WebGPU/Rust/WASM hardening in later phases. |
+## Start reading
 
-> **Safety boundary:** A dry-run command preview is not permission to mutate files. Any future write path must be explicit, typed, reversible, and owned by main/core services.
+The [documentation index](./docs/README.md) offers short routes by goal, subsystem, risk, and implementation phase. New contributors should continue with [Guided reading](./docs/guided-reading.md), then use the [Architecture overview](./docs/architecture/README.md) to locate runtime ownership.
 
-## Architecture rule
+For current capability, read [Implementation status](./docs/roadmap-implementation.md). For product direction, read the separate [Full product roadmap](./docs/full-product-roadmap.md). Keeping those pages separate prevents planned work from being mistaken for available behavior.
 
-Crystal favors highly modular source code and compact runtime outputs. Renderer UI presents state and intent. Main owns privileged effects. Preload exposes only controlled APIs. Core owns portable models, selectors, validators, planners, and state contracts. Future write-capable behavior must go through validated commands, reversible source patches, transaction history, refresh planning, and main/core persistence services.
+## Repository shape
+
+```text
+apps/desktop/electron/   Electron main, preload, and renderer runtimes
+packages/core/           portable models, selectors, validators, and planners
+packages/shared/         contracts shared across runtimes
+packages/adapters/       filesystem, watcher, compiler, bundler, and assembler effects
+scripts/                 build, metadata, policy, and validation tooling
+docs/                    architecture, flows, decisions, development, and roadmap
+```
+
+The renderer has no direct Node or filesystem authority. Privileged operations pass through the constrained preload API to Electron main, which coordinates core logic and adapters.
+
+## Project status
+
+Crystal is an active foundation, not a finished visual editor. The current value is a trustworthy read-only path from source to Preview, selection, inspection, and dry-run command planning. Editing becomes viable only after persistence, conflict handling, history execution, refresh execution, and explicit Apply semantics are implemented together.

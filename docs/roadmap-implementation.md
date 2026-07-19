@@ -1,649 +1,96 @@
-# Roadmap Implementation Status
-
-This document tracks implementation status. The complete product roadmap lives in [`docs/full-product-roadmap.md`](./full-product-roadmap.md).
-
-Crystal is a new Electron/Node desktop application for creating, inspecting, and modifying real HTML projects and their dependencies. This status file stays conservative: it records what has landed, what is intentionally out of scope, and what validation is required before merge.
-
-## Implemented foundations
-
-### Phase -1 — Physical architecture
-
-Covered:
-
-- npm workspaces monorepo base
-- `/apps` and `/packages` root structure
-- Electron app source split into main, preload, and renderer
-- modular renderer folders for layout, views, components, styles, and app bootstrap
-- command, event, state, history, refresh-boundary, source-patch, and planning folders in core
-- adapter folders for build-facing external tools
-- documentation of source modularity and runtime outputs
-
-### Phase 0 — Tooling foundation
-
-Covered:
-
-- Electron minimum application shell
-- TypeScript configuration
-- esbuild bundling for main, preload, and renderer
-- Sass compilation
-- HTML include assembler
-- preload bridge with typed IPC contract
-- structure validation script
-- build scripts
-- local validation runner for pre-merge checks
-- quick local validation scripts that skip dependency installation after the local workspace is already installed:
-  - `validate:local:quick`
-  - `validate:local:quick:core`
-  - `validate:local:quick:preview`
-  - `validate:local:quick:ui`
-- Electron diagnostic script
-- optional manual DevTools opening through the status bar button only
-
-Still future hardening:
-
-- import boundary validation
-- dist manifest validation
-- worker bundle validation
-- WASM build validation
-- HTML include source map support
-- circular include reporting
-
-### Phase 0A — Source Tree Boundary Validation Foundation
-
-Covered:
-
-- tracked-file enumeration through `git ls-files -z -- apps packages`
-- pure physical ownership policy for `apps/desktop/package.json`
-- registered Electron runtime owners under `apps/desktop/electron/main/**`, `preload/**`, and `renderer/**`
-- registered package owners under `packages/core/**`, `packages/shared/**`, and `packages/adapters/**`
-- deterministic structured violations for invalid paths, unknown roots, and misplaced product source
-- `validate:source-tree-boundaries` wired into the canonical catalog, local quick validation, full validation, and `validate:local:quick:core`
-- behavioral fixtures for path safety, deduplication, NUL parsing, Git failure handling, and tracked-versus-untracked behavior
-
-Still future hardening:
-
-- import boundary validation
-- dist manifest validation
-- worker bundle validation
-- WASM build validation
-
-### Phase 1 — Project Graph foundation
-
-Covered:
-
-- opening a project folder or an HTML file through Electron dialog IPC
-- recursive file scanning with ignored directories and initial limits
-- file classification for HTML, CSS, Sass/SCSS, JS, TS, images, SVG, fonts, media, assets, and unknown files
-- HTML page detection
-- direct HTML dependency detection
-- CSS/SCSS dependency detection for `@import` and `url(...)`
-- basic JS/TS dependency detection
-- local, external, resolved, and missing route classification
-- Project Graph state integration
-- renderer Project panel
-- sample fixture project and validation scripts
-- filesystem watcher adapter
-- batched watch events
-- in-memory Project Graph cache foundation
-- conservative semi-incremental refresh planning with full-rescan fallback
-- typed IPC for watcher/cache control
-- automated local watcher filesystem validation over a temporary project
-
-Still future hardening:
-
-- parsed DOM per HTML page in the Project Graph model
-- class usage expansion
-- selector/rule ownership expansion
-- unused files/assets candidates
-- project health signals
-- framework alias resolution
-- TypeScript path alias resolution
-- Sass include path support
-- npm package asset resolution
-- large-project indexing and persistence
-- worker-backed scanning and analysis
-- Rust/WASM acceleration behind typed boundaries
-
-### Phase 2 — Real Preview, DOM Snapshot, Preview Selection
-
-Covered:
-
-- secure real Preview protocol and renderer Preview panel
-- safe Preview target selection and reload controls
-- bounded Preview diagnostics
-- read-only DOM Snapshot model and parser
-- read-only DOM Tree panel
-- inactive-by-default Preview selection script
-- sandbox-preserving renderer message bridge
-- conservative read-only mapping between Preview selection and DOM Snapshot paths
-- non-visual Preview, DOM Snapshot, Preview Selection, and Preview Inspector validators
-
-Still out of scope:
-
-- source writes
-- patch apply
-- write IPC
-- DOM mutation
-- editable Inspector behavior
-
-### Phase 3 — Preview Inspector read-only
-
-Covered:
-
-- minimal read-only Preview Inspector model and selector
-- mapped DOM Snapshot node details for trusted selections
-- defensive Inspector states for missing, stale, mismatched, ambiguous, and missing-path cases
-- compact read-only Preview Inspector panel
-- target/page selector styling integrated with the carbon shell
-- non-visual `validate:preview-inspector` script
-
-Still out of scope:
-
-- attribute editing
-- text editing
-- computed styles
-- box model
-- CSS rule editing
-- DOM Tree navigation
-- scroll-to-node
-
-### Phase 4 — Design Canvas Navigation MVP
-
-Covered:
-
-- pure Design Canvas viewport model under `packages/core/project/design-canvas/`
-- safe zoom, pan, fit, center, reset, focal zoom, and finite-number helpers
-- wheel, trackpad, pinch, keyboard, pointer, and zoom-drag navigation classification
-- renderer Design Canvas component around the Preview frame
-- external capture layer that defaults to `pointer-events: none`
-- in-memory viewport state persistence for the current renderer session
-- non-visual `validate:design-canvas` script wired into local validation
-
-Still out of scope:
-
-- persistent viewport state across app restarts
-- device viewport presets
-- rulers, guides, grids, snapping, and measurement overlays beyond current shell/canvas visuals
-- safe mode surface in Design when Preview fails beyond current diagnostics
-- keyboard shortcut registry as a full app-level system
-
-### Phase 5 — Visual Selection and Overlay MVP
-
-Covered:
-
-- external read-only Visual Selection Overlay outside the Preview iframe
-- bounding-box/highlight projection for matched Preview selections
-- defensive states for missing snapshot or unavailable overlay data
-- overlay lifecycle tied to Preview selection/state rather than persistent DOM mutation
-- no mutation of user DOM beyond the existing temporary selection script
-- non-visual `validate:visual-selection-overlay` script
-
-Partially covered / still future:
-
-- hover highlight as a separate optional state
-- read-only selection handles beyond basic selection visualization
-- multi-frame awareness for multiple preview viewports
-- visual breadcrumbs foundation
-- layout type badges
-- overlay desync hardening after iframe scroll/resize/reflow
-- ruler/guide/measurement overlay integration
-
-### Phase 6A — HTML Element Library command foundation
-
-Covered:
-
-- compact modular Element Library panel grouped by intent
-- read-only HTML element catalog
-- `AddHtmlElementCommand` contracts, constants, validator, and execution blocker
-- target eligibility selector based on Project Graph, Preview target, DOM Snapshot, and Preview Selection mapping state
-- compact Element Library integration with shell UI primitives and disabled future command action
-- non-visual `validate:html-element-library` script wired into quick UI validation
-
-Still out of scope:
-
-- real source writes
-- patch apply
-- IPC write
-- save/apply workflow
-- undo/redo real history
-- DOM mutation
-
-### Phase 6B — Source Patch Preview and Command Bus Foundation
-
-Covered:
-
-- source patch preview model
-- source insertion anchor model based on DOM Snapshot `sourceLocation`
-- dry-run command bus contracts
-- `AddHtmlElementCommand` preview planner
-- compact Element Library patch preview UI
-- validation guarding against writes, IPC write channels, and iframe internals
-
-Still out of scope:
-
-- real source writes
-- patch apply
-- IPC write
-- save/apply workflow
-- undo/redo real history
-- DOM mutation
-
-### Phase 6C — History/Undo transaction skeleton and refresh boundary planning
-
-Covered:
-
-- `HistoryTransactionPreview` contracts under `packages/core/history/`
-- undo/redo strategy descriptors without real undo/redo behavior
-- deterministic history transaction preview factory that accepts an optional timestamp marker instead of calling the clock directly
-- `RefreshBoundaryPlan` contracts under `packages/core/refresh-boundary/`
-- invalidation targets for Project Graph, DOM Snapshot, Preview render, selection state, Inspector state, Visual Overlay, and diagnostics
-- `CommandTransactionPlanPreview` contracts under `packages/core/commands/transaction-planning/`
-- preview-only linkage from Command Preview Result to Source Patch Preview, HistoryTransactionPreview, and RefreshBoundaryPlan
-- validation guarding that Phase 6C remains dry-run/planning only
-- `validate:history-foundation` wired into `validate:local:quick:core`
-
-Still out of scope:
-
-- real source writes
-- patch apply
-- IPC write
-- save/apply workflow
-- real undo/redo execution
-- history persistence
-- dirty-state mutation
-- refresh execution
-- DOM mutation
-- Apply enablement
-
-### Phase 6D — Design Editing MVP preflight
-
-Covered:
-
-- `DirtyStatePreview` contracts under `packages/core/dirty-state/`
-- `SourceConflictPreview` contracts under `packages/core/source-conflict/`
-- `WriteRuntimeCapabilityPreview` contracts under `packages/core/write-runtime/`
-- `DesignEditingReadinessPreview` contracts under `packages/core/design-editing/`
-- preview-only linkage from CommandTransactionPlanPreview to DirtyStatePreview, SourceConflictPreview, and WriteRuntimeCapabilityPreview
-- validation guarding that Phase 6D remains preflight-only and Apply-blocked
-- `validate:design-editing-preflight` wired into `validate:local:quick:core`
-
-Phase 6D boundary: No source files are written. No patch apply is available. No write IPC exists. Apply remains unavailable. No undo/redo execution runs. Dirty-state is not persisted. No refresh execution runs. No Preview DOM mutation occurs.
-
-Still out of scope:
-
-- real source writes
-- patch apply
-- IPC write
-- save/apply workflow
-- real undo/redo execution
-- dirty-state persistence
-- conflict detection against real source files
-- refresh execution
-- DOM mutation
-- Apply enablement
-
-### Phase 7A — Editable Inspector draft/intent foundation
-
-Covered:
-
-- `InspectorEditableFieldPreview` contracts under `packages/core/inspector-editing/`
-- `InspectorEditDraftPreview` contracts for selected-node draft state without persistence
-- `InspectorEditIntentPreview` contracts for text and attribute edit intent without source mutation
-- `InspectorEditingReadinessPreview` contracts linking Inspector draft/intent state to DesignEditingReadinessPreview
-- preview-only reference to `CommandTransactionPlanPreview` as planning context, not execution
-- validation guarding that Phase 7A remains draft/intent-only and Apply-blocked
-- `validate:inspector-editing-foundation` wired into `validate:local:quick:core`
-
-Phase 7A boundary: Editable Inspector draft/intent foundation only. No source files are written. No patch apply is available. No write IPC exists. Apply remains unavailable. No contenteditable is used. No undo/redo execution runs. Dirty-state is not persisted. No refresh execution runs. No Preview DOM mutation occurs.
-
-Still out of scope:
-
-- applied Inspector editing
-- real source writes
-- patch apply
-- IPC write
-- save/apply workflow
-- real undo/redo execution
-- dirty-state persistence
-- refresh execution
-- DOM mutation
-- Apply enablement
-- renderer editable controls beyond disabled/read-only affordances
-
-### Phase 7B — Editable Inspector read-only draft surface
-
-Covered:
-
-- `InspectorEditingReadOnlySurfaceViewModel` under `packages/core/inspector-editing/`
-- renderer `editable-inspector` surface under `apps/desktop/electron/renderer/views/inspector/`
-- disabled/read-only field controls for future text-content and attribute editing
-- unsupported field display for tag-name, class-list, and inline-style
-- compact readiness, blocked reason, safety notes, changed-field summary, and preview-only intent display
-- disabled Apply affordance with “Apply unavailable — write runtime not enabled” copy
-- `validate:editable-inspector-surface` wired into `validate:local:quick:ui`
-- `validate:inspector-editing-foundation` remains wired into `validate:local:quick:core`
-
-Phase 7B boundary: Editable Inspector read-only draft surface only. No source files are written. No patch apply is available. No write IPC exists. Apply remains unavailable. No contenteditable is used. No undo/redo execution runs. Dirty-state is not persisted. No refresh execution runs. No Preview DOM mutation occurs.
-
-Still out of scope:
-
-- applied Inspector editing
-- editable input state mutation
-- real source writes
-- patch apply
-- IPC write
-- save/apply workflow
-- real undo/redo execution
-- dirty-state persistence
-- refresh execution
-- DOM mutation
-- Apply enablement
-
-### Phase 8A — Style Engine read-only source inventory foundation
-
-Covered:
-
-- `StyleSourceReferencePreview` contracts under `packages/core/style-engine/`
-- `StyleSourceInventoryPreview` contracts for read-only stylesheet and inline style inventory
-- `StyleSelectorPreview`, `StyleDeclarationPreview`, and `StyleRulePreview` contracts for textual previews only
-- `SelectedNodeStyleReadinessPreview` contracts linking selected-node style readiness to inventory and optional Inspector editing readiness
-- minimal textual detection for stylesheet links, inline style blocks, inline style attributes, simple selectors, simple declarations, and simple rule previews from source text already supplied as input
-- validation guarding that Phase 8A remains source-inventory-only and Apply-blocked
-- `validate:style-engine-foundation` wired into `validate:local:quick:core`
-
-Phase 8A boundary: Style Engine read-only source inventory foundation only. No CSS/Sass Inspector visual surface is added. No real cascade is calculated. No computed styles are read. No style editing is implemented. No source files are written. No patch apply is available. No write IPC exists. Apply remains unavailable. No contenteditable is used. No undo/redo execution runs. Dirty-state is not persisted. No refresh execution runs. No Preview DOM mutation occurs.
-
-Still out of scope:
-
-- CSS/Sass Inspector visual surface
-- real cascade calculation
-- computed style inspection
-- applied style matching against live Preview DOM
-- style editing
-- real source writes
-- patch apply
-- IPC write
-- save/apply workflow
-- real undo/redo execution
-- dirty-state persistence
-- refresh execution
-- DOM mutation
-- Apply enablement
-
-### Phase 8B — CSS/Sass Inspector read-only visual surface
-
-Covered:
-
-- renderer CSS/Sass Inspector read-only surface integrated into the Preview Inspector
-- compact authored/computed/apply summary
-- selected DOM Snapshot path and target file context
-- source inventory display based on Phase 8A Style Engine inventory
-- compact source cards for linked/inline authored style references
-- rule preview empty state when source text is unavailable
-- compact Safety Boundary
-- passive Apply unavailable affordance
-- `validate:css-sass-inspector-surface` wired into quick UI validation
-- documentation of the Phase 8B boundary
-
-Phase 8B boundary: CSS/Sass Inspector read-only visual surface only. No real cascade is calculated. No computed styles are read. No document.styleSheets or CSSOM is used. No iframe internals are read. No source files are written. No patch apply is available. No write IPC exists. Apply remains unavailable. No contenteditable is used. No undo/redo execution runs. Dirty-state is not persisted. No refresh execution runs. No Preview DOM mutation occurs.
-
-Still out of scope:
-
-- authored style matching against selected DOM Snapshot nodes
-- real cascade calculation
-- specificity resolution beyond textual selector preview
-- computed style inspection
-- applied style matching against live Preview DOM
-- style editing
-- class management
-- source writes
-- patch apply
-- write IPC
-- save/apply workflow
-- undo/redo execution
-- dirty-state persistence
-- refresh execution
-- DOM mutation
-- Apply enablement
-
-### Phase 8C — Authored Style Matching over DOM Snapshot
-
-Covered:
-
-- DOM Snapshot node normalization for authored style matching
-- read-only authored selector match preview contracts
-- read-only authored rule candidate match contracts
-- selected-node authored style matches preview
-- support for simple element, class, id, attribute, and single-node compound selectors
-- explicit unsupported-selector states for combinators, pseudo selectors, universal selectors, and complex selectors
-- CSS/Sass Inspector candidate match summary and compact read-only candidate list
-- validation guarding that Phase 8C remains DOM Snapshot only and Apply-blocked
-- `validate:authored-style-matching` wired into quick validation
+# Implementation status
+
+[Docs index](./README.md)
+
+This page describes what exists in `main`. It is not a delivery schedule. A phase label records how work was organized; implementation status comes from source, tests, validators, runtime wiring, and explicit negative guarantees.
+
+## Reading the status
+
+- **Implemented** means runtime or tooling behavior exists and is validated.
+- **Read-only** means the user can inspect or navigate, but not mutate project source.
+- **Preview-only / dry-run** means Crystal can describe an operation without executing it.
+- **Planning-only** means contracts model a future flow without performing its effects.
+- **Intentionally blocked** means validators and UI prevent the behavior.
+- **Future** means no current implementation should be inferred.
+
+## Current foundation
+
+| Area | Status | Evidence-backed boundary |
+| --- | --- | --- |
+| Electron shell | Implemented | Hardened main/preload/renderer separation; renderer has no Node integration. |
+| Project Graph | Implemented, shallow | Scans files, pages, direct dependencies, assets, missing local routes, and issues. |
+| Watcher and cache | Implemented foundation | Normalized batched events and in-memory cache; no disk cache. |
+| Project Preview | Implemented, read-only | Root-contained protocol, target state, reload planning, bounded diagnostics. |
+| DOM Snapshot | Implemented, read-only | Static source parser with limits and issues; not the live browser DOM. |
+| Preview Selection | Implemented, read-only | Bounded messages and defensive snapshot mapping. |
+| Preview Inspector | Implemented, read-only | Derived structural details; no editable controls. |
+| Design Canvas navigation | Implemented, read-only | Pan, zoom, Fit, Center, Reset, gesture classification, recovery clamps. |
+| Visual Selection Overlay | Implemented, read-only | External projection; no DOM injection or edit handles. |
+
+## Editing foundations
+
+| Phase or foundation | Status | What exists | What remains blocked |
+| --- | --- | --- | --- |
+| Phase 6A | Implemented, preview-only | Element Library intent, target eligibility, insertion modes. | HTML insertion and file writes. |
+| Phase 6B | Implemented, dry-run | Source Patch Preview and Command Preview Bus. | Patch apply, write IPC, persistence. |
+| Phase 6C | Implemented, planning-only | History transaction preview, refresh-boundary plan, command transaction plan. | Undo/redo execution and refresh execution. |
+| Phase 6D | Implemented, preflight-only | Design editing readiness and conflict/capability summaries. | Apply enablement and source mutation. |
+| Phase 7A | Implemented, intent-only | Editable Inspector draft and edit-intent contracts. | Applied Inspector edits. |
+| Phase 7B | Implemented, read-only | **Editable Inspector read-only draft surface** with disabled controls. | Active input state, Apply handlers, persistence. |
+| Source Revision and Freshness Foundation | Implemented, read-only foundation | Canonical `sha256:<byteLength>:<digest>` revisions from exact file bytes, root-contained observation, typed failures, and canonical match/mismatch evidence for `SourceConflictPreview`. | Command execution, writer-time recheck, patch apply, dirty state, history execution, refresh execution, and Apply. |
+
+The source revision token uses SHA-256, lowercase hexadecimal, and byte length without content, Unicode, or line-ending normalization. The Node adapter accepts a project root plus a project-relative path, resolves canonical paths, blocks traversal and symlink escape, bounds reads by `maxBytes`, and returns typed evidence without exposing write authority. A `clean-preview` result remains evidence only: `canApplyWithoutRecheck` is still always `false`, and any future mutation must repeat the revision check immediately before writing.
+
+The existence of a transaction descriptor, readiness result, field draft, disabled control, or source freshness result does not imply an execution path. Current IPC constants and preload methods contain no write channel.
+
+## Style Engine and CSS/Sass Inspector
+
+| Phase | Status | Current result | Explicit limitations |
+| --- | --- | --- | --- |
+| Phase 8A | Implemented, read-only | **Style Engine read-only source inventory foundation**: source references, inventory, textual selectors/declarations/rules, selected-node readiness. | No source reads by renderer, no cascade, computed styles, CSSOM, editing, or Apply. |
+| Phase 8B | Implemented, read-only | **CSS/Sass Inspector read-only visual surface** that presents inventory and preview sections. | Passive UI only; no editable controls or browser stylesheet access. |
+| Phase 8C | Implemented, read-only | Authored Style Matching over normalized DOM Snapshot nodes for a limited selector subset. | Candidate correlation only; no live-DOM matching, complex selector engine, cascade, inheritance, conditions, or computed values. |
+
+Supported 8C selector previews include simple element, class, ID, attribute-presence, attribute-equality, and single-node compound selectors. Combinators, pseudo classes/elements, Sass nesting, media/supports/container evaluation, browser defaults, inheritance, and real cascade remain unsupported or future.
+
+## Intentionally blocked system-wide
+
+No current path provides:
+
+- source file writes or patch application;
+- write IPC or renderer filesystem authority;
+- enabled Apply/Save behavior;
+- real undo/redo execution or durable transaction history;
+- dirty-state persistence;
+- refresh execution after a write;
+- project DOM mutation;
+- live iframe document access;
+- real CSS cascade, computed styles, CSSOM, or box-model inspection;
+- WebGPU overlay runtime;
+- Rust/WebAssembly analyzer runtime;
+- production packaging and distribution.
+
+The read-only source freshness foundation does not complete the write runtime's `conflict-detector` capability because no writer invokes the check at the mutation boundary.
+
+## Canonical phase boundary statements
+
+The repository validators preserve the following historical phase contracts verbatim. They describe the scope of each increment when it landed; they do not erase later read-only additions.
+
+- Phase 6D remained preflight-only.
+- Phase 7A was the Editable Inspector draft/intent foundation.
+- Phase 7B added the Editable Inspector read-only draft surface.
+- Phase 8A introduced the Style Engine read-only source inventory foundation. No CSS/Sass Inspector visual surface is added within that phase.
+
+Across those boundaries: No real cascade is calculated. No computed styles are read. No style editing is implemented. No source files are written. No patch apply is available. No write IPC exists. Apply remains unavailable. No contenteditable is used. No undo/redo execution runs. Dirty-state is not persisted. No refresh execution runs. No Preview DOM mutation occurs.
+
+## Canonical Phase 8C boundary
+
+Phase 8C — Authored Style Matching over DOM Snapshot
 
 Phase 8C boundary: Authored Style Matching over DOM Snapshot only. No real cascade is calculated. No computed styles are read. No document.styleSheets or CSSOM is used. No iframe internals are read. No live Preview DOM matching is performed. No source files are written. No patch apply is available. No write IPC exists. Apply remains unavailable. No contenteditable is used. No undo/redo execution runs. Dirty-state is not persisted. No refresh execution runs. No Preview DOM mutation occurs.
 
-Still out of scope:
+## Validation status model
 
-- real cascade calculation
-- specificity resolution beyond textual preview
-- computed style inspection
-- CSSOM
-- live Preview DOM matching
-- selector engine for complex selectors
-- Sass nesting resolution
-- media/supports/container evaluation
-- style editing
-- class management
-- source writes
-- patch apply
-- write IPC
-- save/apply workflow
-- undo/redo execution
-- dirty-state persistence
-- refresh execution
-- DOM mutation
-- Apply enablement
+The canonical quick suite contains 33 required checks. PASS means every required check executed and succeeded. A required skip remains visible and makes strict validation fail unless the caller explicitly opts into `--allow-skips`.
 
-### Cross-cutting validation hardening and strict reporter
-
-Covered:
-
-- strict local quick validation runner with granular per-check reporting
-- PASS/FAIL/SKIPPED final summary
-- 32-check suite including Validation System meta-validator, Source Tree Boundaries, and Authored Style Matching validators
-- direct-node execution for known Node scripts while preserving npm script contracts
-- Windows-safe npm fallback and command-execution failure reporting
-- render modes for unicode, ascii/plain, raw, json-summary, compact, verbose, no-progress, color/no-color
-- ANSI-safe raw/json/no-color output contracts
-- parseable JSON invocation documented through Node direct or npm --silent
-- color-aware reporter rendering that remains decorative and not state-bearing
-- validation-system meta-validator for suite wiring, render modes, failure types, and critical validator check counts
-- hardening for guided docs and CSS/Sass Inspector validators
-
-PASS means executed and verified.
-
-FAIL means at least one required check failed.
-
-SKIPPED means a check did not run and must be visible in the final summary.
-
-Strict validation reporter boundary: validation reporting and validator hardening only. It does not modify runtime behavior, does not change Electron security, does not add dependencies, does not apply fixes automatically, does not convert failures into warnings, and does not hide skipped checks.
-
-### Cross-cutting shell, Diagnostics, and UI system polish
-
-Covered:
-
-- carbon shell theme with compact density
-- resizable left and right shell panels
-- integrated status bar with runtime badge, Diagnostics button, and manual DevTools button
-- floating Diagnostics panel with open/close, pin/unpin, drag, viewport recovery, and resize
-- Diagnostics scroll containment and responsive grid for Graph, Preview, DOM, and Events
-- dark Preview fixture styling
-- dark Inspector select styling
-- compact control tokens for shared button/select/icon-button styling
-- no-install quick validation path
-- UI flow validator coverage for shell, Diagnostics, DevTools button, dark fixtures, compact controls, and security guards
-
-Still out of scope:
-
-- theme customization UI
-- persisted user UI preferences
-- screenshot/UI automation testing
-- full accessibility pass beyond targeted labels/focus states
-
-## Recommended next module
-
-### Responsive Design and Layout Tools
-
-Recommended scope:
-
-- keep scope read-only/planning until write runtime, patch apply, write IPC, dirty-state persistence, refresh execution, and undo/redo execution exist
-- use Phase 8A Style Engine source inventory, Phase 8B CSS/Sass Inspector surface, and Phase 8C DOM Snapshot authored candidate matching only as read-only inputs
-- inspect responsive/layout metadata from Project Graph, DOM Snapshot, textual authored style previews, and safe renderer state only
-- avoid real cascade, computed style reads, document.styleSheets or CSSOM, iframe internals, live Preview DOM matching, and Preview DOM mutation
-- keep unsupported and not-evaluated states visible
-- do not write source files
-- do not apply patches
-- do not add write IPC
-- keep Apply unavailable
-
-Responsive Design and Layout Tools should remain a read-only/planning module unless a later write-runtime phase explicitly lands source writes, patch application, write IPC, dirty-state persistence, refresh execution, and undo/redo execution.
-
-## Not implemented yet
-
-The following roadmap items remain intentionally pending:
-
-- real source mutation command runtime
-- source mutation service in main/core, not renderer
-- source patch application and reversible patch persistence
-- undo/redo transaction log
-- save/apply dirty-state workflow
-- Webflow/Pinegrow-like structural editing commands
-- editable attributes or text editing with Apply
-- moving/reordering DOM nodes
-- class management and Class Composer
-- real CSS cascade or specificity analysis beyond textual selector preview
-- computed style inspection
-- visual style editor categories
-- style editing and class management
-- responsive breakpoint tooling
-- component/snippet library
-- asset/font/SVG/media management UI
-- Developer Mode / IDE tools
-- separate system terminal and Preview Browser Console
-- browser console integration
-- Project Graph target expansion for DOM, classes, selectors, applied styles, unused files, unused assets, inferred components, and workspace status
-- worker-backed parser/analyzer/asset/css/html/ts/preview-sync/wasm processing
-- fallbacks for WebGPU, WASM, Preview, malformed HTML, failed CSS/assets, blocking scripts, and terminal failure
-- explicit build pipeline for source validation, HTML assembly, SCSS compilation, TypeScript bundling, Rust/WASM compilation, assets, manifest, and dist validation
-- full event bus and domain event expansion
-- state domains for workspace, graph, selection, preview, inspector, developer, files, build, history, and UI
-- WebGPU overlay implementation
-- Rust/WASM analyzer implementation
-- framework alias resolution
-- TypeScript semantic analysis
-- Electron UI automation framework
-- screenshot testing
-- pending decisions for bundler, code editor, terminal, parser, UI strategy, plugins, testing, theming, visual/code source maps, Sass editing, external frameworks, and Preview sandbox policy
-
-## Full roadmap summary
-
-The complete roadmap is documented in [`docs/full-product-roadmap.md`](./full-product-roadmap.md). The high-level sequence now is:
-
-1. ~~Read-only Preview Inspector.~~ Implemented.
-2. ~~Design Canvas Navigation MVP.~~ Implemented foundation.
-3. ~~Visual Selection and Overlay MVP.~~ Implemented MVP; hardening remains.
-4. ~~HTML5 Element Library and safe insertion command foundation.~~ Implemented as read-only Phase 6A foundation.
-5. ~~Source Patch Preview and Command Bus Foundation.~~ Implemented as read-only Phase 6B foundation.
-6. ~~History/Undo transaction skeleton and refresh boundary planning.~~ Implemented as Phase 6C planning foundation.
-7. ~~Design Editing MVP preflight with write-runtime and dirty-state contracts.~~ Implemented as Phase 6D preflight foundation.
-8. ~~Editable Inspector draft/intent foundation.~~ Implemented as Phase 7A draft/intent foundation.
-9. ~~Editable Inspector read-only draft surface.~~ Implemented as Phase 7B disabled surface.
-10. ~~Style Engine source inventory foundation.~~ Implemented as Phase 8A read-only inventory foundation.
-11. ~~CSS/Sass Inspector read-only visual surface.~~ Implemented as Phase 8B read-only surface.
-12. ~~Authored Style Matching over DOM Snapshot.~~ Implemented as Phase 8C read-only candidate matching foundation.
-13. Responsive Design and Layout Tools.
-14. Components, snippets, and reusable blocks.
-15. Assets, fonts, SVG, and media management.
-16. Developer Mode and IDE tools.
-17. WebGPU Overlay Engine.
-18. Rust/WASM Analyzer.
-19. Automation, assistant workflows, packaging, testing, and product hardening.
-
-## Required validation before PR merge
-
-For a full install-backed local gate, run:
-
-```bash
-npm run validate:local
-```
-
-For iterative validation after dependencies are already installed, run:
-
-```bash
-npm run validate:local:quick
-```
-
-For Phase 0A physical source ownership validation, run:
-
-```bash
-npm run validate:source-tree-boundaries
-```
-
-For Phase 8C-specific validation, run:
-
-```bash
-npm run validate:authored-style-matching
-```
-
-For Phase 8B-specific validation, run:
-
-```bash
-npm run validate:css-sass-inspector-surface
-```
-
-For validation reporter/meta-validation, run:
-
-```bash
-npm run validate:validation-system
-npm run validate:local:quick
-npm --silent run validate:local:quick:json
-```
-
-For documentation validation, run:
-
-```bash
-npm run validate:guided-docs
-npm run validate:architecture-docs
-```
-
-For Phase 8A-specific validation, run:
-
-```bash
-npm run validate:style-engine-foundation
-```
-
-For Phase 7B-specific validation, run:
-
-```bash
-npm run validate:editable-inspector-surface
-```
-
-For Phase 7A-specific validation, run:
-
-```bash
-npm run validate:inspector-editing-foundation
-```
-
-For Phase 6D-specific validation, run:
-
-```bash
-npm run validate:design-editing-preflight
-```
-
-For Electron launch checks, run manually:
-
-```bash
-npm run dev
-```
-
-Feature-specific scripts should be added as phases land, for example:
+Read [Validation system](./architecture/validation-system.md) for the command graph and [Full product roadmap](./full-product-roadmap.md) for future direction.

@@ -1,90 +1,49 @@
-# Command Preview Bus Sequence Diagram
+# Command Preview Bus state diagram
 
 [Docs index](../../README.md)
 
-## At a glance
-
-| Question | Answer |
-| --- | --- |
-| Is this implemented? | Yes, as dry-run result states. |
-| Is it an execution bus? | No. |
-| Runtime owner | Core. |
-| Safety risk controlled | Keeps unsupported, blocked, and preview-ready outcomes explicit. |
-| Related next phase | Separate future execution bus. |
-
 ## Purpose
 
-This sequence and state diagram show the dry-run bus as a classification and planning path, not as execution.
-
-## Why this exists
-
-Preview-ready, blocked, and unsupported can look like simple UI labels. Modeling them as states makes the write boundary clearer.
-
-## How to read this page
-
-Read the sequence for actor handoff and the state diagram for allowed statuses.
+The bus is best understood as a small state machine. It classifies a preview request and always ends in display-only output.
 
 ## Current implementation
 
-The bus receives command intent, validates context, and returns unsupported, blocked, or preview-ready state. It does not replace `packages/core/commands/command-bus.ts` and does not call a writer.
-
-| Implemented | Blocked | Future |
-| --- | --- | --- |
-| Dry-run statuses. | Execution side effects. | Execution bus. |
-| Preview-ready output. | File writes. | Transaction-aware command state. |
-
-## Key files
-
-These files define the dry-run bus and its current HTML insertion preview path.
-
-## Key files and responsibilities
-
-| File | Responsibility | Reads | Must not do |
-| --- | --- | --- | --- |
-| `command-preview-bus.types.ts` | Status model. | Command preview types. | Encode side effects. |
-| `command-preview-bus.preview.ts` | Dry-run routing. | Command + context. | Execute command. |
-| `html-insertion-command.validators.ts` | Safety validation. | Context. | Mark unsafe targets ready. |
-
-## Data flow
-
-The bus normalizes command preview outcomes for renderer display.
-
-## Main diagram
+The supported path handles HTML insertion preview. Unknown command types become unsupported. Unsafe or incomplete context becomes blocked. Safe context may produce preview-ready. None of those states executes a command.
 
 ```mermaid
 stateDiagram-v2
   [*] --> Received
-  Received --> Unsupported: unknown command
-  Received --> Validating: supported command
-  Validating --> Blocked: unsafe context
-  Validating --> Planning: safe context
-  Planning --> PreviewReady: preview built
-  Planning --> Blocked: no safe anchor
+  Received --> Unsupported: command type unknown
+  Received --> Validating: supported preview command
+  Validating --> Blocked: unsafe or incomplete context
+  Validating --> Planning: context valid for dry-run
+  Planning --> PreviewReady: preview created
+  Planning --> Blocked: source anchor unavailable
   PreviewReady --> DisplayOnly
   Blocked --> DisplayOnly
   Unsupported --> DisplayOnly
   DisplayOnly --> [*]
 ```
 
+## Key files
+
+- `command-preview-bus.types.ts`
+- `command-preview-bus.preview.ts`
+- `html-insertion-command.validators.ts`
+- `html-insertion-command.planner.ts`
+- `validate-source-patch-preview.mjs`
+
+## Data flow
+
+A request enters once, receives a normalized status, and leaves as renderer data. There is no transition from `PreviewReady` to an effectful state.
+
 ## Boundaries
 
-No execution side effects belong in the preview bus.
-
-## What this does not do
-
-| Not provided | Reason |
-| --- | --- |
-| File write | Not an execution bus. |
-| Patch apply | Source Patch Preview only. |
-| Undo/redo | No transaction. |
-
-## Common misunderstanding
-
-> **Common misunderstanding:** A bus can centralize preview without centralizing writes.
+The Command Preview Bus is not an execution bus and does not replace the legacy command bus boundary. It cannot write, refresh, or register history.
 
 ## Validation
 
-Covered by `validate:source-patch-preview`.
+`validate:source-patch-preview` checks status values, routing, blocked reasons, rendering, and no side effects.
 
 ## Related docs
 
@@ -93,4 +52,4 @@ Covered by `validate:source-patch-preview`.
 
 ## Future work
 
-A future execution bus should use separate names and stronger guarantees.
+A transaction-aware execution state machine should be separately named and validated. It should not mutate the semantics of current preview statuses.

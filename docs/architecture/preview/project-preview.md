@@ -6,119 +6,86 @@
 
 | Question | Answer |
 | --- | --- |
-| Is this implemented? | Yes, for read-only project-relative rendering. |
-| Can it write source files? | No. |
-| Runtime owner | Electron main owns target resolution and protocol serving. |
-| Safety risk controlled | Prevents Preview URLs from becoming arbitrary local file reads. |
-| Related next phase | Refresh planning after future writes. |
+| Status | Implemented, read-only. |
+| Protocol | `crystal-preview://current/<project-relative-path>`. |
+| Authority | Electron main resolves targets and serves bytes. |
+| Diagnostics | Sanitized bounded issues. |
+| Writes | None. |
 
 ## Purpose
 
-Project Preview bridges the scanned project model and Chromium rendering. It answers one narrow question: given an active project and a selected HTML page, what can Crystal safely serve to an isolated iframe?
-
-## Why this exists
-
-The renderer should not construct filesystem paths or decide what can be served. Main owns that decision because Preview requests touch local files.
-
-## How to read this page
-
-| Topic | Section |
-| --- | --- |
-| Load lifecycle | Current implementation and data flow. |
-| File serving risk | Boundaries and main diagram. |
-| Diagnostics | Key files and validation. |
+Project Preview answers a narrow privileged question: which resource inside the active project may Chromium load, and how should failures be reported without exposing local filesystem details?
 
 ## Current implementation
 
-Electron main owns Preview load state and the `crystal-preview://current/<relative-project-path>` protocol. Core defines target, state, issue, path, and reload models. Renderer displays controls and status but asks preload/main to resolve targets and state.
-
-| Implemented | Blocked | Future |
-| --- | --- | --- |
-| Target selection from Project Graph. | Renderer path construction. | Reload after future source writes. |
-| Safe custom protocol. | Traversal/out-of-root serving. | Richer diagnostics. |
-| Bounded Preview issues. | Absolute path exposure. | Refresh invalidation contracts. |
+A page selected from Project Graph becomes Preview target state. Main normalizes the project-relative path, confirms containment within the active root, resolves supported content, and serves it through the custom protocol. Renderer displays loading, ready, blocked, issue, and reload state without constructing absolute paths.
 
 ## Key files
 
-Start with the core model files, then read the main service/protocol files, and finally the renderer panel.
+The following paths are the shortest reliable entry points. They are not a substitute for following the data flow through the subsystem.
 
 ## Key files and responsibilities
 
-| File | Responsibility | Reads | Must not do |
+| File or path | Responsibility | Reads | Must not do |
 | --- | --- | --- | --- |
-| `packages/core/project/preview/project-preview.types.ts` | Preview state contracts. | Shared model data. | Perform IO. |
-| `packages/core/project/preview/project-preview-target.ts` | Target validation helpers. | Project-relative paths. | Trust arbitrary paths. |
-| `packages/core/project/preview/project-preview-issues.ts` | Issue model and coalescing. | Safe issue fields. | Expose absolute paths. |
-| `apps/desktop/electron/main/preview/project-preview-service.ts` | Main Preview state service. | Active graph/root. | Delegate path safety to renderer. |
-| `apps/desktop/electron/main/preview/project-preview-protocol.ts` | Protocol handler. | Active root and resource path. | Serve outside-root files. |
-| `apps/desktop/electron/renderer/components/project-preview-panel/project-preview-panel.ts` | Preview UI. | Sanitized Preview state. | Read filesystem. |
+| `packages/core/project/preview/project-preview.types.ts` | Preview target and state contracts. | plain model data | perform IO |
+| `packages/core/project/preview/project-preview-target.ts` | Validates project-relative target identity. | graph paths | trust arbitrary strings |
+| `apps/desktop/electron/main/preview/project-preview-service.ts` | Owns active Preview lifecycle. | active graph and root | delegate safety to renderer |
+| `apps/desktop/electron/main/preview/project-preview-protocol.ts` | Serves allowed resources. | normalized root-contained paths | serve traversal or outside-root requests |
+| `apps/desktop/electron/renderer/components/project-preview-panel` | Presents controls and status. | sanitized state | read files |
 
 ## Data flow
 
 | Input | Decision | Output |
 | --- | --- | --- |
-| Renderer load request | Is a Project Graph page selected? | Preview target or missing-target state. |
-| Resource request | Is the path normalized and inside root? | Served bytes or blocked issue. |
-| Read/fallback result | Is MIME supported? | Response or warning. |
-| Watcher refresh | Does it affect current page/dependencies? | Reload request or no-op. |
-
-## Main diagram
+| Load request | Is a page selected in Project Graph? | Target or missing-target state |
+| Protocol URL | Is the path normalized and root-contained? | File response or blocked issue |
+| File response | Is the MIME type supported? | Rendered resource or diagnostic |
+| Watcher refresh | Does the active page or direct dependency require reload? | Reload request or no change |
 
 ```mermaid
-flowchart TD
-  subgraph Renderer[Renderer]
-    Panel[Preview panel]
-    Iframe[Preview iframe]
-  end
-
-  subgraph Main[Main]
-    Service[Preview service]
-    Target{Target inside active root?}
-    Protocol[Protocol handler]
-    Issue[Sanitized issue]
-  end
-
-  subgraph Files[Project files]
-    HTML[(HTML)]
-    Asset[(Asset)]
-  end
-
-  Panel --> Service --> Target
-  Target -->|yes| Protocol --> HTML
-  Iframe --> Protocol --> Asset
-  Target -->|no| Issue --> Panel
-  Protocol -. blocks .-> Outside[(Outside root)]
+flowchart LR
+  Panel[Renderer Preview panel] --> Service[Main Preview service]
+  Service --> Target{Safe graph target?}
+  Target -->|yes| Protocol[crystal-preview protocol]
+  Protocol --> Root{Inside active root?}
+  Root -->|yes| File[(Project resource)]
+  Root -->|no| Issue[Sanitized issue]
+  Target -->|no| Issue
+  File --> Frame[Sandboxed iframe]
+  Issue --> Panel
 ```
 
 ## Boundaries
 
-Renderer does not construct absolute paths, read project files, or decide whether a resource is safe. The protocol rejects traversal and outside-root requests.
+Renderer does not build filesystem paths or decide containment. Protocol failures expose safe categories and project-relative context, not raw absolute paths. Serving a file does not make it editable.
 
-> **Safety boundary:** Preview serving is main-owned because it reads from the user's filesystem.
+> **Safety boundary:** State that crosses a boundary is evidence to validate, not authority to perform a privileged effect.
 
 ## What this does not do
 
-| Not provided | Reason |
+| Not provided | Why |
 | --- | --- |
-| Source writes | Preview only serves and reports. |
-| Browser automation | No Playwright/Spectron layer exists. |
-| Full dev server behavior | The protocol serves active-project files only. |
+| Arbitrary local server | The protocol serves active-project resources only. |
+| Browser automation | No Playwright or Spectron runtime is part of Preview. |
+| Source persistence | Preview reads and reports; it does not write. |
+| Automatic trust of dependencies | A loaded asset may still be external, missing, or unsupported. |
 
 ## Common misunderstanding
 
-> **Common misunderstanding:** A successful Preview load does not mean all source dependencies are editable or even local.
+> **Common misunderstanding:** A successful load proves that Chromium received a resource. It does not prove every dependency is local, source-mapped, or writable.
 
 ## Validation
 
-`validate:preview` checks target resolution, protocol constraints, diagnostics, issue coalescing, and forbidden behavior.
+`npm run validate:preview` checks target resolution, containment, diagnostics, MIME handling, issue coalescing, and forbidden path behavior.
 
 ## Related docs
 
+- [Preview architecture](./README.md)
 - [Preview safety](./preview-safety.md)
-- [DOM Snapshot](./dom-snapshot.md)
 - [Project open flow](../flows/project-open-flow.md)
 - [Security model](../security-model.md)
 
 ## Future work
 
-A future write runtime will need to tell Preview when to reload and when to invalidate derived state. Phase 6C should model that refresh boundary without applying source changes.
+Post-write reload must be driven by a validated refresh boundary, not by indiscriminate iframe reloads or raw watcher events.
