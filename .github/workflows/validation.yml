@@ -1,0 +1,96 @@
+name: Validation
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+      - "tooling/**"
+
+permissions:
+  contents: read
+
+jobs:
+  validation:
+    name: Windows validation
+    runs-on: windows-latest
+    timeout-minutes: 30
+    env:
+      CRYSTAL_CHANGE_POLICY_BRANCH: ${{ github.head_ref || github.ref_name }}
+      CRYSTAL_CHANGE_POLICY_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+      CRYSTAL_CHANGE_POLICY_EVENT: ${{ github.event_name }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Node from .nvmrc
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci --foreground-scripts
+
+      - name: Validate project metadata
+        run: npm run validate:project-metadata
+
+      - name: Verify metadata synchronization idempotence
+        shell: pwsh
+        run: |
+          npm run sync:project-metadata
+          git diff --exit-code
+          npm run sync:project-metadata
+          git diff --exit-code
+
+      - name: Validate validation system
+        run: npm run validate:validation-system
+
+      - name: Validate changed-file policy
+        run: npm run validate:change-policy
+
+      - name: Validate Markdown integrity
+        run: npm run validate:markdown-integrity
+
+      - name: Run strict local quick validation
+        run: npm run validate:local:quick
+
+      - name: Parse JSON validation summary
+        shell: pwsh
+        run: |
+          $json = npm --silent run validate:local:quick:json | Out-String | ConvertFrom-Json
+          if ($json.status -ne "PASS") { throw "Expected PASS" }
+          if ($json.failed -ne 0) { throw "Expected zero failed" }
+          if ($json.skipped -ne 0) { throw "Expected zero skipped" }
+          $json | ConvertTo-Json -Depth 8
+
+      - name: Run tooling hardening regression tests
+        run: npm run test:tooling-hardening
+
+      - name: Build generated and compiled outputs twice
+        shell: pwsh
+        run: |
+          npm run build
+          git diff --exit-code
+          npm run build
+          git diff --exit-code
+
+      - name: Verify no metadata transaction residue
+        shell: pwsh
+        run: |
+          $residue = Get-ChildItem -Recurse -Force | Where-Object {
+            $_.Name -match "crystal-tmp|crystal-backup|project-metadata-sync.lock|project-metadata-sync-transaction"
+          }
+          if ($residue) {
+            $residue | ForEach-Object { Write-Error $_.FullName }
+            throw "Metadata transaction residue detected"
+          }
+
+      - name: Audit dependency graph without fixes
+        run: npm audit
