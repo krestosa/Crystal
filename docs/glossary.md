@@ -66,6 +66,15 @@ The future user action that would cross from validated intent into persistence. 
 
 ## Future write system
 
+**Source version**
+A canonical revision token derived from the exact bytes read from one source file. Its external form is `sha256:<byteLengthDecimal>:<64LowercaseHexCharacters>`. Byte length is not JavaScript character count; content, Unicode, and line endings are not normalized. The token contains no path or mtime.
+
+**Source revision observation**
+A bounded, read-only filesystem result produced from a project root, a project-relative path, and `maxBytes`. A ready result contains the canonical source version and byte length. Material failures remain typed as `invalid-path`, `outside-root`, `missing`, `not-file`, `too-large`, or `unreadable`.
+
+**Source freshness check**
+A comparison between an expected canonical source version and a newly observed canonical source version. `match` and `mismatch` require two valid tokens; malformed tokens and read failures block reliable checking. A clean preview is evidence only and never changes `canApplyWithoutRecheck: false`.
+
 **History transaction preview**
 A planning descriptor for reversibility and affected source. It is not an executed transaction and cannot undo or redo anything.
 
@@ -76,7 +85,7 @@ A descriptor of state that a future write may invalidate. It does not refresh Pr
 Future persisted knowledge that source differs from the last saved state. Current readiness models may refer to dirty-state requirements, but no dirty-state workflow is active.
 
 **Write runtime**
-A future main/core path responsible for source freshness, policy, patch application, persistence, history execution, dirty state, and refresh orchestration.
+A future main/core path responsible for source freshness, policy, patch application, persistence, history execution, dirty state, and refresh orchestration. The current read-only revision foundation does not complete this runtime or its writer-time conflict detector.
 
 ## Style Engine preparation
 
@@ -129,4 +138,4 @@ Next:
 - [Implementation status](./roadmap-implementation.md) shows which terms describe current behavior and which remain future-facing.
 
 Why this matters:
-Precise terms stop a source-derived preview, visual correlation, or readiness descriptor from being mistaken for browser truth or write authority.
+Precise terms stop a source-derived preview, visual correlation, readiness descriptor, or canonical revision observation from being mistaken for browser truth or write authority.

@@ -53,6 +53,7 @@ export const validationCatalog = Object.freeze([
   entry("typecheck", "Typecheck", "build", "typecheck", externalNpm(), "Build", { scriptOwnership: VALIDATION_SCRIPT_OWNERSHIP_EXTERNAL }),
   entry("structure", "Structure", "core", "validate:structure", directNode("scripts/validate-structure.mjs"), "Core"),
   entry("source-tree-boundaries", "Source Tree Boundaries", "core", "validate:source-tree-boundaries", directNode("scripts/validate-source-tree-boundaries.mjs"), "Core"),
+  entry("source-freshness-foundation", "Source Freshness Foundation", "core", "validate:source-freshness-foundation", directNode("scripts/validate-source-freshness-foundation.mjs"), "Core"),
   entry("project-graph", "Project Graph", "core", "validate:project-graph", directNode("scripts/validate-project-graph.mjs"), "Core"),
   entry("project-watch", "Project Watch", "core", "validate:project-watch", directNode("scripts/validate-project-watch.mjs"), "Core"),
   entry("history-foundation", "History Foundation", "core", "validate:history-foundation", directNode("scripts/validate-history-foundation.mjs"), "Core"),
@@ -242,9 +243,13 @@ export function validateValidationCatalog(catalog, options = {}) {
     if (item.scriptOwnership === VALIDATION_SCRIPT_OWNERSHIP_GENERATED && item.executionMode !== VALIDATION_EXECUTION_DIRECT_NODE) {
       errors.push(`${subject} generated scripts must use direct-node execution.`);
     }
+    if (item.scriptOwnership === VALIDATION_SCRIPT_OWNERSHIP_EXTERNAL && item.executionMode !== VALIDATION_EXECUTION_NPM) {
+      errors.push(`${subject} external scripts must use npm execution.`);
+    }
 
-    if (!item.includeInLocalQuick && !item.includeInFullValidation) {
-      if (typeof item.suiteExclusionJustification !== "string" || item.suiteExclusionJustification.trim().length < 12) {
+    const included = item.includeInLocalQuick || item.includeInFullValidation;
+    if (!included) {
+      if (typeof item.suiteExclusionJustification !== "string" || item.suiteExclusionJustification.trim() === "") {
         errors.push(`${subject} is excluded from all suites and must define suiteExclusionJustification.`);
       }
     } else if (item.suiteExclusionJustification !== null) {

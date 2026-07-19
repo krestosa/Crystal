@@ -6,7 +6,7 @@
 
 | Question | Answer |
 | --- | --- |
-| Canonical checks | 32 required checks in quick and full validation. |
+| Canonical checks | 33 required checks in quick and full validation. |
 | Result semantics | PASS, FAIL, and visible SKIPPED. |
 | Mutation policy | Validators read and fail; they do not repair source. |
 | Reporter modes | Human, plain, raw, and JSON summary without semantic drift. |
@@ -18,14 +18,16 @@ Many of Crystal’s most important guarantees are negative: renderer cannot reac
 
 ## Current implementation
 
-The script graph covers generated metadata, change policy, Markdown integrity, guided docs, architecture docs, build outputs, typecheck, source ownership, project models, Preview, selection, Inspector, canvas, overlays, command previews, editing readiness, style inventory, authored matching, local watch, Electron diagnostics, and validation-system self-checks. The strict quick runner fails on required failures and required skips by default.
+The script graph covers generated metadata, change policy, Markdown integrity, guided docs, architecture docs, build outputs, typecheck, source ownership, project models, Preview, selection, Inspector, canvas, overlays, command previews, editing readiness, canonical source revision and freshness behavior, style inventory, authored matching, local watch, Electron diagnostics, and validation-system self-checks. The strict quick runner fails on required failures and required skips by default.
+
+The source freshness validator compiles and executes the real portable core and Node adapter against temporary files outside the repository. It does not infer behavior from filenames or token searches alone.
 
 ## Generated validator catalog
 
 <!-- crystal-generated:validation-catalog:start -->
 <!-- Do not edit manually. Run npm run sync:project-metadata. -->
 
-Canonical checks: 32. Local quick checks: 32. Full validation checks: 32.
+Canonical checks: 33. Local quick checks: 33. Full validation checks: 33.
 
 | Group | ID | Label | npm script | Ownership | Required | Local quick | Full | Execution | Direct script | Args |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -41,6 +43,7 @@ Canonical checks: 32. Local quick checks: 32. Full validation checks: 32.
 | Build | `typecheck` | Typecheck | `typecheck` | external | yes | yes | yes | npm | — | — |
 | Core | `structure` | Structure | `validate:structure` | generated | yes | yes | yes | direct-node | `scripts/validate-structure.mjs` | — |
 | Core | `source-tree-boundaries` | Source Tree Boundaries | `validate:source-tree-boundaries` | generated | yes | yes | yes | direct-node | `scripts/validate-source-tree-boundaries.mjs` | — |
+| Core | `source-freshness-foundation` | Source Freshness Foundation | `validate:source-freshness-foundation` | generated | yes | yes | yes | direct-node | `scripts/validate-source-freshness-foundation.mjs` | — |
 | Core | `project-graph` | Project Graph | `validate:project-graph` | generated | yes | yes | yes | direct-node | `scripts/validate-project-graph.mjs` | — |
 | Core | `project-watch` | Project Watch | `validate:project-watch` | generated | yes | yes | yes | direct-node | `scripts/validate-project-watch.mjs` | — |
 | Core | `history-foundation` | History Foundation | `validate:history-foundation` | generated | yes | yes | yes | direct-node | `scripts/validate-history-foundation.mjs` | — |
@@ -75,6 +78,7 @@ The following paths are the shortest reliable entry points. They are not a subst
 | `scripts/validation/validation-suite.mjs` | Canonical suite metadata. | check descriptors | invent successful checks |
 | `scripts/validation/validation-runner.mjs` | Executes checks and calculates status. | child-process results | convert failure to warning |
 | `scripts/validation/validation-reporter.mjs` | Formats terminal, raw, and JSON output. | observed results | change status semantics |
+| `scripts/validate-source-freshness-foundation.mjs` | Executes canonical byte-revision, path-containment, failure-state, and conflict-preview fixtures. | temporary files and compiled foundation modules | write repository source or claim Apply authority |
 | `scripts/validate-validation-system.mjs` | Meta-validates validation wiring. | scripts, metadata, and docs | recursively run the quick suite |
 
 ## Data flow
@@ -103,7 +107,7 @@ flowchart TD
 
 ## Boundaries
 
-A passing documentation gate does not prove runtime behavior. A passing feature gate does not make a planned capability real. Validators must not mutate files, conceal skipped checks, or print language suggesting they repaired source.
+A passing documentation gate does not prove runtime behavior. A passing feature gate does not make a planned capability real. Validators must not mutate repository files, conceal skipped checks, or print language suggesting they repaired source. Behavioral validators may create isolated temporary fixtures outside the repository and must remove them even when a check fails.
 
 > **Safety boundary:** State that crosses a boundary is evidence to validate, not authority to perform a privileged effect.
 
@@ -113,12 +117,13 @@ A passing documentation gate does not prove runtime behavior. A passing feature 
 | --- | --- |
 | Autofix | Validation reports drift; generation is a separate explicit operation. |
 | Future capability proof | Checks preserve boundaries but do not implement features. |
+| Write-runtime conflict gate | The freshness validator proves read-only primitives, not writer-time invocation. |
 | Import graph completeness | Physical ownership is covered; full dependency linting remains future. |
 | Merge decision | Review and CI remain separate evidence. |
 
 ## Common misunderstanding
 
-> **Common misunderstanding:** A validator is evidence only for the contract it actually executed. Passing Markdown integrity does not prove Preview behavior, and a missing runtime check cannot be restated as success.
+> **Common misunderstanding:** A validator is evidence only for the contract it actually executed. Passing the source freshness validator proves canonical read-only revision behavior; it does not prove a nonexistent writer will recheck before mutation.
 
 ## Canonical phase boundary statements
 
@@ -147,7 +152,7 @@ Phase 8C boundary: Authored Style Matching over DOM Snapshot only. No real casca
 
 ## Validation
 
-Run `npm run validate:validation-system` to check the validator platform itself. Use `npm run validate:local:quick` for the canonical strict local suite and `npm --silent run validate:local:quick:json` for parseable summary output.
+Run `npm run validate:source-freshness-foundation` for the focused behavioral foundation, `npm run validate:validation-system` to check the validator platform itself, `npm run validate:local:quick` for the canonical strict local suite, and `npm --silent run validate:local:quick:json` for parseable summary output.
 
 ## Related docs
 
@@ -158,7 +163,7 @@ Run `npm run validate:validation-system` to check the validator platform itself.
 
 ## Future work
 
-Add import-boundary and write-runtime checks when corresponding contracts exist. New checks must remain deterministic, required where appropriate, and honest about missing execution.
+Add the execution-time write-runtime conflict gate only when a real writer exists. New checks must remain deterministic, required where appropriate, and honest about missing execution.
 
 ## Read next
 
@@ -168,7 +173,8 @@ Before this:
 - [Architecture overview](./README.md) explains which boundaries validation protects.
 
 Next:
-- [Authored Style Matching over DOM Snapshot](./authored-style-matching-dom-snapshot.md) is a concrete example of a narrowly guarded read-only capability.
+- [Future write flow](./flows/future-write-flow.md) places read-only source revision evidence before the future mutation boundary.
+- [Authored Style Matching over DOM Snapshot](./authored-style-matching-dom-snapshot.md) is another concrete example of a narrowly guarded read-only capability.
 - [Validation platform hardening](./validation-platform-hardening-phase-2.md) explains metadata generation, process execution, and CI constraints.
 
 Why this matters:
