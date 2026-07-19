@@ -4,19 +4,20 @@
 
 ## Purpose
 
-This document describes the Status Bar as the shell-level control surface for runtime status and developer-only shell actions.
+The Status Bar exposes compact runtime state and explicit shell-level actions without becoming an alternate command surface.
 
 ## Current implementation
 
-The Status Bar displays compact runtime state, a Diagnostics button, and a manual DevTools button. It is part of the shell chrome and does not change project data.
+It displays runtime status, opens Diagnostics, and offers a manual Open DevTools action. DevTools travels through the constrained preload API to the `app:open-devtools` main IPC handler. No Status Bar action changes project files.
 
 ```mermaid
 flowchart LR
-  StatusBar[Status Bar] --> RuntimeBadge[Runtime badge]
-  StatusBar --> DiagnosticsButton[Diagnostics]
-  StatusBar --> DevToolsButton[Open DevTools]
-  DevToolsButton --> Preload[preload app.openDevTools]
-  Preload --> Main[app:open-devtools IPC]
+  Bar[Status Bar] --> State[Runtime status]
+  Bar --> Diagnostics[Open Diagnostics]
+  Bar --> DevTools[Open DevTools]
+  DevTools --> API[window.crystal.app.openDevTools]
+  API --> IPC[app:open-devtools]
+  IPC --> Main[Electron main]
 ```
 
 ## Key files
@@ -29,15 +30,15 @@ flowchart LR
 
 ## Data flow
 
-The Status Bar renders status and calls controlled preload actions for app-level operations. DevTools opens only when requested by the user. Diagnostics opens the renderer Diagnostics panel.
+Renderer derives a small status summary and updates the bar. Diagnostics opens a renderer panel. DevTools uses a named preload method and main handler only when the user requests it.
 
 ## Boundaries
 
-The Status Bar must not auto-open DevTools, mutate project files, expose raw IPC, or act as a write-command shortcut. It is chrome, not a feature execution surface.
+The Status Bar does not auto-open DevTools, expose raw IPC, mutate project source, or hide feature commands behind generic controls. It remains shell chrome.
 
 ## Validation
 
-`validate:ui-flow` checks that DevTools behavior is manual and that the status/diagnostics surface remains integrated with the shell.
+`validate:ui-flow` checks Status Bar placement, Diagnostics integration, and manual DevTools behavior.
 
 ## Related docs
 
@@ -47,4 +48,4 @@ The Status Bar must not auto-open DevTools, mutate project files, expose raw IPC
 
 ## Future work
 
-Future status messages should be derived from explicit state domains and remain compact. Avoid turning the Status Bar into a hidden command palette.
+New status indicators should come from explicit state domains and remain compact. A command palette, if added later, needs its own command and security model.

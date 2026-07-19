@@ -1,53 +1,53 @@
-# Shell UI Primitives
+# Shell UI primitives
 
 [Docs index](../../README.md)
 
 ## Purpose
 
-This document describes the shared renderer shell primitives used to keep the UI modular and consistent.
+Shared primitives keep panel chrome consistent without turning the renderer into a component framework or centralizing feature behavior.
 
 ## Current implementation
 
-The shell uses small CSS/HTML/TS primitives for panel headers, panel sections, scroll regions, sidebar stacks, status badges, metadata rows, empty states, and compact controls. Feature panels compose these primitives instead of recreating one-off chrome.
+Small HTML, SCSS, and TypeScript helpers cover panel headers, sections, scroll regions, sidebar stacks, metadata rows, empty states, status badges, and compact controls. Feature panels compose them and own their own state, subscriptions, and actions.
 
 ```mermaid
 flowchart LR
-  Primitive[Shell primitive] --> GraphPanel[Project Graph panel]
-  Primitive --> PreviewPanel[Preview panel]
-  Primitive --> DomTree[DOM Tree panel]
+  Primitive[Presentational primitive] --> Graph[Project Graph panel]
+  Primitive --> Preview[Preview panel]
+  Primitive --> Inspector[Inspector]
   Primitive --> Library[Element Library]
   Primitive --> Diagnostics[Diagnostics]
+  Feature[Feature module] --> Primitive
+  Feature --> Behavior[Feature-specific behavior]
 ```
 
 ## Key files
 
-- `apps/desktop/electron/renderer/components/shell-ui/panel-header/panel-header.html`
-- `apps/desktop/electron/renderer/components/shell-ui/panel-header/panel-header.scss`
-- `apps/desktop/electron/renderer/components/shell-ui/panel-section/panel-section.html`
-- `apps/desktop/electron/renderer/components/shell-ui/panel-section/panel-section.scss`
-- `apps/desktop/electron/renderer/components/shell-ui/status-badge/status-badge.scss`
-- `apps/desktop/electron/renderer/components/shell-ui/metadata-row/metadata-row.ts`
-- `apps/desktop/electron/renderer/components/shell-ui/empty-state/empty-state.ts`
-- `apps/desktop/electron/renderer/components/shell-ui/compact-control/compact-control.scss`
+- `components/shell-ui/panel-header`
+- `components/shell-ui/panel-section`
+- `components/shell-ui/status-badge`
+- `components/shell-ui/metadata-row`
+- `components/shell-ui/empty-state`
+- `components/shell-ui/compact-control`
 
 ## Data flow
 
-Primitives provide markup, classes, and tiny render helpers. They do not own global state. Feature components create content, pass metadata, and attach behavior outside primitive modules.
+Feature code supplies content and metadata to a primitive, then attaches feature behavior outside the primitive. The primitive may format or render a small value, but it does not subscribe to project state or call preload.
 
 ## Boundaries
 
-Primitives must not call preload, mutate project state, access Preview iframe internals, implement command behavior, or hide feature logic. They should remain presentation and small rendering utilities.
+Primitives remain presentational. They must not call `window.crystal`, access Preview internals, mutate project state, dispatch commands, or silently coordinate multiple features.
 
 ## Validation
 
-`validate:ui-flow` checks current shell structure and class hooks. Feature validators ensure panels keep disabled/future actions honest.
+`validate:ui-flow` checks current shell structure and class hooks. Feature validators remain responsible for behavior and disabled-state guarantees.
 
 ## Related docs
 
-- [Renderer shell README](./README.md)
+- [Renderer shell](./README.md)
 - [Sidebar composition](./sidebar-composition.md)
-- [Element Library](../commands/html-element-library.md)
+- [ADR 0004](../../decisions/0004-modular-shell-ui-primitives.md)
 
 ## Future work
 
-Expand primitives only when multiple panels need the same visual grammar. Avoid component-library sprawl that obscures feature boundaries.
+Extend a primitive when multiple panels need the same stable pattern. Avoid a generalized design-system layer that obscures ownership or creates abstractions ahead of use.

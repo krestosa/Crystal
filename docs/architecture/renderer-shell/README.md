@@ -1,27 +1,27 @@
-# Renderer Shell Architecture
+# Renderer shell architecture
 
 [Docs index](../../README.md)
 
 ## Purpose
 
-This document describes the renderer shell as the composition layer for Crystal's current read-only product surface.
+The renderer shell turns application state into a coherent workspace. Its job is composition: arrange project navigation, Preview, inspection, diagnostics, and dry-run controls without inheriting privileged authority.
 
 ## Current implementation
 
-The renderer shell composes layout, Project Graph, Design view, Preview panel, DOM Tree, Preview Inspector, Visual Selection Overlay, Element Library, Diagnostics, and Status Bar. It is not a privileged runtime and does not own project persistence.
+The shell composes the sidebar, Design view, Design Canvas, Project Preview, DOM Tree, Preview Inspector, external selection overlay, Element Library, Diagnostics, and Status Bar. Components call the constrained preload API for main-owned operations and subscribe to sanitized updates. Shell behavior is read-only with respect to project source.
 
 ```mermaid
 flowchart TD
-  Bootstrap[renderer bootstrap] --> Shell[App shell]
+  Bootstrap[Renderer bootstrap] --> Shell[Application shell]
   Shell --> Sidebar[Sidebar]
   Shell --> Design[Design view]
   Shell --> Diagnostics[Diagnostics]
-  Shell --> Status[Status bar]
-  Sidebar --> Graph[Project Graph panel]
-  Sidebar --> DomTree[DOM Tree panel]
-  Sidebar --> Library[Element Library panel]
+  Shell --> Status[Status Bar]
+  Sidebar --> Graph[Project Graph]
+  Sidebar --> Tree[DOM Tree]
+  Sidebar --> Library[Element Library]
   Design --> Canvas[Design Canvas]
-  Canvas --> Preview[Project Preview panel]
+  Canvas --> Preview[Project Preview]
 ```
 
 ## Key files
@@ -29,32 +29,29 @@ flowchart TD
 - `apps/desktop/electron/renderer/app/bootstrap/bootstrap.ts`
 - `apps/desktop/electron/renderer/layout/app-shell/app-shell.html`
 - `apps/desktop/electron/renderer/layout/side-bar/side-bar.html`
-- `apps/desktop/electron/renderer/layout/status-bar/status-bar.html`
 - `apps/desktop/electron/renderer/views/design/design.html`
-- `apps/desktop/electron/renderer/components/project-graph-panel/project-graph-panel.ts`
-- `apps/desktop/electron/renderer/components/project-preview-panel/project-preview-panel.ts`
-- `apps/desktop/electron/renderer/components/html-element-library-panel/html-element-library-panel.ts`
+- `apps/desktop/electron/renderer/layout/status-bar/status-bar.html`
 
 ## Data flow
 
-Bootstrap wires component initialization. Components call preload APIs, subscribe to state changes, and re-render. The shell groups controls by intent and keeps Preview controls, diagnostics, selection summary, and Inspector outside Design Canvas transforms.
+Bootstrap initializes controllers and views. Feature components subscribe to state, derive presentation, attach browser events, and request privileged work through `window.crystal`. Preview controls and Inspector/diagnostic panels stay outside Design Canvas transforms; the project page remains inside the sandboxed iframe.
 
 ## Boundaries
 
-Renderer shell is visual composition only. It does not write files, bypass preload, relax iframe sandboxing, or inspect live iframe documents. Shell primitives must remain reusable UI building blocks, not feature-specific hidden behavior.
+The shell does not write files, expose raw IPC, relax sandboxing, inspect the live iframe document, or hide feature execution inside presentation primitives. A disabled future control remains disabled rather than becoming a local-only shortcut.
 
 ## Validation
 
-`validate:ui-flow`, `validate:design-canvas`, `validate:visual-selection-overlay`, `validate:html-element-library`, and `validate:source-patch-preview` guard current shell behavior.
+`validate:ui-flow` covers shell composition and DevTools behavior. Design Canvas, overlay, Element Library, editable-Inspector, and CSS/Sass surface validators guard their respective components.
 
 ## Related docs
 
 - [Shell UI primitives](./shell-ui-primitives.md)
 - [Design view](./design-view.md)
-- [Diagnostics](./diagnostics.md)
 - [Sidebar composition](./sidebar-composition.md)
-- [Status bar](./status-bar.md)
+- [Diagnostics](./diagnostics.md)
+- [Status Bar](./status-bar.md)
 
 ## Future work
 
-Future shell work should keep components modular, preserve compact density, and avoid mixing UI chrome work with runtime feature changes.
+Add shell primitives only after repeated use demonstrates a shared visual grammar. Keep feature logic in feature modules and preserve clear boundaries around transformed Preview content.

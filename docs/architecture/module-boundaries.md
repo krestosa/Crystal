@@ -1,4 +1,4 @@
-# Module Boundaries
+# Module boundaries
 
 [Docs index](../README.md)
 
@@ -6,134 +6,84 @@
 
 | Question | Answer |
 | --- | --- |
-| Is this implemented? | Physical source ownership is enforced; import-direction enforcement remains partial. |
-| Can UI modules import effects? | No. |
-| Runtime owner | Renderer, main, core, adapters, and shared contracts each own different concerns. |
-| Safety risk controlled | Prevents preview UI and dry-run modules from gaining side-effect authority. |
-| Related next phase | Import-boundary validators before write-capable features. |
+| Physical ownership | Enforced for tracked source paths. |
+| Import direction | Architectural rule with partial tooling coverage. |
+| Renderer effects | Forbidden outside the preload API. |
+| Core effects | Pure models and planners must remain effect-free. |
+| Adapter role | Isolate external and Node-specific behavior. |
 
 ## Purpose
 
-Crystal is intentionally modular, but modularity is only useful if dependencies point in predictable directions. This page explains which layers may know about each other and which shortcuts would make the system harder to secure, validate, or evolve.
-
-## Why this exists
-
-The project has many small modules. Without dependency rules, a panel can accidentally import a privileged service, or a core planner can quietly become an execution path.
-
-## How to read this page
-
-| Layer | Owns | Should avoid |
-| --- | --- | --- |
-| Renderer | UI, local interaction state, display formatting. | Filesystem, main services, patch application. |
-| Preload | Controlled API exposure. | Raw IPC exposure. |
-| Main | Privileged coordination and services. | Browser UI composition. |
-| Core | Pure models, selectors, validators, dry-run planners. | Electron and filesystem effects. |
-| Adapters | Effect isolation. | Business rules hidden from core. |
+Small files do not create modularity by themselves. Crystal stays understandable only when dependencies move from UI intent toward controlled authority and pure logic, never sideways into convenient side effects.
 
 ## Current implementation
 
-Renderer components compose UI and hold only local interaction state. Core packages define portable models, validators, selectors, and planners. Main process modules coordinate Electron, filesystem, watcher, Preview protocol, and service state. Adapters isolate Node or external-tool effects.
-
-| Implemented | Blocked | Future |
-| --- | --- | --- |
-| Registered physical owners for apps and packages. | Unregistered tracked source roots. | Import-boundary validation. |
-| Modular renderer components. | UI importing filesystem adapters. | Static import graph enforcement. |
-| Core command preview modules. | Preview modules writing files. | Separate execution runtime. |
-| Shared IPC contracts. | Ad-hoc string channels. | Stronger ownership checks. |
+The source tree has registered owners for the desktop runtimes and core/shared/adapter packages. Feature validators guard high-risk shortcuts, while the source-tree validator rejects unregistered physical roots. There is not yet a complete linter for every import specifier, re-export, alias, or dynamic import.
 
 ## Key files
 
-This list gives representative entry points for each layer. When changing a feature, follow the nearest path downward instead of reaching sideways into another runtime.
+The following paths are the shortest reliable entry points. They are not a substitute for following the data flow through the subsystem.
 
 ## Key files and responsibilities
 
 | File or path | Responsibility | Reads | Must not do |
 | --- | --- | --- | --- |
-| `apps/desktop/electron/renderer/components/**` | Browser UI components. | Shared types, pure selectors, preload API. | Import main/adapters. |
-| `apps/desktop/electron/main/ipc/register-project-ipc.ts` | Main IPC registration. | Shared channel contracts. | Expose untyped effects. |
-| `packages/core/project/**` | Project models and selectors. | Source-independent model data. | Use Electron APIs. |
-| `packages/core/commands/**` | Command preview contracts and planning. | Command/context state. | Write files. |
-| `packages/adapters/file-system/file-system.adapter.ts` | Filesystem effect wrapper. | Main service calls. | Decide UI policy. |
-| `packages/shared/**` | Cross-runtime contracts. | Types/constants. | Perform effects. |
+| `apps/desktop/electron/renderer` | Browser UI and local interaction state. | shared contracts, pure core APIs, preload surface | import main or adapters |
+| `apps/desktop/electron/preload` | Constrained bridge. | IPC constants and types | expose raw IPC |
+| `apps/desktop/electron/main` | Privileged coordination. | core and adapters | own browser UI composition |
+| `packages/core` | Portable model, validation, and planning logic. | plain inputs | use Electron or filesystem effects |
+| `packages/adapters` | Effect implementations. | main-owned requests | hide product policy |
 
 ## Data flow
 
 | Input | Decision | Output |
 | --- | --- | --- |
-| UI interaction | Is this display-only or privileged? | Local state or preload call. |
-| Main service request | Which core model or adapter owns it? | Sanitized state or issue. |
-| Core planner input | Can it compute without side effects? | Preview result or blocked state. |
-| Adapter call | Which effect is needed? | Filesystem/watcher result. |
-
-## Main diagram
-
-The diagram shows the intended dependency chain. Dotted arrows are forbidden shortcuts.
+| Renderer interaction | Is local state sufficient? | UI update or preload request |
+| Main request | Which service owns the operation? | Validated state or adapter call |
+| Core planner input | Can it remain pure? | Model or dry-run result |
+| Adapter request | Which narrow effect is required? | Filesystem, watcher, compiler, or bundler result |
 
 ```mermaid
-flowchart TD
-  subgraph UI[Renderer UI]
-    Component[Component]
-    Controller[Controller]
-  end
-
-  subgraph Bridge[Bridge]
-    Preload[Preload API]
-  end
-
-  subgraph Main[Main process]
-    IPC[IPC handler]
-    Service[Service]
-  end
-
-  subgraph Core[Core]
-    Selector[Selector]
-    Validator[Validator]
-    Planner[Dry-run planner]
-  end
-
-  subgraph Effects[Effects]
-    Adapter[Adapter]
-    FS[(Filesystem)]
-  end
-
-  Component --> Controller --> Preload --> IPC --> Service
-  Service --> Selector
-  Service --> Validator
-  Service --> Planner
-  Service --> Adapter --> FS
-  Component -. must not import .-> Adapter
-  Planner -. must not call .-> FS
+flowchart LR
+  UI[Renderer component] --> Bridge[Preload API]
+  Bridge --> Main[Main service]
+  Main --> Core[Core model or planner]
+  Main --> Adapter[Adapter]
+  Adapter --> Effect[(External effect)]
+  UI -. forbidden .-> Adapter
+  Core -. forbidden .-> Effect
 ```
 
 ## Boundaries
 
-`validate:source-tree-boundaries` enforces where tracked product source may live: `main`, `preload`, `renderer`, `core`, `shared`, and `adapters`, plus the exact desktop package metadata file. A UI panel must not import filesystem adapters, watcher adapters, protocol handlers, or Electron main services. Core command preview modules must not import renderer components. Source patch modules must not write files.
+A panel must not import privileged services. A core preview planner must not apply its own result. An adapter should not decide presentation or command policy. Physical ownership validation does not remove the need for architectural review.
 
-> **Implementation note:** Physical ownership validation does not inspect import specifiers, re-exports, aliases, or dynamic imports. Those import-boundary rules are still enforced by review and feature validators rather than a complete static import graph.
+> **Safety boundary:** State that crosses a boundary is evidence to validate, not authority to perform a privileged effect.
 
 ## What this does not do
 
-| Not provided | Reason |
+| Not provided | Why |
 | --- | --- |
-| Complete dependency linter | Future validation work. |
-| Execution bus | Current command modules are preview-only. |
-| Cross-runtime shortcuts | These would weaken security and testability. |
+| Complete dependency linter | Import-boundary coverage remains partial. |
+| Execution authority in core previews | Preview and planning modules are pure. |
+| Feature logic in shell primitives | Primitives remain presentational. |
+| Unregistered source roots | Tracked paths outside policy fail validation. |
 
 ## Common misunderstanding
 
-> **Common misunderstanding:** Modular does not mean any small file can import any other small file. Runtime direction still matters.
+> **Common misunderstanding:** Modular means responsibilities and dependency direction are explicit. It does not mean any small module may import any other small module.
 
 ## Validation
 
-`npm run validate:source-tree-boundaries` rejects tracked files outside the registered physical owners. Current feature validators focus on the highest-risk behavioral boundaries. Import-boundary validation is still future work, so reviewers should treat dependency direction as an architectural rule even where tooling is not yet exhaustive.
+Run `validate:source-tree-boundaries` for physical ownership and the focused feature validator for behavioral boundaries. Review new imports as part of the change.
 
 ## Related docs
 
 - [Repository map](./repository-map.md)
 - [Runtime boundaries](./runtime-boundaries.md)
-- [Command Preview Bus](./commands/command-preview-bus.md)
-- [Future command execution](./commands/future-command-execution.md)
+- [Renderer shell](./renderer-shell/README.md)
+- [Commands architecture](./commands/README.md)
 
 ## Future work
 
-Add explicit import-boundary checks for renderer-to-main imports, core-to-renderer leakage, adapter usage, and future worker/WASM/WebGPU modules before write-capable flows become normal UI.
+Add targeted import-boundary checks before write-capable flows, workers, WebGPU, or WASM create additional authority zones.

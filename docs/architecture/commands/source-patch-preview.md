@@ -6,129 +6,87 @@
 
 | Question | Answer |
 | --- | --- |
-| Is this implemented? | Yes, as a dry-run description of a possible source change. |
-| Can it apply a patch? | No. |
-| Runtime owner | Core builds preview; renderer displays it. |
-| Safety risk controlled | Prevents preview text from becoming a file mutation shortcut. |
-| Related next phase | Transaction skeletons and refresh-boundary planning. |
-
-> **Common misunderstanding:** Source Patch Preview is not the future write runtime. It is only the inspectable description that a future write runtime may consume after additional checks exist.
+| Status | Implemented as dry-run display data. |
+| Content | Target path, source anchor, inserted text preview, status, issues, and summary. |
+| Unsafe input | Produces a blocked result. |
+| Apply behavior | Unavailable. |
+| Write behavior | None. |
 
 ## Purpose
 
-Source Patch Preview is a verifiable description of a possible source change. Source Patch Preview is not a write operation. It gives the user and validators something concrete to inspect before Crystal has permission to modify files.
-
-## Why this exists
-
-A future editor needs transparency before mutation. Showing a patch-like preview makes intent inspectable while keeping writes blocked.
-
-## How to read this page
-
-| Need | Focus |
-| --- | --- |
-| Preview status | State diagram. |
-| Source anchors | Key files and data flow. |
-| Write boundary | What this does not do. |
+Source Patch Preview makes a possible change inspectable before Crystal has authority to make it. It is deliberately specific enough for review and deliberately powerless.
 
 ## Current implementation
 
-The preview model records target file path, source anchor, inserted text preview, status, errors, and a human summary. HTML insertion preview planning uses DOM Snapshot source locations to identify where a future insert might happen. If location data is missing or unsafe, the preview blocks instead of inventing a patch.
-
-| Implemented | Blocked | Future |
-| --- | --- | --- |
-| Source anchor preview. | Patch apply. | Conflict detection. |
-| Inserted text preview. | File save. | Formatting policy. |
-| Blocked status for unsafe input. | Write IPC. | Transaction records. |
+HTML insertion preview planning uses a trusted DOM Snapshot source location to derive before, after, or inside anchors. The result records bounded source text and explanatory state. Renderer displays the result and keeps Apply disabled. Later history and refresh planners may read affected-file metadata, but no component consumes it as a patch to apply.
 
 ## Key files
 
-Read the anchor selectors with the planner. The renderer only displays the resulting preview and must not apply it.
+The following paths are the shortest reliable entry points. They are not a substitute for following the data flow through the subsystem.
 
 ## Key files and responsibilities
 
-| File | Responsibility | Reads | Must not do |
+| File or path | Responsibility | Reads | Must not do |
 | --- | --- | --- | --- |
-| `html-source-anchor.types.ts` | Defines preview anchor model. | Snapshot source positions. | Represent applied edits. |
-| `html-source-anchor.selectors.ts` | Resolves before/after/inside anchors. | DOM Snapshot node location. | Infer missing source. |
-| `source-patch-preview.types.ts` | Defines preview payload. | Anchor and command data. | Encode persistence. |
-| `html-insertion-command.planner.ts` | Creates dry-run insertion preview. | Command + anchor. | Write files. |
-| `command-preview.renderer.ts` | Displays preview result. | SourcePatchPreview. | Apply patch. |
+| `html-source-anchor.types.ts` | Defines source-anchor data. | Snapshot source positions | represent an applied edit |
+| `html-source-anchor.selectors.ts` | Resolves supported anchors. | matched Snapshot node | guess missing source |
+| `source-patch-preview.types.ts` | Defines the preview payload. | anchor and command data | encode persistence |
+| `html-insertion-command.planner.ts` | Creates the dry-run preview. | validated command and anchor | write files |
+| `command-preview.renderer.ts` | Presents status and source text. | SourcePatchPreview | enable Apply |
 
 ## Data flow
 
 | Input | Decision | Output |
 | --- | --- | --- |
-| Mapped DOM Snapshot node | Does source location exist? | Source anchor or blocked status. |
-| Insertion mode | Is before/after/inside supported? | Previewable position or blocked state. |
-| Catalog item | Can snippet be rendered safely? | Inserted text preview. |
-| Preview result | Should renderer enable Apply? | No; display only. |
-
-## Main diagram
+| Mapped Snapshot node | Is source location present and current? | Anchor or blocked result |
+| Insertion mode | Is a supported position available? | Preview position or blocked result |
+| Catalog item | Can bounded source text be represented? | Inserted text preview |
+| Preview card | Should renderer expose mutation? | No; display only |
+| Planning consumer | Which files and reversibility questions matter? | Descriptor metadata only |
 
 ```mermaid
 flowchart TD
-  subgraph Renderer[Renderer: UI only]
-    Library[Element Library]
-    PreviewCard[Patch preview card]
-    Apply[Apply button disabled]
-  end
-
-  subgraph Core[Core: pure planning]
-    Command[AddHtmlElementCommand]
-    Planner{Can create safe preview?}
-    Anchor[HTML source anchor]
-    Patch[SourcePatchPreview]
-    Blocked[Blocked preview]
-  end
-
-  subgraph Forbidden[Forbidden in current phase]
-    FileWrite[(File write)]
-    PatchApply[Patch apply]
-    WriteIPC[Write IPC]
-  end
-
-  Library --> Command
-  Command --> Planner
-  Anchor --> Planner
-  Planner -->|safe| Patch
-  Planner -->|missing sourceLocation / unsupported mode| Blocked
-  Patch --> PreviewCard
-  Blocked --> PreviewCard
-  PreviewCard --> Apply
-  Patch -. must not call .-> FileWrite
-  Patch -. must not call .-> PatchApply
-  Patch -. must not call .-> WriteIPC
+  Node[Mapped snapshot node] --> Location{Has source location?}
+  Location -->|no| Blocked[Blocked preview]
+  Location -->|yes| Anchor[Source anchor]
+  Mode[Insertion mode] --> Anchor
+  Item[Catalog item] --> Text[Inserted text preview]
+  Anchor --> Patch[SourcePatchPreview]
+  Text --> Patch
+  Patch --> UI[Read-only preview card]
+  Patch -. must not write .-> Files[(Project files)]
 ```
 
 ## Boundaries
 
-Source Patch Preview must not write, save, patch, mutate, or call IPC write channels. It should remain safe to compute even when the project is open read-only.
+Source Patch Preview is not a write operation. It must not write, save, patch, call write IPC, mutate Preview, register undo/redo, or create an implicit pending change. Missing evidence blocks rather than triggers fallback mutation.
 
-> **Safety boundary:** Renderer may display a patch preview, but it cannot apply it, save it, or request file mutation.
+> **Safety boundary:** State that crosses a boundary is evidence to validate, not authority to perform a privileged effect.
 
 ## What this does not do
 
-| Not provided | Reason |
+| Not provided | Why |
 | --- | --- |
-| Patch application | No apply runtime exists. |
-| File persistence | No write IPC exists. |
-| Undo/redo transaction | No transaction model exists. |
-| Conflict resolution | Future write runtime concern. |
+| Patch application | No apply service exists. |
+| File save | No write IPC exists. |
+| Undo transaction | Current history data is planning-only. |
+| Conflict resolution | A future writer must re-read and validate source freshness. |
 
 ## Common misunderstanding
 
-> **Common misunderstanding:** A preview that looks like code is still a model result, not a source change.
+> **Common misunderstanding:** Preview text that looks executable is still a model result. `preview-ready` means ready to show, not ready to write.
 
 ## Validation
 
-`validate:source-patch-preview` guards model shape, blocked states, renderer labels, disabled apply behavior, and absence of write-channel implementation.
+`npm run validate:source-patch-preview` checks source anchors, statuses, renderer labels, disabled Apply, bus wiring, and absence of write channels and patch application.
 
 ## Related docs
 
-- [Command Preview Bus](./command-preview-bus.md)
 - [HTML insertion preview planner](./html-insertion-preview-planner.md)
+- [Command Preview Bus](./command-preview-bus.md)
 - [Source Patch Preview flow](../flows/source-patch-preview-flow.md)
+- [ADR 0003](../../decisions/0003-command-preview-before-write.md)
 
 ## Future work
 
-Patch application will need atomic file IO, source freshness checks, conflict detection, formatting policy, undo records, dirty-state UI, and refresh planning. Until those exist, preview text stays descriptive only.
+Patch application needs atomic safe IO, source freshness, conflict handling, formatting, executable history, dirty state, refresh execution, and explicit user approval. Until then, preview remains descriptive.

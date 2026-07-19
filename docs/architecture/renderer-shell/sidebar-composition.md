@@ -1,44 +1,47 @@
-# Sidebar Composition
+# Sidebar composition
 
 [Docs index](../../README.md)
 
 ## Purpose
 
-This document explains how the current sidebar composes the read-only project tools.
+The sidebar groups source-oriented tools without making those tools coordinate hidden mutations. Its composition should help a reader move from project structure to a trustworthy target and then to dry-run intent.
 
 ## Current implementation
 
-The sidebar groups Project Graph status, DOM Tree, and Element Library modules using shell primitives. It supports current inspection and preview planning workflows without implementing real editing.
+The sidebar hosts Project Graph status, DOM Tree, and HTML Element Library modules using shared shell primitives. Graph and Snapshot panels are read-only. The Element Library derives target eligibility from current graph, Preview, Snapshot, and selection state and shows command previews with Apply unavailable.
 
 ```mermaid
 flowchart TD
-  Sidebar[Sidebar] --> GraphPanel[Project Graph panel]
-  Sidebar --> DomTree[DOM Tree panel]
-  Sidebar --> ElementLibrary[Element Library panel]
-  GraphPanel --> ProjectState[Project Graph state]
-  DomTree --> SnapshotState[DOM Snapshot state]
-  ElementLibrary --> CommandPreview[Dry-run command preview]
+  Sidebar[Sidebar] --> Graph[Project Graph]
+  Sidebar --> Tree[DOM Tree]
+  Sidebar --> Library[Element Library]
+  Graph --> Project[Project state]
+  Tree --> Snapshot[DOM Snapshot]
+  Project --> Eligibility[Insertion eligibility]
+  Snapshot --> Eligibility
+  Eligibility --> Library
+  Library --> Preview[Dry-run command preview]
 ```
 
 ## Key files
 
-- `apps/desktop/electron/renderer/layout/side-bar/side-bar.html`
-- `apps/desktop/electron/renderer/layout/side-bar/side-bar.scss`
-- `apps/desktop/electron/renderer/components/project-graph-panel/project-graph-panel.ts`
-- `apps/desktop/electron/renderer/components/project-dom-tree-panel/project-dom-tree-panel.ts`
-- `apps/desktop/electron/renderer/components/html-element-library-panel/html-element-library-panel.ts`
+- `apps/desktop/electron/renderer/layout/side-bar`
+- `components/project-graph-panel`
+- `components/project-dom-tree-panel`
+- `components/html-element-library-panel`
+- `packages/core/project/html-element-library`
 
 ## Data flow
 
-Project Graph data arrives from main through preload. DOM Tree renders DOM Snapshot state. Element Library combines selected catalog item, insertion mode, Project Graph, Preview, DOM Snapshot, and Preview Selection mapping state to request a dry-run preview.
+Graph and Snapshot updates arrive through main-owned state. Selection mapping contributes target identity. The Element Library normalizes insertion modes and asks core for a dry-run preview. Each panel renders its own state rather than reaching into another panel.
 
 ## Boundaries
 
-Sidebar modules must not directly coordinate writes between each other. The DOM Tree is not a navigation/editing tree yet. Element Library displays command previews but its apply button remains unavailable.
+The DOM Tree is not an editing tree. The Element Library is not an insertion engine. Sidebar components must not call each other to coordinate writes or bypass target eligibility.
 
 ## Validation
 
-`validate:html-element-library`, `validate:dom-snapshot`, `validate:source-patch-preview`, and `validate:ui-flow` guard sidebar behavior.
+`validate:dom-snapshot`, `validate:html-element-library`, `validate:source-patch-preview`, and `validate:ui-flow` cover the composed behavior.
 
 ## Related docs
 
@@ -48,4 +51,4 @@ Sidebar modules must not directly coordinate writes between each other. The DOM 
 
 ## Future work
 
-Future sidebar work may add active tabs, tree navigation, or editing panels only after their command and security boundaries are explicit.
+Tabs, navigation, or additional inspectors should be added only with explicit state ownership. Editing panels remain future until command execution and persistence exist.

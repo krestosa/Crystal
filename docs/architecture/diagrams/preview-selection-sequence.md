@@ -1,101 +1,58 @@
-# Preview Selection Sequence Diagram
+# Preview Selection sequence diagram
 
 [Docs index](../../README.md)
 
-## At a glance
-
-| Question | Answer |
-| --- | --- |
-| Is this implemented? | Yes, as read-only selection flow. |
-| Can it edit selected nodes? | No. |
-| Runtime owner | Iframe, renderer, main, core. |
-| Safety risk controlled | Keeps click payload validation and mapping explicit. |
-| Related next phase | Future hover/multi-select states. |
-
 ## Purpose
 
-This sequence shows how Crystal turns a click in rendered HTML into a validated read-only selection state without reading iframe internals from renderer.
-
-## Why this exists
-
-The iframe can report a click, but only main/core mapping can decide whether that click relates to the static source model.
-
-## How to read this page
-
-Follow the `alt` branch: matched selection and defensive state are both valid outcomes.
+The sequence makes the trust decision after a Preview click visible. Both matched and defensive outcomes are correct results.
 
 ## Current implementation
 
-The click is not trusted by itself. Renderer checks the message source and shape, main validates the payload again, and core maps it to the DOM Snapshot before Inspector or Overlay consumes it.
-
-| Implemented | Blocked | Future |
-| --- | --- | --- |
-| Bounded selection message. | DOM/source mutation. | Hover selection. |
-| Defensive mapping states. | Live iframe DOM access. | Multi-selection. |
-
-## Key files
-
-These files implement the steps in the sequence.
-
-## Key files and responsibilities
-
-| File | Responsibility | Reads | Must not do |
-| --- | --- | --- | --- |
-| `project-preview-selection-message-bridge.ts` | Message handling. | Iframe message events. | Read iframe DOM. |
-| `project-preview-selection-service.ts` | Main selection service. | Validated payload. | Trust invalid data. |
-| `packages/core/project/preview-selection/**` | Mapping and state. | Snapshot + selection data. | Edit source. |
-
-## Data flow
-
-The iframe sends limited data. Main and core turn it into sanitized selection state.
-
-## Main diagram
+Select Mode is explicitly enabled. The iframe reports a bounded summary. Renderer verifies the message source and shape, preload carries the typed request, main validates again, and core correlates it with current DOM Snapshot state. Only a matched result supplies trusted Inspector and overlay input.
 
 ```mermaid
 sequenceDiagram
   participant User
   participant Renderer
-  participant Iframe as Preview iframe
+  participant Frame as Preview iframe
   participant Preload
   participant Main
   participant Core
-
-  User->>Renderer: Toggle Select Mode
-  Renderer->>Iframe: crystal:preview-selection:enable
-  User->>Iframe: Click element
-  Iframe->>Renderer: crystal:preview-selection:selected
-  Renderer->>Renderer: Validate payload and source window
+  User->>Renderer: Enable Select Mode
+  Renderer->>Frame: crystal:preview-selection:enable
+  User->>Frame: Click element
+  Frame->>Renderer: bounded selected-node summary
+  Renderer->>Renderer: validate source window and payload
   Renderer->>Preload: setPreviewSelectedNode(payload)
-  Preload->>Main: project:preview-selection:set-selected-node
-  Main->>Core: validate payload and map to DOM Snapshot
+  Preload->>Main: named selection IPC
+  Main->>Core: validate and map to current Snapshot
   alt matched source-derived target
-    Core-->>Main: matched selection state
-    Main-->>Renderer: Inspector and Overlay can derive state
-  else missing/stale/mismatch/ambiguous
-    Core-->>Main: defensive selection state
-    Main-->>Renderer: explain defensive state
+    Core-->>Main: matched state
+    Main-->>Renderer: Inspector and overlay may derive state
+  else missing, stale, mismatched, or ambiguous
+    Core-->>Main: defensive state
+    Main-->>Renderer: explain why trust is blocked
   end
 ```
 
+## Key files
+
+- `project-preview-selection-message-bridge.ts`
+- `project-preview-selection-service.ts`
+- `project-preview-selection-validators.ts`
+- `project-preview-selection-mapping.ts`
+
+## Data flow
+
+The iframe contributes visual evidence, not source authority. Current Preview load and Snapshot provide the context that decides whether the evidence is usable.
+
 ## Boundaries
 
-No live iframe DOM read. No edit. No source write.
-
-## What this does not do
-
-| Not provided | Reason |
-| --- | --- |
-| Editing | Selection is read-only. |
-| DOM mutation | Preview is isolated. |
-| Write IPC | No write runtime. |
-
-## Common misunderstanding
-
-> **Common misunderstanding:** Selection state is not edit state.
+No participant reads the live iframe document, mutates project DOM, edits source, or opens write IPC. A defensive branch is not an error to suppress.
 
 ## Validation
 
-Covered by `validate:preview-selection`, `validate:preview-inspector`, and `validate:visual-selection-overlay`.
+`validate:preview-selection`, `validate:preview-inspector`, and `validate:visual-selection-overlay` cover transport, mapping, and consumers.
 
 ## Related docs
 
@@ -104,4 +61,4 @@ Covered by `validate:preview-selection`, `validate:preview-inspector`, and `vali
 
 ## Future work
 
-Add hover and multi-select only as separate, validated read-only states first.
+Hover and multi-selection should add explicit messages and states rather than broadening the existing payload into an implicit editor protocol.

@@ -6,123 +6,86 @@
 
 | Question | Answer |
 | --- | --- |
-| Is this implemented? | Yes, as a bounded static source snapshot. |
-| Can it write source files? | No. |
-| Runtime owner | Main reads source; core parses and models snapshot state. |
-| Safety risk controlled | Avoids trusting or inspecting the live iframe DOM. |
-| Related next phase | Better source mapping before writes. |
+| Status | Implemented, read-only. |
+| Input | Static HTML source for the active Preview target. |
+| Output | Bounded tree, source locations where available, and parser issues. |
+| Browser relation | Parallel model, not the live DOM. |
+| Writes | None. |
 
 ## Purpose
 
-DOM Snapshot gives Crystal a source-derived structure to reason about without trusting or inspecting the live iframe DOM. It is the static counterpart to the rendered Preview.
-
-## Why this exists
-
-Rendered DOM may include browser recovery and runtime mutations. Source planning needs a safer static model with explicit limits and issues.
-
-## How to read this page
-
-| Need | Focus |
-| --- | --- |
-| Snapshot shape | Key files and data flow. |
-| Selection mapping | Data flow and related docs. |
-| Parser limits | Boundaries and blocked states. |
+Crystal needs a structural model tied to source, but the iframe DOM is runtime output shaped by browser recovery and scripts. DOM Snapshot provides a bounded source-derived tree for reasoning without granting live-DOM authority.
 
 ## Current implementation
 
-The snapshot service reads the active Preview target's static HTML source and builds a bounded tree. Nodes include structural paths, tag names, attributes, text previews, depth, sibling indexes, source locations when available, and parser issues.
-
-| Implemented | Blocked | Future |
-| --- | --- | --- |
-| Static tree from source. | Script execution. | More precise source ranges. |
-| Source locations where available. | Computed layout/style. | Worker/WASM parsing if contract stays stable. |
-| Parser issues and truncation. | Live iframe DOM reads. | Richer mapping diagnostics. |
+Main reads the active HTML file and passes text to the core parser/builder. The snapshot records document and element nodes, structural paths, tag names, attributes, bounded text previews, depth, sibling indexes, source locations when available, truncation state, and issues. Consumers include DOM Tree, selection mapping, Inspector, source anchors, and authored-style matching.
 
 ## Key files
 
-Read the types first, then the builder/parser, then the main service and renderer panel.
+The following paths are the shortest reliable entry points. They are not a substitute for following the data flow through the subsystem.
 
 ## Key files and responsibilities
 
-| File | Responsibility | Reads | Must not do |
+| File or path | Responsibility | Reads | Must not do |
 | --- | --- | --- | --- |
-| `packages/core/project/dom/project-dom-snapshot.types.ts` | Snapshot contracts. | Static model fields. | Encode browser runtime state. |
-| `packages/core/project/dom/project-dom-snapshot-builder.ts` | Builds bounded snapshot tree. | Parsed source. | Write files. |
-| `packages/core/project/dom/project-dom-snapshot-parser.ts` | Parses HTML source. | HTML text. | Execute scripts. |
-| `apps/desktop/electron/main/dom/project-dom-snapshot-service.ts` | Reads source and emits state. | Active Preview target. | Read iframe DOM. |
-| `apps/desktop/electron/renderer/components/project-dom-tree-panel/project-dom-tree-panel.ts` | Displays tree state. | Snapshot state. | Mutate snapshot/source. |
+| `packages/core/project/dom/project-dom-snapshot.types.ts` | Defines snapshot state and node contracts. | plain source-derived data | encode live browser objects |
+| `packages/core/project/dom/project-dom-snapshot-parser.ts` | Tokenizes and parses bounded HTML. | source text | execute scripts |
+| `packages/core/project/dom/project-dom-snapshot-builder.ts` | Builds structural nodes and paths. | parser records | write source |
+| `apps/desktop/electron/main/dom/project-dom-snapshot-service.ts` | Reads active target source and publishes state. | Preview target | inspect iframe DOM |
+| `project-dom-tree-panel.ts` | Displays snapshot structure. | sanitized snapshot state | mutate model or source |
 
 ## Data flow
 
 | Input | Decision | Output |
 | --- | --- | --- |
-| Current Preview target | Is source readable? | Source text or issue. |
-| Source text | Can parser build bounded structure? | Snapshot tree + issues. |
-| Snapshot node | Does it have source location? | Eligible anchor or blocked preview. |
-| Parser limit | Was tree truncated? | Explicit truncation state. |
-
-## Main diagram
+| Active Preview target | Can main read its static HTML? | Source text or sanitized issue |
+| Source text | Can the bounded parser complete? | Snapshot tree and parser issues |
+| Snapshot node | Is source location available? | Eligible source anchor or blocked state |
+| Parser limit | Was traversal truncated? | Explicit truncation metadata |
 
 ```mermaid
 flowchart TD
-  subgraph Main[Main]
-    Target[Active Preview target]
-    SourceRead[Read static HTML]
-  end
-
-  subgraph Core[Core]
-    Parser[HTML parser]
-    Builder[Snapshot builder]
-    Snapshot[(DOM Snapshot)]
-    Issue[Parser issue]
-  end
-
-  subgraph Consumers[Read-only consumers]
-    Tree[DOM Tree]
-    Mapping[Selection mapping]
-    Inspector[Preview Inspector]
-    Anchor[Source anchor preview]
-  end
-
-  Target --> SourceRead --> Parser
-  Parser --> Builder --> Snapshot
-  Parser --> Issue --> Snapshot
-  Snapshot --> Tree
-  Snapshot --> Mapping
-  Snapshot --> Inspector
-  Snapshot --> Anchor
-  Snapshot -. must not write .-> Files[(Project files)]
+  Target[Active Preview target] --> Read[Main reads static HTML]
+  Read --> Parser[Bounded parser]
+  Parser --> Builder[Snapshot builder]
+  Builder --> Snapshot[(DOM Snapshot)]
+  Snapshot --> Tree[DOM Tree]
+  Snapshot --> Mapping[Selection mapping]
+  Snapshot --> Inspector[Inspector]
+  Snapshot --> Anchors[Source anchor preview]
+  Snapshot --> Styles[Authored style candidates]
 ```
 
 ## Boundaries
 
-DOM Snapshot is not a browser-grade DOM. It does not execute scripts, resolve runtime framework state, compute layout, inspect styles, or guarantee every browser recovery rule.
+DOM Snapshot is not a browser-grade DOM. It does not execute scripts, calculate layout, inspect styles, reproduce every recovery rule, or guarantee a writable identity for a rendered node. Missing source location is a reason to block source planning.
 
-> **Safety boundary:** Snapshot paths are structural coordinates in a source-derived model, not proof that a live browser node is writable.
+> **Safety boundary:** State that crosses a boundary is evidence to validate, not authority to perform a privileged effect.
 
 ## What this does not do
 
-| Not provided | Reason |
+| Not provided | Why |
 | --- | --- |
-| Live DOM sync | Would require trusting runtime DOM. |
-| CSS cascade/box model | Style Engine is future work. |
-| Source mutation | Snapshot is read-only input to planning. |
+| Live synchronization | Runtime DOM changes are not mirrored into the snapshot. |
+| CSS cascade or box model | The snapshot contains structure, not browser style/layout truth. |
+| Source mutation | Consumers receive read-only model data. |
+| Guaranteed exact ranges | Locations exist only where the bounded parser can provide them. |
 
 ## Common misunderstanding
 
-> **Common misunderstanding:** DOM Snapshot is not the same object model Chromium uses after scripts and browser recovery run.
+> **Common misunderstanding:** A snapshot path is a coordinate inside one source-derived traversal. It is not a permanent ID and not an editable `Element`.
 
 ## Validation
 
-`validate:dom-snapshot` checks parser behavior, limits, path stability, issue handling, and the read-only DOM Tree contract.
+`npm run validate:dom-snapshot` covers parser behavior, limits, node paths, source locations, issues, truncation, and read-only consumers.
 
 ## Related docs
 
+- [Preview architecture](./README.md)
 - [Preview Selection](./preview-selection.md)
-- [Preview Inspector](./preview-inspector.md)
-- [Source Patch Preview](../commands/source-patch-preview.md)
 - [DOM Snapshot flow](../flows/dom-snapshot-flow.md)
+- [Authored Style Matching](../authored-style-matching-dom-snapshot.md)
 
 ## Future work
 
-Future source mapping can become more precise, but it should remain bounded and source-derived. Worker or WASM acceleration should preserve the same state contract before replacing TypeScript parsing paths.
+Source mapping can become more precise while preserving bounded plain-data contracts. Worker or WASM acceleration should prove a benefit before replacing the TypeScript path.

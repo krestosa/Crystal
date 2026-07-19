@@ -1,38 +1,35 @@
 # Visual Selection Overlay MVP
 
-The Visual Selection Overlay MVP is a read-only Design Canvas layer for showing the currently selected Preview element without editing the user project.
+[Docs index](./README.md)
 
-The overlay is external to the Preview iframe. It is rendered by Crystal UI as HTML/CSS in the Design Canvas frame wrapper, above the iframe and inside the same transformed Design Canvas stage. Because it is inside the stage, the selection box moves and scales with Design Canvas pan, zoom, Fit, Center, Reset, and resize behavior. The Design Canvas toolbar and Preview controls remain outside that transform.
+The Visual Selection Overlay gives a matched Preview selection a visible outline without inserting editor chrome into the project page. Crystal renders the overlay as its own read-only HTML/CSS layer in the transformed Design Canvas stage. The overlay is external to the Preview iframe and remains outside the user's DOM.
 
-The Preview document is still sandboxed without `allow-same-origin`. Crystal does not read `iframe.contentDocument`, does not read `iframe.contentWindow.document`, does not query the live iframe document, does not call computed styles, does not inject a preload into the iframe, and does not expose Node or filesystem APIs to the iframe.
+## Projection model
 
-Selection data flows through the existing Preview selection bridge:
-
-```txt
-iframe selection rect
--> validated Preview selection message
--> previewSelection state
--> DOM Snapshot mapping status
--> Design Canvas overlay projection
--> external overlay render
+```text
+bounded iframe selection rectangle
+→ validated Preview Selection state
+→ trusted DOM Snapshot mapping
+→ Design Canvas coordinate projection
+→ external read-only overlay
 ```
 
-The injected Preview selection script now serializes a bounded `selectionRect` from `getBoundingClientRect()` and labels it as `iframe-viewport`. The payload is validated in the renderer and again in main before it updates `previewSelection` state. Rect values must be finite, bounded, serializable numbers; `NaN`, `Infinity`, invalid coordinate spaces, and unsafe ranges are rejected.
+The selection script reports a bounded `selectionRect` from `getBoundingClientRect()` in the `iframe-viewport` coordinate space. Renderer validates the message and main validates the payload again. Coordinates must be finite, serializable, and within accepted bounds.
 
-The overlay follows the same trust boundary as the read-only Preview Inspector. A bounding box is shown only when `mappingStatus` is `matched` and a reliable non-zero `selectionRect` is available. `missing-snapshot`, `stale`, `ambiguous`, mismatched, unknown, and rect-unavailable states do not show a false highlight. They render a compact defensive message or hide the overlay when no selection exists.
+A highlight appears only when `mappingStatus` is `matched` and a reliable non-zero rectangle is available. Missing snapshots, stale state, mismatches, ambiguity, unknown coordinate data, and unavailable rectangles produce a defensive message or no overlay. Crystal does not invent geometry to preserve visual continuity.
 
-The overlay has `pointer-events: none`, so it does not block normal iframe interaction. Preview Select Mode continues to own selection interception inside the iframe. Clearing selection, changing Preview target, or reloading Preview clears the selected node through the existing Preview selection state flow.
+Because the overlay lives inside the transformed stage, it follows Design Canvas pan, zoom, Fit, Center, Reset, and resize behavior. `pointer-events: none` keeps normal iframe interaction available. Preview Select Mode remains responsible for click interception inside the page.
 
-This MVP does not implement visual editing, drag handles, moving, resizing, insertion, text editing, attribute editing, style editing, computed styles, box model inspection, rulers, guides, snapping, multi-select, WebGPU, canvas overlay rendering, Rust/WASM analysis, or source mutation.
+## Boundary
 
-Validation is exposed as:
+The iframe remains sandboxed without `allow-same-origin`. Crystal does not read `iframe.contentDocument`, does not read `iframe.contentWindow.document`, query the live page, call computed-style APIs, inject a preload into the iframe, or expose Node and filesystem capability to project code.
+
+The MVP has no edit handles, drag/resize behavior, insertion, text or attribute editing, style editing, box-model inspection, rulers, guides, snapping, multi-select, WebGPU rendering, Rust/WASM analysis, or source mutation.
+
+## Validation
 
 ```bash
 npm run validate:visual-selection-overlay
 ```
 
-It is also wired into:
-
-```bash
-npm run validate:local
-```
+The validator checks payload bounds, mapping gates, lifecycle clearing, projection behavior, pointer transparency, and the absence of user-DOM mutation.

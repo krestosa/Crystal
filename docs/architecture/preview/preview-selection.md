@@ -6,117 +6,95 @@
 
 | Question | Answer |
 | --- | --- |
-| Is this implemented? | Yes, as read-only bounded selection plus mapping. |
-| Can it write source files? | No. |
-| Runtime owner | Iframe emits bounded data; renderer validates transport; main/core validate and map. |
-| Safety risk controlled | Prevents visual clicks from becoming implicit source mutation. |
-| Related next phase | Future selection states before any write runtime. |
+| Status | Implemented, read-only. |
+| Default mode | Selection script inactive until Select Mode is enabled. |
+| Transport | Namespaced `postMessage` payloads. |
+| Trust decision | Defensive mapping against DOM Snapshot. |
+| Editing authority | None. |
 
 ## Purpose
 
-Preview Selection bridges what the user clicks in the rendered page and what Crystal can safely reason about in the source model. It captures a bounded selection event, normalizes it, and lets mapping decide whether the target relates to the DOM Snapshot.
-
-## Why this exists
-
-A visual click is useful only after it becomes a safe application state. Selection exists to keep that conversion explicit and defensive.
-
-## How to read this page
-
-| Need | Focus |
-| --- | --- |
-| Message transport | Main diagram and key files. |
-| Mapping confidence | Data flow and blocked states. |
-| Security constraints | Boundaries and Preview safety. |
+A click in the rendered page is useful only after Crystal turns it into bounded application state and checks whether source-derived structure supports the same identity.
 
 ## Current implementation
 
-Selection uses an injected script for HTML responses served through the Preview protocol. The script is inactive by default. Renderer toggles it with namespaced `postMessage` commands. The iframe sends a small selected-node summary back to renderer; renderer validates it and passes it to main, where it is validated again and mapped in core.
-
-| Implemented | Blocked | Future |
-| --- | --- | --- |
-| Select Mode off by default. | Text/attribute editing. | Hover selection. |
-| Bounded selected-node payloads. | DOM mutation. | Multi-selection. |
-| Snapshot mapping states. | Live iframe DOM reads. | Breadcrumb and scroll-to-node behavior. |
+HTML responses served by the Preview protocol receive a small selection script. Renderer sends enable/disable messages. On click, the script emits a bounded node summary and optional rectangle. Renderer verifies the source window and payload shape, then calls the typed preload method. Main validates again; core maps against current Preview and DOM Snapshot state and returns matched, missing, stale, mismatched, ambiguous, or other defensive state.
 
 ## Key files
 
-These files separate message transport, state validation, and mapping. Review all three layers before changing selection behavior.
+The following paths are the shortest reliable entry points. They are not a substitute for following the data flow through the subsystem.
 
 ## Key files and responsibilities
 
-| File | Responsibility | Reads | Must not do |
+| File or path | Responsibility | Reads | Must not do |
 | --- | --- | --- | --- |
-| `project-preview-selection-message-bridge.ts` | Handles renderer/iframe messages. | Message source and payload. | Read iframe DOM. |
-| `project-preview-selection-service.ts` | Stores main selection state. | Validated payloads. | Trust renderer blindly. |
-| `project-preview-selection-validators.ts` | Guards payload shape. | Candidate payload. | Infer missing source. |
-| `project-preview-selection-mapping.ts` | Maps selection to snapshot. | Selection + DOM Snapshot. | Treat ambiguity as match. |
-| `project-preview-selection-mapping-lookup.ts` | Finds candidate snapshot nodes. | Snapshot paths and tag data. | Mutate snapshot. |
+| `project-preview-selection-message-bridge.ts` | Owns iframe message transport and renderer guards. | MessageEvent and active frame | read iframe DOM |
+| `project-preview-selection-service.ts` | Owns main selection state. | validated payloads and Preview context | trust arbitrary renderer input |
+| `project-preview-selection-validators.ts` | Checks bounded payload shape. | unknown candidate data | infer missing fields |
+| `project-preview-selection-mapping.ts` | Calculates mapping status. | selection and DOM Snapshot | accept ambiguity as match |
+| `project-preview-selection-mapping-lookup.ts` | Finds candidate snapshot nodes. | paths, tags, and bounded attributes | mutate snapshot |
 
 ## Data flow
 
 | Input | Decision | Output |
 | --- | --- | --- |
-| Select Mode toggle | Should iframe selection script activate? | Enable/disable message. |
-| Iframe click | Is payload bounded and shaped correctly? | Selected-node summary. |
-| Selected-node summary | Does snapshot confirm the target? | Matched or defensive mapping. |
-| Mapping state | Can downstream panels trust it? | Inspector/Overlay state or fallback. |
-
-## Main diagram
+| Select Mode toggle | Should iframe interception be active? | Enable or disable message |
+| Iframe click | Is selection active and payload bounded? | Selected-node summary |
+| Renderer message | Does source window and shape match expectations? | Main request or ignored input |
+| Main/core mapping | Does current snapshot confirm identity? | Matched or defensive selection |
+| Selection result | May consumers trust details and geometry? | Inspector/overlay state or explanation |
 
 ```mermaid
 sequenceDiagram
   participant User
   participant Renderer
-  participant Iframe as Preview iframe
+  participant Frame as Preview iframe
   participant Main
   participant Core
-
   User->>Renderer: Enable Select Mode
-  Renderer->>Iframe: postMessage enable
-  User->>Iframe: Click rendered node
-  Iframe->>Renderer: bounded selected-node summary
-  Renderer->>Renderer: Validate source window and payload
+  Renderer->>Frame: enable selection
+  User->>Frame: Click rendered node
+  Frame->>Renderer: bounded node summary
+  Renderer->>Renderer: validate source and shape
   Renderer->>Main: set selected node
-  Main->>Core: validate and map to DOM Snapshot
-  alt trusted match
-    Core-->>Main: matched selection state
-    Main-->>Renderer: Inspector/Overlay can derive state
-  else missing/stale/mismatch/ambiguous
-    Core-->>Main: defensive selection state
-    Main-->>Renderer: explain blocked mapping
+  Main->>Core: validate and map to snapshot
+  alt matched
+    Core-->>Renderer: trusted selection state
+  else missing, stale, mismatch, ambiguous
+    Core-->>Renderer: defensive state
   end
 ```
 
 ## Boundaries
 
-Selection is not editing. It cannot mutate attributes, text, DOM nodes, or files. Renderer must not read `iframe.contentDocument` or `iframe.contentWindow.document`.
+Selection cannot mutate attributes, text, DOM nodes, styles, or files. Renderer must not use `iframe.contentDocument` or `iframe.contentWindow.document`. A payload is evidence, never edit permission.
 
-> **Safety boundary:** A selected-node payload is evidence to validate, not authority to edit.
+> **Safety boundary:** State that crosses a boundary is evidence to validate, not authority to perform a privileged effect.
 
 ## What this does not do
 
-| Not provided | Reason |
+| Not provided | Why |
 | --- | --- |
-| Source writes | No write runtime. |
-| Attribute/text editing | Inspector is read-only. |
-| Live DOM query | Preview isolation. |
-| Trusted mapping on ambiguity | Avoids corrupting future source operations. |
+| Text or attribute editing | No execution runtime exists. |
+| Live iframe query | Isolation is preserved. |
+| Trust on ambiguity | Ambiguous and stale states remain defensive. |
+| Persistent identity | Selection depends on current Preview load and Snapshot state. |
 
 ## Common misunderstanding
 
-> **Common misunderstanding:** Selection mode makes the page selectable, not editable.
+> **Common misunderstanding:** Select Mode makes the page selectable, not editable. A visual target becomes trustworthy only within the current validated mapping context.
 
 ## Validation
 
-`validate:preview-selection` checks payload validation, message boundaries, mapping states, and forbidden iframe access.
+`npm run validate:preview-selection` checks message boundaries, payload limits, load identity, mapping states, rectangle validation, and forbidden iframe access.
 
 ## Related docs
 
 - [DOM Snapshot](./dom-snapshot.md)
-- [Visual Selection Overlay](./visual-selection-overlay.md)
 - [Preview Inspector](./preview-inspector.md)
-- [Preview selection sequence](../diagrams/preview-selection-sequence.md)
+- [Visual Selection Overlay](./visual-selection-overlay.md)
+- [Selection flow](../flows/preview-selection-flow.md)
 
 ## Future work
 
-Hover selection, multi-selection, breadcrumbs, and scroll-to-node can be added later as separate states. They still should not imply source mutation until command execution and history boundaries exist.
+Hover, breadcrumbs, scroll-to-node, and multi-selection should become explicit read-only states first. Their eventual use in editing still requires source freshness and command policy.

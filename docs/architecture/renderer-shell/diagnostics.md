@@ -4,46 +4,46 @@
 
 ## Purpose
 
-This document describes the renderer Diagnostics surface and the system state it exposes.
+Diagnostics makes hidden application state visible so contributors can understand a broken project, Preview, Snapshot, or event flow without reaching for privileged data.
 
 ## Current implementation
 
-Diagnostics is a shell UI feature for observing graph, preview, DOM, and event state. It is integrated into the current carbon shell as a floating panel with open/close, pin/unpin, drag, resize, viewport recovery, and scroll containment. It is informational only.
+A floating shell panel presents graph, Preview, DOM Snapshot, and event information from already-sanitized renderer state. It supports explicit open/close, pinning, drag, resize, viewport recovery, and contained scrolling. The panel remains informational.
 
 ```mermaid
-flowchart TD
-  StatusBar[Status bar button] --> Diagnostics[Diagnostics panel]
-  Diagnostics --> Graph[Graph diagnostics]
-  Diagnostics --> Preview[Preview diagnostics]
-  Diagnostics --> DOM[DOM Snapshot diagnostics]
-  Diagnostics --> Events[Events diagnostics]
+flowchart LR
+  Status[Status Bar action] --> Panel[Diagnostics panel]
+  Graph[Graph state] --> Panel
+  Preview[Preview state] --> Panel
+  Snapshot[DOM Snapshot issues] --> Panel
+  Events[Event summaries] --> Panel
 ```
 
 ## Key files
 
+- `apps/desktop/electron/renderer/components/diagnostics-panel`
 - `apps/desktop/electron/renderer/layout/status-bar/status-bar.html`
 - `apps/desktop/electron/renderer/layout/status-bar/status-bar.scss`
-- `apps/desktop/electron/renderer/components/diagnostics-panel/**`
 - `scripts/validate-ui-flow.mjs`
 
 ## Data flow
 
-Diagnostics reads already-sanitized renderer state and shell events. It does not request privileged data directly. It presents status and issues to help developers understand active project, Preview, DOM Snapshot, and event state.
+Feature controllers publish sanitized state. Diagnostics derives compact rows and issue summaries. Panel position and size remain renderer-local. No diagnostic interaction calls a hidden project command.
 
 ## Boundaries
 
-Diagnostics must not become a hidden command execution panel. It must not expose raw absolute paths, direct filesystem reads, write controls, iframe internals, or apply actions. DevTools opening remains an explicit Status Bar action, not an automatic side effect of `npm run dev`.
+Diagnostics does not expose absolute paths, raw IPC, direct filesystem reads, iframe internals, Apply actions, or command execution. DevTools remains a separate explicit app action.
 
 ## Validation
 
-`validate:ui-flow` guards Diagnostics placement, status flow, and DevTools behavior.
+`validate:ui-flow` guards panel integration, recoverable geometry, status routing, and the manual DevTools contract.
 
 ## Related docs
 
-- [Status bar](./status-bar.md)
+- [Status Bar](./status-bar.md)
 - [Validation system](../validation-system.md)
 - [Preview safety](../preview/preview-safety.md)
 
 ## Future work
 
-Future Diagnostics may expose richer structured logs and validation summaries, but it should remain read-only unless a specific safe action is designed and validated.
+Richer structured logs and validation summaries may be useful, but each new action needs an explicit safe contract. The panel should not become an unreviewed command console.

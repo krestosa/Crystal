@@ -1,115 +1,68 @@
-# Security Boundaries Diagram
+# Security boundaries diagram
 
 [Docs index](../../README.md)
 
-## At a glance
-
-| Question | Answer |
-| --- | --- |
-| Is this implemented? | Yes, as documented boundaries. |
-| Can security boundaries be relaxed for Preview convenience? | No. |
-| Runtime owner | Main/preload/renderer/iframe split. |
-| Safety risk controlled | Separates allowed, forbidden, and future authority. |
-| Related next phase | Future writes must add gates, not remove boundaries. |
-
 ## Purpose
 
-This diagram shows the security edges that protect Crystal while it loads real project HTML.
-
-## Why this exists
-
-A contributor should be able to see at a glance which shortcuts are forbidden before touching Preview, preload, or Electron settings.
-
-## How to read this page
-
-Allowed edges are solid. Forbidden shortcuts are dotted from current nodes. Future-only nodes are separated from current implementation.
+This view separates current allowed authority, forbidden shortcuts, and future-only write concepts so a convenience edge cannot hide inside a broader architecture diagram.
 
 ## Current implementation
 
-Only the preload bridge may connect renderer UI to main. Preview is served through a constrained protocol. The iframe can send bounded selection messages, but it cannot access Crystal privileges.
-
-| Implemented | Blocked | Future |
-| --- | --- | --- |
-| Constrained preload. | Raw IPC. | Write IPC only after design. |
-| Root-contained protocol. | Traversal/out-of-root serving. | Write gates. |
-| Bounded iframe messages. | Live iframe DOM reads. | More selection messages with same boundary. |
-
-## Key files
-
-These files implement the security boundaries shown above.
-
-## Key files and responsibilities
-
-| File | Responsibility | Reads | Must not do |
-| --- | --- | --- | --- |
-| `web-preferences.ts` | BrowserWindow security. | Electron options. | Relax security. |
-| `crystal-api.bridge.ts` | API bridge. | IPC constants. | Expose raw IPC. |
-| `project-preview-protocol.ts` | Safe serving. | Active root. | Serve arbitrary local files. |
-| `project-preview-selection-message-bridge.ts` | Bounded messages. | Event payloads. | Read iframe DOM. |
-
-## Data flow
-
-Only sanitized, typed, bounded data crosses boundaries. Project files are served only after root containment checks.
-
-## Main diagram
+Renderer reaches main only through the context-isolated preload API. Main reaches the active project root and serves root-contained resources. Preview iframe returns bounded messages. Raw IPC, direct renderer filesystem access, live iframe inspection, traversal, and project-content privilege are blocked.
 
 ```mermaid
 flowchart TD
   subgraph Allowed[Allowed today]
-    Renderer[Renderer shell] --> Preload[contextBridge preload API]
-    Preload --> Main[Electron main IPC]
-    Main --> ProjectRoot[(Active project root)]
-    Main --> PreviewProtocol[crystal-preview protocol]
-    PreviewProtocol --> PreviewIframe[Sandboxed Preview iframe]
-    PreviewIframe --> Message[Bounded postMessage]
+    Renderer[Renderer shell] --> Preload[Constrained preload]
+    Preload --> Main[Electron main]
+    Main --> Root[(Active project root)]
+    Main --> Protocol[crystal-preview protocol]
+    Protocol --> Frame[Sandboxed Preview iframe]
+    Frame --> Message[Bounded postMessage]
     Message --> Renderer
   end
-
   subgraph Forbidden[Forbidden today]
     Node[Node APIs in renderer]
     RawIPC[raw ipcRenderer]
-    DirectFS[Direct filesystem]
-    IframeDOM[iframe.contentDocument]
-    CrystalPrivileges[Crystal privileged APIs from iframe]
-    Traversal[Traversal/out-of-root]
+    DirectFS[direct filesystem]
+    LiveDOM[live iframe document]
+    Privilege[Crystal APIs from project content]
+    Traversal[outside-root serving]
   end
-
-  subgraph FutureOnly[Future only]
-    WriteIPC[Write IPC contract]
-    PatchApply[Patch apply]
-    Undo[Undo/redo transaction]
+  subgraph Future[Future only]
+    WriteIPC[Write IPC]
+    Apply[Patch application]
+    History[Executable undo/redo]
   end
-
   Renderer -. blocked .-> Node
   Renderer -. blocked .-> RawIPC
   Renderer -. blocked .-> DirectFS
-  Renderer -. blocked .-> IframeDOM
-  PreviewIframe -. blocked .-> CrystalPrivileges
-  PreviewProtocol -. blocks .-> Traversal
+  Renderer -. blocked .-> LiveDOM
+  Frame -. blocked .-> Privilege
+  Protocol -. blocks .-> Traversal
   Main -. not implemented .-> WriteIPC
-  WriteIPC -. future gated .-> PatchApply
-  PatchApply -. future gated .-> Undo
+  WriteIPC -. gated .-> Apply --> History
 ```
+
+## Key files
+
+- `web-preferences.ts`
+- `crystal-api.bridge.ts`
+- `ipc.constants.ts`
+- `project-preview-protocol.ts`
+- `project-preview-selection-message-bridge.ts`
+
+## Data flow
+
+Only typed, sanitized, bounded data crosses trust boundaries. The active project root constrains filesystem reads. Future write nodes are disconnected from current IPC.
 
 ## Boundaries
 
-No `allow-same-origin` shortcut. No live iframe document reads. No renderer filesystem writes.
-
-## What this does not do
-
-| Not provided | Reason |
-| --- | --- |
-| Write contract | Future-only. |
-| Security relaxation | Explicitly forbidden. |
-| Raw project path exposure | Diagnostics remain sanitized. |
-
-## Common misunderstanding
-
-> **Common misunderstanding:** Security boundaries are not styling preferences; they define which code can hold authority.
+No `allow-same-origin` shortcut, live iframe document access, renderer file helper, hidden write channel, or absolute-path diagnostic belongs in the allowed graph.
 
 ## Validation
 
-Covered by security checks inside feature validators and `validate:architecture-docs` for docs presence.
+Feature validators and architecture docs checks preserve these claims; direct review remains required for Electron and protocol changes.
 
 ## Related docs
 
@@ -119,4 +72,4 @@ Covered by security checks inside feature validators and `validate:architecture-
 
 ## Future work
 
-Future write features must add gates, not remove these boundaries.
+A writer must add new gates behind main-owned authority. It must not convert a forbidden current edge into an allowed shortcut.
