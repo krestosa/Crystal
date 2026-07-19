@@ -66,6 +66,7 @@ export const validationCatalog = Object.freeze([
   entry("preview-selection", "Preview Selection", "preview", "validate:preview-selection", directNode("scripts/validate-preview-selection.mjs"), "Preview"),
   entry("preview-inspector", "Preview Inspector", "preview", "validate:preview-inspector", directNode("scripts/validate-preview-inspector.mjs"), "Preview"),
   entry("design-canvas", "Design Canvas", "ui", "validate:design-canvas", directNode("scripts/validate-design-canvas.mjs"), "UI"),
+  entry("repository-graph-view", "Repository Graph View", "ui", "validate:repository-graph-view", directNode("scripts/validate-repository-graph-view.mjs"), "UI"),
   entry("visual-selection-overlay", "Visual Selection Overlay", "ui", "validate:visual-selection-overlay", directNode("scripts/validate-visual-selection-overlay.mjs"), "UI"),
   entry("html-element-library", "HTML Element Library", "ui", "validate:html-element-library", directNode("scripts/validate-html-element-library.mjs"), "UI"),
   entry("source-patch-preview", "Source Patch Preview", "ui", "validate:source-patch-preview", directNode("scripts/validate-source-patch-preview.mjs"), "UI"),

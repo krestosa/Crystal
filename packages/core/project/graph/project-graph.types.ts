@@ -22,6 +22,7 @@ export interface ProjectFile {
   readonly extension: string;
   readonly kind: ProjectFileKind;
   readonly sizeBytes: number;
+  readonly modifiedAtMs: number;
   readonly isText: boolean;
   readonly isBinaryHeavy: boolean;
   readonly discoveredAt: number;
@@ -140,6 +141,7 @@ export interface ProjectFileSystemEntry {
   readonly name: string;
   readonly isDirectory: boolean;
   readonly sizeBytes: number;
+  readonly modifiedAtMs: number;
 }
 
 export interface ProjectFileSystem {

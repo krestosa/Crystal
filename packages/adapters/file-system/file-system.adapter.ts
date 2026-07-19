@@ -9,7 +9,13 @@ export class NodeFileSystemAdapter implements ProjectFileSystem {
     for (const entry of entries) {
       const entryPath = path.resolve(absolutePath, entry.name);
       const entryStats = await stat(entryPath);
-      result.push({ absolutePath: entryPath, name: entry.name, isDirectory: entry.isDirectory(), sizeBytes: entryStats.size });
+      result.push({
+        absolutePath: entryPath,
+        name: entry.name,
+        isDirectory: entry.isDirectory(),
+        sizeBytes: entryStats.size,
+        modifiedAtMs: entryStats.mtimeMs
+      });
     }
     return result.sort((a, b) => a.absolutePath.localeCompare(b.absolutePath));
   }
